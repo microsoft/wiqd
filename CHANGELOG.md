@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.9.0] — 2026-07-29
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- Check for prerequisite CLIs and offer a consent-gated install
+- Notify you when a newer release is available, show what changed after an update, and browse version ranges with `wiqd changelog --from/--to`
+
+### Fixes
+
+- Seed extensions on first run, and repair them from the doctor, when a post-install step is blocked
+- Install the evaluation and Work IQ extensions as first-class dependencies
+- Scope the doctor's antivirus exclusion advice to the project instead of a whole drive
+- Distinguish active from installed extensions in `wiqd ext list`, with clearer version reporting
+- Report upstream and precondition failures with actionable diagnostics
+- Describe the `wiqd agent add` command group properly in help output
+
 ## [0.8.0-rc.1] — 2026-07-22
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

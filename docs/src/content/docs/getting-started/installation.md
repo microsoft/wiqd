@@ -122,7 +122,7 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --version 0.1.9
 
 ## npm
 
-`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path (they also handle Node.js and the VS Code extension), but a manual install works too. During the preview period, pin the `preview` dist-tag explicitly — `latest` does not carry the shipping prerelease build:
+`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path (they also handle Node.js, the VS Code extension, and the Copilot CLI plugin), but a manual install works too. During the preview period, pin the `preview` dist-tag explicitly — `latest` does not carry the shipping prerelease build:
 
 ```bash
 npm install -g @microsoft/wiqd@preview

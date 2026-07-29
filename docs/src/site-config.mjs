@@ -12,4 +12,4 @@ export const base = normalizedBase;
 
 // Baked at mirror-generation time from the repo-root VERSION; the mirror tree
 // has no VERSION file to read.
-export const version = '0.8.0-rc.1';
+export const version = '0.9.0';

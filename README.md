@@ -12,7 +12,7 @@
 
 Work IQ Dev Tools are the agentic experience for Microsoft 365 Copilot extensibility that takes any plugin (skills, connectors, declarative agents) from an empty folder to a published, monitored product. One install. One mental model. The whole lifecycle in a single flow that you, or the Copilot building alongside you, can run end to end.
 
-> This repository hosts Work IQ Dev Tools' documentation, downloads, and project meta-files. The `wiqd` CLI itself is publicly available via npm — install it with `npm install -g @microsoft/wiqd` (see [Quick start](#quick-start) below) — while its source remains private to Microsoft during this preview.
+> This repository hosts Work IQ Dev Tools' documentation, downloads, and project meta-files. The `wiqd` CLI itself is publicly available via npm — see the [Quick start](#quick-start) below to install it — while its source remains private to Microsoft during this preview.
 
 ## What you can do with Work IQ Dev Tools
 

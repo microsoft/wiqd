@@ -59,7 +59,7 @@ VSCODE_EXTENSION_ID="Microsoft.wiqd"
 plugin_force_recompose=false
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.8.0-rc.1"
+WIQD_INSTALLER_VERSION="0.9.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -475,6 +475,29 @@ print_wiqd_quickstart() {
     echo ""
 }
 
+# Returns 0 (true) when the installer is allowed to prompt interactively.
+# Falls closed: any failed test → not interactive. The
+# probe MUST use /dev/tty (not [ -t 0 ]) because the most common public-
+# installer invocation form `curl ... | bash` pipes the SCRIPT through
+# stdin — so -t 0 is false even though the user has a controlling
+# terminal. Mirrors can_prompt_on_tty. Public island: both 1P and 3P
+# installers gate their EULA prompt on this function, so it must survive
+# the mirror strip. NON_INTERACTIVE defaults to false under set -u since
+# the 3P installer never defines it. The check below is a STRING compare,
+# not a truth-value command execution: in the generated public installer the
+# NON_INTERACTIVE=false default and the --non-interactive flag parser are
+# both stripped out of the public build, so this value comes entirely from
+# the caller's environment. Running it as a command (the old `if
+# ${VAR:-false};` form) would execute whatever the caller set NON_INTERACTIVE
+# to — e.g. the widespread `NON_INTERACTIVE=1` convention runs `1` (command
+# not found, falls through to interactive) and an arbitrary string is
+# outright eval'd.
+is_installer_interactive() {
+    if [[ "${NON_INTERACTIVE:-false}" == "true" ]]; then return 1; fi
+    [[ -z "${CI:-}" ]] || return 1
+    [[ -z "${WIQD_INSTALLER_NON_INTERACTIVE:-}" ]] || return 1
+    [[ -r /dev/tty && -w /dev/tty ]]
+}
 
 # ─────────────────────────────────────────────
 # Installation helpers

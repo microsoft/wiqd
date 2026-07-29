@@ -487,18 +487,18 @@ wiqd changelog [options]
 
 | Option | Description |
 | --- | --- |
-| `--version <version>` | Show changelog for a specific version |
-| `--from <version>` | Start version for range |
-| `--to <version>` | End version for range |
+| `--version <version>` | Show changelog for a specific version (not with --from/--to) |
+| `--from <version>` | Range start, exclusive — releases AFTER this one (not with --version) |
+| `--to <version>` | Range end, inclusive (not with --version); defaults to latest |
 | `--markdown` | Emit canonical markdown (paste-ready; never ANSI-rendered) |
 | `--no-markdown-render` | Disable inline markdown rendering in text output (always raw markdown) |
 
 **Examples**
 
 ```bash
-wiqd changelog
-wiqd changelog --version <version> --from <version>
-wiqd changelog --json
+wiqd changelog                          # the latest release
+wiqd changelog --version <version>      # one specific release
+wiqd changelog --from <version>         # everything AFTER that release
 ```
 
 ## wiqd component
