@@ -104,7 +104,7 @@ $script:PluginForceRecompose = $false
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.8.0-rc.1"
+$script:WiqdVersion = "0.9.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -307,6 +307,22 @@ function Show-NpmConfigDeprecationWarning {
     Write-Host ""
 }
 
+# Returns $true when the installer is allowed to prompt the user
+# interactively. Falls closed: any exception → not interactive. CI
+# environments, redirected stdin, $env:WIQD_INSTALLER_NON_INTERACTIVE,
+# and the -NonInteractive flag (via $script:ForceNonInteractive) all
+# suppress the prompt. Public island: both 1P and 3P installers gate
+# their EULA prompt on this function, so it must survive the mirror strip.
+function Test-IsInstallerInteractive {
+    if ($script:ForceNonInteractive) { return $false }
+    if ($env:CI) { return $false }
+    if ($env:WIQD_INSTALLER_NON_INTERACTIVE) { return $false }
+    try {
+        return -not [Console]::IsInputRedirected
+    } catch {
+        return $false
+    }
+}
 
 function Install-NpmGlobalPackages {
     # The ONE `npm install -g` primitive for every install source: every
