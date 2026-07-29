@@ -1,0 +1,44 @@
+/* wiqd brand colors — extracted from the WIQD banner */
+/* Spectrum: cyan (#4ECDC4) → blue (#6366F1) → purple (#A855F7) → pink (#EC4899) */
+
+:root {
+  --sl-color-accent-low: #1e1033;
+  --sl-color-accent: #a855f7;
+  --sl-color-accent-high: #e9d5ff;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eeeef0;
+  --sl-color-gray-2: #c2c2c6;
+  --sl-color-gray-3: #8b8b96;
+  --sl-color-gray-4: #585861;
+  --sl-color-gray-5: #38363f;
+  --sl-color-gray-6: #26242d;
+  --sl-color-black: #17151e;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #1e1033;
+  --sl-color-accent: #c084fc;
+  --sl-color-accent-high: #f3e8ff;
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #eeeef0;
+  --sl-color-gray-2: #c2c2c6;
+  --sl-color-gray-3: #8b8b96;
+  --sl-color-gray-4: #585861;
+  --sl-color-gray-5: #38363f;
+  --sl-color-gray-6: #26242d;
+  --sl-color-black: #17151e;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #f3e8ff;
+  --sl-color-accent: #9333ea;
+  --sl-color-accent-high: #4c1d95;
+  --sl-color-white: #17151e;
+  --sl-color-gray-1: #26242d;
+  --sl-color-gray-2: #38363f;
+  --sl-color-gray-3: #585861;
+  --sl-color-gray-4: #8b8b96;
+  --sl-color-gray-5: #c2c2c6;
+  --sl-color-gray-6: #eeeef0;
+  --sl-color-black: #ffffff;
+}

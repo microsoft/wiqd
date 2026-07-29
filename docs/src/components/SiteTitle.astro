@@ -1,0 +1,99 @@
+---
+// Faithful copy of Starlight 0.39.3's default SiteTitle.astro (see
+// node_modules/@astrojs/starlight/components/SiteTitle.astro), extended with a
+// version badge next to the title so the header always reflects the
+// build-time VERSION — never a hardcoded, driftable literal.
+import { logos } from 'virtual:starlight/user-images';
+import config from 'virtual:starlight/user-config';
+import { version } from '../site-config.mjs';
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+
+// A SemVer prerelease suffix (e.g. "-rc.1") is the build-time signal that this
+// is a preview build — derived from VERSION itself so the "Preview" tag
+// disappears automatically at 1.0 with no manual edit anywhere.
+const isPreview = version.includes('-');
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+  {
+    config.logo && logos.dark && (
+      <>
+        <img
+          class:list={{ 'light:sl-hidden print:hidden': !('src' in config.logo) }}
+          alt={config.logo.alt}
+          src={logos.dark.src}
+          width={logos.dark.width}
+          height={logos.dark.height}
+        />
+        {/* Show light alternate if a user configure both light and dark logos. */}
+        {!('src' in config.logo) && (
+          <img
+            class="dark:sl-hidden print:block"
+            alt={config.logo.alt}
+            src={logos.light?.src}
+            width={logos.light?.width}
+            height={logos.light?.height}
+          />
+        )}
+      </>
+    )
+  }
+  <span class:list={{ 'sr-only': config.logo?.replacesTitle }} translate="no">
+    {siteTitle}
+  </span>
+  <span class="version-badge">
+    {isPreview && <span class="preview-tag">Preview ·</span>}
+    <span translate="no">v{version}</span>
+  </span>
+</a>
+
+<style>
+  @layer starlight.core {
+    .site-title {
+      align-items: center;
+      gap: var(--sl-nav-gap);
+      font-size: var(--sl-text-h4);
+      font-weight: 600;
+      color: var(--sl-color-text-accent);
+      text-decoration: none;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    span {
+      overflow: hidden;
+    }
+    img {
+      height: calc(var(--sl-nav-height) - 2 * var(--sl-nav-pad-y));
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      object-position: 0 50%;
+    }
+  }
+
+  /* Override Starlight core's `span { overflow: hidden }` — the badge's
+     nested "Preview" + version spans must stay visible, not clip like the
+     ellipsis-prone title span. */
+  .version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    flex-shrink: 0;
+    overflow: visible;
+    font-size: var(--sl-text-xs);
+    font-weight: 400;
+    color: var(--sl-color-gray-2);
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.25rem;
+    padding: 0.05rem 0.4rem;
+    opacity: 0.85;
+  }
+  .version-badge span {
+    overflow: visible;
+  }
+  .preview-tag {
+    color: var(--sl-color-accent-high);
+    font-weight: 600;
+  }
+</style>
+

@@ -1,0 +1,35 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+name: 🛠️ Improvement
+description: An existing wiqd command or capability could work better.
+title: '[Improvement]: '
+labels:
+  - feedback
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! If you have the `wiqd` CLI installed, running `wiqd feedback submit --type improvement` opens this same kind of issue directly from your terminal.
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: What does wiqd do today, and which command or capability is involved?
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-improvement
+    attributes:
+      label: Suggested improvement
+      description: How should it behave instead? Why would that be better?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that would help us understand the suggestion.
+    validations:
+      required: false

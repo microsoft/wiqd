@@ -1,0 +1,21 @@
+{
+  "name": "wiqd-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "npm run generate:index && astro dev",
+    "start": "npm run generate:index && astro dev",
+    "prebuild": "node scripts/generate-docs-index.cjs --output ./public/docs-index.json",
+    "build": "node scripts/build.mjs",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate:index": "node scripts/generate-docs-index.cjs --output ./public/docs-index.json"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.39.3",
+    "astro": "6.4.8",
+    "sharp": "0.35.3",
+    "starlight-theme-terminal": "1.2.0"
+  }
+}

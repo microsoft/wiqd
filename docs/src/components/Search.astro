@@ -1,0 +1,479 @@
+---
+// Search.astro — docs-index.json-powered search for the Starlight docs site.
+// Replaces Starlight's built-in Pagefind search with a BM25 engine over the
+// generated docs-index.json. This in-site search is the only consumer of that index.
+---
+
+<button id="docs-search-btn" type="button" class="sl-flex search-trigger" aria-label="Search" title="Search (Ctrl+K)">
+<svg aria-hidden="true" class="icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+</svg>
+<span class="search-label">Search</span>
+<span class="shortcut" aria-hidden="true">
+<kbd>Ctrl</kbd><kbd>K</kbd>
+</span>
+</button>
+
+<dialog id="docs-search-modal" aria-label="Search documentation">
+<div class="modal-inner">
+<div class="search-bar">
+<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+</svg>
+<input
+id="docs-search-q"
+type="search"
+placeholder="Search documentation…"
+autocomplete="off"
+spellcheck="false"
+aria-label="Search query"
+aria-autocomplete="list"
+aria-controls="docs-search-hits"
+/>
+<button type="button" id="docs-search-cancel" aria-label="Close search">
+<kbd>Esc</kbd>
+</button>
+</div>
+<ul id="docs-search-hits" role="listbox" aria-label="Search results"></ul>
+<p class="search-footer">
+<span>↑↓ navigate</span>
+<span>↵ open</span>
+<span>Esc close</span>
+</p>
+</div>
+</dialog>
+
+<style>
+/* ── Search trigger button ────────────────────────────────────────────── */
+.search-trigger {
+align-items: center;
+gap: 0.5rem;
+background-color: var(--sl-color-bg-nav);
+border: 1px solid var(--sl-color-hairline-light);
+border-radius: 0.5rem;
+padding: 0.3rem 0.75rem;
+color: var(--sl-color-gray-2);
+cursor: pointer;
+font-size: var(--sl-text-sm);
+line-height: 1;
+min-height: 2rem;
+white-space: nowrap;
+}
+.search-trigger:hover {
+border-color: var(--sl-color-accent);
+color: var(--sl-color-white);
+}
+.shortcut {
+display: flex;
+gap: 0.125rem;
+}
+.shortcut kbd {
+display: flex;
+align-items: center;
+justify-content: center;
+border: 1px solid var(--sl-color-hairline);
+border-radius: 0.25rem;
+padding: 0.1em 0.35em;
+font-size: 0.7em;
+font-family: inherit;
+background: var(--sl-color-bg);
+color: var(--sl-color-gray-2);
+}
+@media (max-width: 40rem) {
+.shortcut { display: none; }
+.search-label { display: none; }
+.search-trigger { padding: 0.3rem 0.5rem; }
+}
+
+/* ── Modal dialog ──────────────────────────────────────────────────────── */
+dialog {
+position: fixed;
+inset: 0;
+z-index: 9999;
+width: min(90vw, 600px);
+height: fit-content;
+max-height: 80vh;
+margin: 3.5rem auto 0;
+padding: 0;
+border: 1px solid var(--sl-color-hairline);
+border-radius: 0.75rem;
+background: var(--sl-color-bg);
+color: var(--sl-color-text);
+box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+/* Hidden by default; [open] shows it */
+display: none;
+flex-direction: column;
+overflow: hidden;
+}
+dialog[open] {
+display: flex;
+}
+dialog::backdrop {
+background: rgba(0, 0, 0, 0.5);
+backdrop-filter: blur(4px);
+}
+
+/* ── Inner layout ──────────────────────────────────────────────────────── */
+.modal-inner {
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+.search-bar {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+padding: 0.75rem 1rem;
+border-bottom: 1px solid var(--sl-color-hairline);
+flex-shrink: 0;
+}
+.search-bar svg {
+color: var(--sl-color-gray-3);
+flex-shrink: 0;
+}
+#docs-search-q {
+flex: 1;
+background: transparent;
+border: none;
+outline: none;
+color: var(--sl-color-text);
+font-size: var(--sl-text-base);
+caret-color: var(--sl-color-accent);
+min-width: 0;
+}
+#docs-search-q::placeholder {
+color: var(--sl-color-gray-3);
+}
+#docs-search-cancel {
+background: none;
+border: 1px solid var(--sl-color-hairline);
+border-radius: 0.25rem;
+color: var(--sl-color-gray-3);
+cursor: pointer;
+padding: 0.1em 0.5em;
+font-size: 0.75em;
+font-family: inherit;
+flex-shrink: 0;
+}
+#docs-search-cancel:hover {
+border-color: var(--sl-color-accent);
+color: var(--sl-color-text);
+}
+#docs-search-hits {
+overflow-y: auto;
+list-style: none;
+margin: 0;
+padding: 0.375rem;
+flex: 1;
+}
+#docs-search-hits:empty {
+display: none;
+}
+.search-footer {
+display: flex;
+gap: 1rem;
+padding: 0.5rem 1rem;
+border-top: 1px solid var(--sl-color-hairline);
+color: var(--sl-color-gray-3);
+font-size: 0.7rem;
+flex-shrink: 0;
+margin: 0;
+}
+</style>
+
+<style is:global>
+/* ── Result items (global: applied to dynamically-inserted markup) ──────── */
+.search-result-link {
+display: flex;
+flex-direction: column;
+gap: 0.2rem;
+padding: 0.5rem 0.75rem;
+border-radius: 0.375rem;
+text-decoration: none;
+color: inherit;
+}
+.search-result-link:hover,
+.search-result-link:focus {
+background: var(--sl-color-bg-sidebar);
+outline: none;
+}
+.search-result-section {
+display: inline-block;
+font-size: 0.6rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.07em;
+color: var(--sl-color-accent);
+background: color-mix(in srgb, var(--sl-color-accent) 15%, transparent);
+border-radius: 0.25rem;
+padding: 0.05rem 0.4rem;
+}
+.search-result-title {
+font-size: var(--sl-text-sm);
+font-weight: 600;
+color: var(--sl-color-text-accent);
+}
+.search-result-snippet {
+font-size: 0.75rem;
+color: var(--sl-color-gray-2);
+line-height: 1.5;
+}
+.search-result-snippet mark {
+background: color-mix(in srgb, var(--sl-color-accent) 25%, transparent);
+color: var(--sl-color-accent-high);
+border-radius: 0.1rem;
+padding: 0 0.1rem;
+}
+.search-no-results {
+padding: 1.25rem;
+text-align: center;
+color: var(--sl-color-gray-3);
+font-size: var(--sl-text-sm);
+list-style: none;
+}
+</style>
+
+<script>
+(() => {
+// ── BM25 constants (mirrors DocsSearchEngine.cs) ─────────────────────
+const K1 = 1.2;
+const B = 0.75;
+const W = { title: 3.0, description: 2.0, headings: 2.0, body: 1.0 };
+const SNIP = 120;
+// Index served as a static file under the site base (e.g. /docs-index.json or
+// /wiqd/docs-index.json). import.meta.env.BASE_URL is replaced by Vite at build
+// time with the configured base so search works under any deployment prefix.
+const INDEX_URL = import.meta.env.BASE_URL + 'docs-index.json';
+// aka.ms redirect prefix used in index URLs; stripped to produce site-relative paths
+const DOCS_URL_PREFIX = 'https://aka.ms/wiqd/docs';
+// HTML entities for safe interpolation into dynamically-built markup
+const HTML_ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// ── Index loading (lazy, cached) ──────────────────────────────────────
+/** @type {{ entries: Record<string, any>[] } | null} */
+let cachedSearchIndex = null;
+
+async function getIndex() {
+if (cachedSearchIndex) return cachedSearchIndex;
+try {
+const r = await fetch(INDEX_URL);
+cachedSearchIndex = await r.json();
+} catch (err) {
+// Non-fatal: search silently returns no results when the index is unavailable
+console.warn('[wiqd-search] Could not load search index:', err);
+cachedSearchIndex = { entries: [] };
+}
+return cachedSearchIndex;
+}
+
+// ── BM25 utilities ────────────────────────────────────────────────────
+function escapeRegex(s) {
+return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function tokenize(q) {
+const seen = new Set();
+return q.toLowerCase()
+.split(/\s+/)
+.map(w => w.replace(/^[^\w]+|[^\w]+$/g, ''))
+.filter(w => w && !seen.has(w) && (seen.add(w), true));
+}
+
+function countWords(t) {
+return t ? t.split(/\s+/).filter(Boolean).length : 0;
+}
+
+function entryLen(e) {
+return Math.max(
+countWords(e.title) + countWords(e.description) +
+countWords((e.headings ?? []).join(' ')) + countWords(e.body),
+1,
+);
+}
+
+// Word-boundary occurrence count (same as CountOccurrences in C#)
+function countOccurrences(text, term) {
+if (!text) return 0;
+return (text.match(new RegExp('\\b' + escapeRegex(term) + '\\b', 'gi')) ?? []).length;
+}
+
+function containsTerm(e, term) {
+const re = new RegExp('\\b' + escapeRegex(term) + '\\b', 'i');
+return re.test(e.title) || re.test(e.description ?? '') ||
+(e.headings ?? []).some(h => re.test(h)) || re.test(e.body ?? '');
+}
+
+function bm25Field(text, term, dl, avg) {
+const tf = countOccurrences(text, term);
+if (!tf) return 0;
+return (tf * (K1 + 1)) / (tf + K1 * (1 - B + B * dl / avg));
+}
+
+function idf(n, df) {
+if (!df) return 0;
+return Math.log((n - df + 0.5) / (df + 0.5) + 1);
+}
+
+// ── Search ────────────────────────────────────────────────────────────
+function search(entries, query, limit) {
+const terms = tokenize(query);
+if (!terms.length) return [];
+
+const avg = entries.reduce((s, e) => s + entryLen(e), 0) / Math.max(entries.length, 1);
+const df = {};
+for (const t of terms) df[t] = entries.filter(e => containsTerm(e, t)).length;
+
+const scored = [];
+for (const e of entries) {
+const dl = entryLen(e);
+let sc = 0;
+for (const t of terms) {
+const iv = idf(entries.length, df[t]);
+sc += iv * bm25Field(e.title, t, dl, avg) * W.title;
+sc += iv * bm25Field(e.description, t, dl, avg) * W.description;
+sc += iv * bm25Field((e.headings ?? []).join(' '), t, dl, avg) * W.headings;
+sc += iv * bm25Field(e.body, t, dl, avg) * W.body;
+}
+if (sc > 0) scored.push([e, sc]);
+}
+
+return scored
+.sort((a, b) => b[1] - a[1])
+.slice(0, limit)
+.map(([e]) => ({ entry: e, snippet: extractSnippet(e.body, terms) }));
+}
+
+// ── Snippet extraction ────────────────────────────────────────────────
+function extractSnippet(body, terms) {
+if (!body) return '';
+let best = body.length;
+for (const t of terms) {
+const m = new RegExp('\\b' + escapeRegex(t) + '\\b', 'i').exec(body);
+if (m && m.index < best) best = m.index;
+}
+if (best === body.length) best = 0;
+const start = Math.max(0, best - SNIP / 4);
+const end = Math.min(body.length, start + SNIP);
+let txt = body.slice(Math.max(0, end - SNIP), end).trim().replace(/\s+/g, ' ');
+if (start > 0) txt = '\u2026' + txt;
+if (end < body.length) txt += '\u2026';
+// Highlight matched terms
+for (const t of terms) {
+txt = txt.replace(new RegExp('\\b(' + escapeRegex(t) + ')\\b', 'gi'), '<mark>$1</mark>');
+}
+return txt;
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────
+const SECTION_LABELS = {
+cli: 'CLI', 'getting-started': 'Getting Started', concepts: 'Concepts',
+extensions: 'Extensions', specs: 'Specs', project: 'Project', pilot: 'Pilot',
+};
+
+function escHtml(s) {
+return String(s).replace(/[&<>"']/g, c => HTML_ENTITIES[c] ?? c);
+}
+
+// Convert aka.ms doc URL to a site-relative path for in-site navigation.
+// Paths are prefixed with the configured base (import.meta.env.BASE_URL, which
+// already ends in a slash) so navigation works under a project Pages base.
+function toSitePath(url) {
+if (url.startsWith(DOCS_URL_PREFIX)) {
+const baseUrl = import.meta.env.BASE_URL;
+// Handle deep-link format: ...?id=path
+const qmark = url.indexOf('?');
+if (qmark !== -1) {
+const params = new URLSearchParams(url.slice(qmark));
+const id = params.get('id');
+if (id) return baseUrl + id.replace(/^\//, '') + '/';
+}
+// Handle path format: .../path
+const path = url.slice(DOCS_URL_PREFIX.length) || '/';
+return baseUrl + path.replace(/^\//, '');
+}
+return url;
+}
+
+function renderResults(hits, query) {
+const ul = document.getElementById('docs-search-hits');
+if (!ul) return;
+if (!hits.length) {
+ul.innerHTML = `<li class="search-no-results">No results for <strong>${escHtml(query)}</strong></li>`;
+return;
+}
+ul.innerHTML = hits.map(({ entry, snippet }) => {
+const sectionLabel = SECTION_LABELS[entry.section] ?? entry.section ?? 'Docs';
+const href = toSitePath(entry.url);
+return `
+<li>
+<a href="${escHtml(href)}" class="search-result-link" tabindex="0">
+<span class="search-result-section">${escHtml(sectionLabel)}</span>
+<span class="search-result-title">${escHtml(entry.title)}</span>
+${snippet ? `<span class="search-result-snippet">${snippet}</span>` : ''}
+</a>
+</li>
+`;
+}).join('');
+}
+
+// ── DOM wiring ────────────────────────────────────────────────────────
+const modal = document.getElementById('docs-search-modal');
+const input = document.getElementById('docs-search-q');
+const cancelBtn = document.getElementById('docs-search-cancel');
+const hitsEl = document.getElementById('docs-search-hits');
+
+function openSearch() {
+modal?.showModal();
+input?.focus();
+getIndex(); // warm the cache
+}
+
+function closeSearch() {
+modal?.close();
+}
+
+document.getElementById('docs-search-btn')?.addEventListener('click', openSearch);
+cancelBtn?.addEventListener('click', closeSearch);
+modal?.addEventListener('click', (e) => { if (e.target === modal) closeSearch(); });
+
+// Global keyboard shortcut: Ctrl/Cmd + K
+document.addEventListener('keydown', (e) => {
+if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+e.preventDefault();
+openSearch();
+}
+});
+
+// Search input with 150ms debounce
+let timer;
+input?.addEventListener('input', () => {
+clearTimeout(timer);
+const q = input.value.trim();
+if (!q) {
+if (hitsEl) hitsEl.innerHTML = '';
+return;
+}
+timer = setTimeout(async () => {
+const data = await getIndex();
+renderResults(search(data.entries ?? [], q, 8), q);
+}, 150);
+});
+
+// Keyboard navigation inside results (↑↓ to move, Enter to open)
+input?.addEventListener('keydown', (e) => {
+const links = modal?.querySelectorAll('.search-result-link');
+if (!links?.length) return;
+const focused = modal?.querySelector('.search-result-link:focus');
+const idx = focused ? [...links].indexOf(focused) : -1;
+if (e.key === 'ArrowDown') {
+e.preventDefault();
+(links[idx + 1] ?? links[0]).focus();
+} else if (e.key === 'ArrowUp') {
+e.preventDefault();
+(links[idx > 0 ? idx - 1 : links.length - 1]).focus();
+} else if (e.key === 'Enter' && idx === -1) {
+links[0]?.click();
+}
+});
+})();
+</script>
