@@ -1,0 +1,163 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+# Build and deploy the public docs site to GitHub Pages.
+#
+# This workflow is SELF-CONTAINED: it ships inside the mirror payload and, after
+# the mirror is flattened into the public repository, lives at
+# `.github/workflows/deploy-docs.yml`. It has no dependency on the internal
+# repository's reusable workflows — the public repo builds and publishes its own
+# docs independently.
+#
+# The docs subtree is a standalone npm package with dependencies pinned to exact
+# versions and a committed docs/package-lock.json, so this workflow installs
+# with `npm ci` (not `npm install`) for a reproducible, drift-free public build.
+# This is intentionally decoupled from the internal repo's pnpm workspace
+# tooling — the mirror's docs package must build standalone with plain npm.
+#
+# Every `uses:` below is pinned to a full commit SHA (not a mutable @vN tag),
+# per AGENTS.md "GitHub Actions Version Policy": this workflow runs with
+# `pages: write` + `id-token: write` in a public repo, so a mutable tag would be
+# a supply-chain hazard (the tag could be silently repointed at malicious code).
+
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy-docs.yml'
+  # Manual redeploy (e.g., after a Pages outage or an accidental rollback).
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+
+      - name: Install docs dependencies
+        # `npm ci` installs the exact locked transitive graph from
+        # docs/package-lock.json so the public Pages build is reproducible.
+        # Audit reporting is intentionally NOT suppressed (no --no-audit): npm's
+        # default audit-on-install is informational only (it never fails the
+        # build on advisories), so keeping it surfaces known-vulnerable
+        # transitive deps on every public build without blocking anything.
+        working-directory: docs
+        run: npm ci --no-fund --loglevel=error
+
+      - name: Build docs
+        # `npm run build` runs the prebuild search-index generator first, then
+        # scripts/build.mjs (the public, 3P-only Starlight build) into docs/dist.
+        working-directory: docs
+        run: npm run build
+
+      # Rendered-output release-gate scan, defense-in-depth leg #2 (leg #1 runs
+      # in the PRIVATE repo's auto-tag-release.yml against this exact same
+      # mirror payload before it is pushed here — see
+      # "Scan rendered public docs for 1P leaks + zero-blog policy" there).
+      # This workflow is intentionally self-contained (no dependency on the
+      # private repo's scripts/scan-anti-leak.ps1 or its marker vocabulary
+      # JSON, which never ship into the public mirror), so it re-checks the
+      # EXACT compiled HTML/search-index/sitemap this job is about to publish
+      # with a narrow, low-false-positive grep set, and separately asserts
+      # zero blog routes/feed/search-index entries/sitemap entries/files (blog
+      # removal at the source is a separate, tracked workstream; this is the
+      # backstop over the compiled artifact actually served by Pages).
+      - name: Scan rendered docs for 1P leaks + zero-blog policy
+        run: |
+          set -e
+          # NOTE: the repo-slug pattern below is deliberately written with a
+          # bracket expression around its hyphen, not as one contiguous
+          # literal string — this workflow file itself ships as part of the
+          # public mirror it scans, so spelling the marker out verbatim here
+          # would make this file match its own leak check on every run. The
+          # bracket expression is functionally identical for grep -E (matches
+          # the exact same real content) without containing that substring.
+          if grep -RIn -E "gim[-]home/wiqd|@[A-Za-z0-9][A-Za-z0-9-]*_microsoft|<!-- *internal-only|\bmcdc\b|service[-]?tree" docs/dist; then
+            echo "::error::Rendered public docs contain internal markers — refusing to publish to Pages."
+            exit 1
+          fi
+
+          if find docs/dist -type d -iname 'blog' | grep -q . \
+            || find docs/dist -type f \( -iname 'rss.xml' -o -iname 'feed.xml' -o -iname 'atom.xml' \) | grep -q .; then
+            echo "::error::Rendered public docs contain a blog route/feed file — refusing to publish to Pages."
+            exit 1
+          fi
+
+          if find docs/dist -type f -iname 'sitemap*.xml' -exec grep -IliE '/blog/' {} \; | grep -q .; then
+            echo "::error::A rendered sitemap references a /blog/ route — refusing to publish to Pages."
+            exit 1
+          fi
+
+          # Structurally inspect the offline search index. generate-docs-index.js
+          # emits entries shaped { id, section, url, ... } with NO `slug` key, so
+          # the old `"slug":"blog` grep silently never matched. A blog post yields
+          # id "blog/<slug>", section "blog", url "<BASE_URL>?id=blog/<slug>"; all
+          # three are checked. node parses the JSON structure (grep cannot).
+          found_blog_index=""
+          while IFS= read -r f; do
+            rc=0
+            node -e '
+              const fs = require("fs");
+              let idx;
+              try { idx = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); }
+              catch (e) { console.error(e.message); process.exit(2); }
+              const entries = Array.isArray(idx.entries) ? idx.entries : [];
+              const hit = entries.some((e) => {
+                const id = String((e && e.id) || "");
+                const url = String((e && e.url) || "");
+                const sec = String((e && e.section) || "");
+                return /^blog(\/|$)/i.test(id) || /[?&]id=blog(\/|$|&)/i.test(url) || sec.toLowerCase() === "blog";
+              });
+              process.exit(hit ? 1 : 0);
+            ' "$f" || rc=$?
+            if [ "$rc" -eq 1 ]; then
+              echo "::error::The rendered search index references a blog entry — refusing to publish to Pages. ($f)"
+              found_blog_index=1
+            elif [ "$rc" -ne 0 ]; then
+              echo "::error::Could not parse rendered search index $f (node exit $rc) — refusing to publish to Pages."
+              exit 1
+            fi
+          done < <(find docs/dist -type f -iname 'docs-index.json')
+          if [ -n "$found_blog_index" ]; then
+            exit 1
+          fi
+
+          echo "Rendered public docs: clean (no 1P leaks, zero blog routes/feed/search/sitemap/files)."
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # `group: pages` serializes deployments; `cancel-in-progress: false` ensures
+    # an in-flight deploy is never cancelled by a later push.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

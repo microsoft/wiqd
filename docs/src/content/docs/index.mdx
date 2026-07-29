@@ -1,0 +1,84 @@
+---
+title: Work IQ Dev Tools
+description: The agentic experience for developers building, debugging, validating, publishing and monitoring declarative agents for Work IQ
+template: splash
+editUrl: false
+hero:
+  tagline: The agentic experience for developers building, debugging, validating, publishing and monitoring declarative agents for Work IQ
+  image:
+    html: '<img class="wiqd-banner" src="/wiqd/banner.svg" alt="Work IQ Dev Tools banner" />'
+  actions:
+    # Base-root-relative (no leading slash) so these resolve under any deploy
+    # base: the splash page is always served at the site root, so
+    # `cli/reference/` → `<base>/cli/reference/`. A leading-slash path would
+    # ignore the mirror's /wiqd/ base.
+    - text: Get Started
+      link: getting-started/
+      icon: right-arrow
+    - text: CLI Reference
+      link: cli/reference/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+## Key Highlights
+
+<CardGrid>
+  <Card title="Full Agent Lifecycle" icon="rocket">
+    Create, validate, package, provision, publish, and share agents from a single CLI. Manage templates, environments, and collaborators without leaving the terminal.
+  </Card>
+  <Card title="LSP Validation" icon="approve-check-circle">
+    Built-in Language Server Protocol support powers real-time manifest validation in your editor with static and deep validation modes.
+  </Card>
+  <Card title="Copilot Skills" icon="star">
+    Purpose-built Copilot skills guide you through installation, authoring, validation, provisioning, onboarding, review, and publishing workflows.
+  </Card>
+  <Card title="npm Distribution" icon="seti:npm">
+    Install fast with a one-liner or run instantly with <code>npx</code> when you want to explore without a full setup.
+  </Card>
+  <Card title="Extensible Architecture" icon="puzzle">
+    Extend Work IQ Dev Tools with npm-based extensions that add commands, declarative-agent.validate.deep validators, and health checks. Built-in extensions cover ATK, Work IQ, and evals.
+  </Card>
+  <Card title="Agent Evaluation" icon="list-format">
+    Run quality evaluations against deployed agents with <code>wiqd agent eval</code>. Define expected behaviors in YAML configs and enforce pass/fail quality thresholds.
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+```powershell
+# One-liner install
+iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
+
+# Create and deploy an agent
+wiqd agent create --name my-agent
+wiqd agent validate --path my-agent
+wiqd agent provision --path my-agent
+```
+
+## Explore the Docs
+
+<CardGrid>
+  <LinkCard
+    title="Getting Started"
+    description="Installation, quickstart, and authentication setup."
+    href="getting-started/"
+  />
+  <LinkCard
+    title="CLI Reference"
+    description="Complete command reference for the Work IQ Dev Tools CLI."
+    href="cli/reference/"
+  />
+  <LinkCard
+    title="Concepts"
+    description="Declarative agents, host vs extensions, environments, validation, and exit codes."
+    href="concepts/"
+  />
+  <LinkCard
+    title="Project"
+    description="Release history and version changelog."
+    href="project/changelog/"
+  />
+</CardGrid>

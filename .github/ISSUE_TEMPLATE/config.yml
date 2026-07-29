@@ -1,0 +1,11 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Submit feedback via the wiqd CLI (recommended)
+    url: https://aka.ms/wiqd/docs
+    about: Run `wiqd feedback submit` from your terminal — it collects the same information as these templates (plus environment context) automatically and is usually faster.
+  - name: 🔒 Report a security vulnerability
+    url: https://github.com/microsoft/wiqd/security/policy
+    about: Please do not file a public issue for security vulnerabilities.

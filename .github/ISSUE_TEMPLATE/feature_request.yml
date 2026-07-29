@@ -1,0 +1,42 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+name: ✨ Feature request
+description: Suggest a new capability that wiqd does not have today.
+title: '[Feature]: '
+labels:
+  - feedback
+  - feature-request
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an idea! If you have the `wiqd` CLI installed, running `wiqd feedback submit --type feature` opens this same kind of issue directly from your terminal.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the gap or limitation you're running into today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like wiqd to do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any workarounds or other approaches you've tried.
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Anything else that would help us understand the request.
+    validations:
+      required: false

@@ -1,0 +1,16 @@
+---
+// Overrides Starlight's default Banner, which only renders when a page sets
+// frontmatter `banner`. wiqd is pre-1.0, so the preview notice must render
+// unconditionally on every page — including the splash home page, since
+// Starlight's Page.astro mounts <Banner /> inside <main> above the hero.
+import { version, base } from '../site-config.mjs';
+
+const installationHref = `${base}getting-started/installation/`;
+---
+
+<div class="sl-banner" data-pagefind-ignore>
+  Work IQ Dev Tools are in preview (v{version}). Commands and APIs may change before 1.0 — pin the
+  <code>@preview</code> dist-tag when installing. See the <a href={installationHref}
+    >installation guide</a
+  >.
+</div>

@@ -1,0 +1,984 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aka.ms/wiqd/extension-schema",
+  "title": "wiqd Extension Manifest",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema pointer for editor validation/completion."
+    },
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "displayName": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Advertised capability tags (e.g. \"commands\", \"workflows\", \"skills\"). Informational."
+    },
+    "requirements": {
+      "$ref": "#/definitions/ExtensionRequirements"
+    },
+    "workflows": {
+      "$ref": "#/definitions/ExtensionResourceDir",
+      "description": "Contributed-workflows directory, relative to the extension package root."
+    },
+    "references": {
+      "$ref": "#/definitions/ExtensionResourceDir",
+      "description": "Contributed-references directory, relative to the extension package root."
+    },
+    "skills": {
+      "$ref": "#/definitions/ExtensionResourceDir",
+      "description": "Contributed-skills directory, relative to the extension package root."
+    },
+    "commands": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ManifestCommandSet"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionCommand"
+          }
+        }
+      ]
+    },
+    "upstream": {
+      "$ref": "#/definitions/UpstreamConfig"
+    },
+    "auth": {
+      "$ref": "#/definitions/ExtensionAuthConfig"
+    },
+    "doctor": {
+      "$ref": "#/definitions/ExtensionDoctorConfig"
+    },
+    "eulaGate": {
+      "$ref": "#/definitions/EulaGate",
+      "description": "EULA gate: how the host recognizes this tool's \"EULA required\" handshake, what to surface, and how `wiqd eula accept` accepts. Declared once per extension; the host applies it to every command the extension contributes."
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ExtensionFlagDefinition"
+      },
+      "description": "Feature flags this extension declares; merged into the host flag registry."
+    },
+    "mock": {
+      "$ref": "#/definitions/ManifestMockConfig"
+    }
+  },
+  "required": ["id", "displayName", "version"],
+  "description": "A wiqd extension manifest (`wiqd-extension.json`). Declares the commands, upstream tool, auth providers, doctor checks, and mock responses an extension contributes to the wiqd host.",
+  "definitions": {
+    "CompletionSpec": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "const": "envFiles",
+          "description": "Built-in primitive name. Unknown names yield no completions (fail closed)."
+        },
+        "args": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Primitive-specific parameters (e.g. `{ dir: \"env\" }` for `envFiles`)."
+        }
+      },
+      "description": "Declarative completion source for an option value. Names a host-provided completion PRIMITIVE (a sync, local, fail-closed candidate generator that runs per keystroke inside the `__complete` process). Static value lists do NOT belong here — use `choices`/`enum`, which already become the option's commander choices and take precedence."
+    },
+    "DelegateWhenConfig": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        }
+      },
+      "required": ["condition", "extension", "command"]
+    },
+    "DoctorCheck": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Default row label (e.g. \"workiq --json\"). Individual outcomes MAY override it."
+        },
+        "description": {
+          "type": "string",
+          "description": "Documents the check's intent. Not rendered in the row."
+        },
+        "binary": {
+          "type": "string",
+          "description": "Binary resolved (via `pathEnvVar` → npm `.bin` walk → PATH) and probed."
+        },
+        "pathEnvVar": {
+          "type": "string",
+          "description": "Environment variable consulted first when resolving `binary` (e.g. WORKIQ_PATH)."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Probe arguments."
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "description": "Probe timeout in seconds. Defaults to 10."
+        },
+        "missing": {
+          "$ref": "#/definitions/DoctorOutcome",
+          "description": "Outcome when `binary` cannot be resolved. Defaults to warn \"<binary> not found\"."
+        },
+        "onError": {
+          "$ref": "#/definitions/DoctorOutcome",
+          "description": "Outcome when the probe throws (spawn failure / timeout). Defaults to warn \"Could not probe <binary>\"."
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DoctorRule"
+          },
+          "description": "Ordered result rules; the first whose `when` matches the completed probe wins."
+        }
+      },
+      "required": ["name", "binary", "rules"],
+      "description": "A manifest-declared health check run by `wiqd doctor`. The host resolves `binary`, probes it with `args`, and maps the result to a row via the declarative outcomes — it never branches on the extension's identity. The shape is rich enough to express a tri-state probe (the workiq `--json` check): `missing` (binary absent), `onError` (probe threw), and an ordered `rules` list (first match wins) over the completed probe."
+    },
+    "DoctorCondition": {
+      "type": "object",
+      "properties": {
+        "exitCode": {
+          "type": "number"
+        },
+        "exitCodeNot": {
+          "type": "number"
+        },
+        "stdoutContains": {
+          "type": "string"
+        },
+        "stdoutMatches": {
+          "type": "string"
+        }
+      }
+    },
+    "DoctorOutcome": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Row-label override for this outcome (e.g. the `missing` outcome labels the row \"workiq\")."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ok", "warn", "error"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Row message. Supports `${exitCode}` interpolation against the probe result."
+        }
+      },
+      "required": ["status", "message"]
+    },
+    "DoctorRule": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "$ref": "#/definitions/DoctorCondition",
+          "description": "Match condition. Every present field must match; an omitted `when` is a catch-all."
+        }
+      }
+    },
+    "ErrorRule": {
+      "type": "object",
+      "properties": {
+        "match": {
+          "type": "string"
+        },
+        "say": {
+          "type": "string"
+        }
+      }
+    },
+    "EulaAccept": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Args appended to the extension's resolved upstream binary to accept the EULA (e.g. `[\"accept-eula\"]`). This is the ONLY source of the args wiqd runs — never derived from parsed output. wiqd runs this tuple solely via the interactive `wiqd eula accept` handler."
+        },
+        "displayCommand": {
+          "type": "string",
+          "description": "Raw upstream command shown as the fallback CTA (e.g. `workiq accept-eula`)."
+        }
+      },
+      "required": ["args", "displayCommand"]
+    },
+    "EulaDetectCondition": {
+      "type": "object",
+      "properties": {
+        "exitCode": {
+          "type": "number"
+        },
+        "exitCodeNot": {
+          "type": "number"
+        },
+        "stdoutContains": {
+          "type": "string"
+        },
+        "stdoutMatches": {
+          "type": "string"
+        },
+        "stderrMatches": {
+          "type": "string"
+        },
+        "stdoutJson": {
+          "$ref": "#/definitions/EulaStdoutJsonPredicate"
+        }
+      },
+      "description": "Recognition conditions for the EULA handshake. Extends the doctor `when` vocabulary (`exitCode`/`exitCodeNot`/`stdoutContains`/`stdoutMatches`) with `stderrMatches` and the structured `stdoutJson { path, equals }` discriminator. All present conditions must match (logical AND). There is no `exitCode` constraint by default, so a EULA payload emitted with exit 0 still matches."
+    },
+    "EulaExtract": {
+      "type": "object",
+      "properties": {
+        "eulaUrl": {
+          "$ref": "#/definitions/EulaExtractRule"
+        },
+        "displayCommand": {
+          "$ref": "#/definitions/EulaExtractRule"
+        }
+      },
+      "description": "Display-only capture rules. MUST NOT influence `accept.args`."
+    },
+    "EulaExtractRule": {
+      "type": "object",
+      "properties": {
+        "stdoutMatches": {
+          "type": "string"
+        },
+        "group": {
+          "type": "number",
+          "description": "1-based capture group index for `stdoutMatches`. Defaults to 1."
+        },
+        "stdoutJson": {
+          "type": "string"
+        }
+      },
+      "description": "A single display-value capture rule. Either a stdout regex with a capture `group`, or a `stdoutJson` path read from the parsed stdout JSON."
+    },
+    "EulaGate": {
+      "type": "object",
+      "properties": {
+        "tool": {
+          "type": "string",
+          "description": "Display name of the tool whose EULA is unaccepted, and the `<tool>` selector for `wiqd eula accept <tool>` / `wiqd eula status`. Shown to the user; never used for host branching."
+        },
+        "eulaUrl": {
+          "type": "string",
+          "description": "Static EULA URL to display; overridden by a matching `extract.eulaUrl`."
+        },
+        "accept": {
+          "$ref": "#/definitions/EulaAccept",
+          "description": "How `wiqd eula accept` performs acceptance."
+        },
+        "detect": {
+          "$ref": "#/definitions/EulaDetectCondition",
+          "description": "Recognition conditions evaluated against the completed upstream result."
+        },
+        "extract": {
+          "$ref": "#/definitions/EulaExtract",
+          "description": "Optional display-only capture rules pulled from the tool's own output."
+        }
+      },
+      "required": ["tool", "eulaUrl", "accept", "detect"],
+      "description": "Manifest-contributed EULA gate. Lets a downstream tool declare — with zero host change — how wiqd recognizes its \"you must accept the EULA\" handshake, what tool name / URL to surface, and how `wiqd eula accept` performs the (interactive, human-confirmed) acceptance."
+    },
+    "EulaStdoutJsonPredicate": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Dot/bracket path into the parsed stdout JSON (e.g. `isError`, `error.code`, `items[0].id`)."
+        },
+        "equals": {
+          "type": ["string", "number", "boolean"],
+          "description": "Value the resolved path must strictly equal."
+        }
+      },
+      "required": ["path", "equals"],
+      "description": "Structured JSON-path discriminator over the tool's stdout JSON."
+    },
+    "ExitIfConfig": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "code": {
+          "type": "number"
+        },
+        "say": {
+          "type": "string"
+        }
+      },
+      "required": ["condition"]
+    },
+    "ExtensionArg": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "short": {
+          "type": "string"
+        },
+        "alias": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "boolean", "number", "bool", "int", "float"]
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "positional": {
+          "type": "boolean",
+          "description": "When true, this arg is registered as a commander POSITIONAL argument (`wiqd agent review gate <name>`) instead of a `--flag`. The builder uses commander's optional `[name]` form and leaves `required: true` enforcement to ManifestExecutor, so parent command args never block child subcommand dispatch and `defaultFrom` can populate values before the final required check. The parsed value threads into the executor's expression/argMap context under the bare arg `name` (no leading `--`), so a positional and a flag are interchangeable from the manifest's `argMap`/`bindArgs` point of view. Defaults to `false` (flag behavior)."
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "gatedBy": {
+          "type": "string",
+          "description": "Optional feature-flag gate for a SINGLE option/positional. When set, the host skips registering this arg unless the named boolean flag is enabled — so the flag hides the arg from `--help` AND makes it inert (an unregistered option can never be parsed, so any `argMap`/`devuiProxy` expression keyed on it evaluates falsy). Fail-closed: an unknown or disabled flag hides the arg. Use this to gate a capability-specific flag on an otherwise-always-available command (e.g. `--devui` on `agent ask`, gated by the `devui` flag)."
+        },
+        "default": {
+          "type": ["string", "boolean", "number"]
+        },
+        "defaultFrom": {
+          "type": "string"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "upstream": {
+          "type": "string"
+        },
+        "complete": {
+          "$ref": "#/definitions/CompletionSpec",
+          "description": "Optional shell-completion source for this option's VALUE. Lets an extension own the completion of its own args (e.g. ATK declaring that `--env` completes from `env/.env.<name>`) instead of the host hardcoding that domain knowledge. The host runs the named primitive in-process during `wiqd __complete` — see completion/completion-primitives.ts."
+        }
+      },
+      "required": ["name"]
+    },
+    "ExtensionAuthCommand": {
+      "type": "object",
+      "properties": {
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interactive": {
+          "type": "boolean",
+          "description": "Marks the action as inherently interactive (e.g. a browser sign-in) so the host grants it an extended subprocess timeout."
+        },
+        "interactiveArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra args appended to `args` for `login` when the user passes `wiqd auth login --interactive` (e.g. ATK `-i true`)."
+        },
+        "nonInteractiveArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Extra args appended to `args` for `login` when `--interactive` is NOT set (e.g. ATK `-i false`). Lets the host force a non-interactive default while still forcing a real sign-in."
+        },
+        "signedInPattern": {
+          "type": "string",
+          "description": "Regex (optionally with an `account` named group) applied to the `status` action's combined output. A match means signed in. Required for upstream tools whose status command exits 0 in both signed-in and signed-out states (e.g. ATK's `auth list`), where the exit code is not a reliable signal. Also used by `login` to verify an identity was actually acquired after the login subprocess exits 0."
+        }
+      }
+    },
+    "ExtensionAuthConfig": {
+      "type": "object",
+      "properties": {
+        "providerId": {
+          "type": "string",
+          "description": "Stable provider identifier surfaced by `wiqd auth status`."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Human-readable provider name shown in auth output."
+        },
+        "signInLabel": {
+          "type": "string",
+          "description": "User-facing service name for the mid-flow \"Signing in to <X>...\" progress line (e.g. \"Microsoft 365\"). Falls back to `displayName` when absent. Lets an extension present a friendly product name in sign-in UX without leaking an internal tool name, while the host stays domain-agnostic."
+        },
+        "binary": {
+          "type": "string",
+          "description": "Upstream binary that performs the auth flow (defaults to `upstream.binary`)."
+        },
+        "applicability": {
+          "type": "string",
+          "description": "Which command surfaces this provider applies to (e.g. \"all\")."
+        },
+        "commands": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ExtensionAuthCommand"
+          },
+          "description": "Per-action upstream invocations (login/logout/status)."
+        }
+      }
+    },
+    "ExtensionCommand": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionArg"
+          }
+        },
+        "subcommands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionCommand"
+          }
+        },
+        "definition": {
+          "$ref": "#/definitions/ManifestCommandDef"
+        },
+        "gatedBy": {
+          "type": "string",
+          "description": "Optional command-availability feature-flag gate for an individual command (e.g. the opt-in `monitor` command). When set, the host skips registering this command unless the named boolean flag is enabled. Fail-closed semantics live in `feature-flags/gating.ts`."
+        },
+        "namespaceOverride": {
+          "type": "string",
+          "description": "When a command is mounted under an `additionalNamespaces` group (e.g. `feedback` rather than the manifest's primary `agent` namespace), this carries the mounted namespace so telemetry and host-level error envelopes report `feedback.submit` instead of the misleading `agent.submit`."
+        }
+      },
+      "required": ["name"]
+    },
+    "ExtensionDoctorConfig": {
+      "type": "object",
+      "properties": {
+        "checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DoctorCheck"
+          }
+        }
+      },
+      "required": ["checks"]
+    },
+    "ExtensionFlagDefinition": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["boolean", "string-enum", "string", "number"]
+        },
+        "default": {
+          "type": ["boolean", "string", "number"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "enumValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "owner": {
+          "type": "string"
+        },
+        "since": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["alpha", "beta", "ga"]
+        }
+      },
+      "required": ["name", "type", "default", "description"],
+      "description": "A feature flag declared by an extension's manifest. Mirrors the host `FlagDefinition` (feature-flags/types.ts); the registry merges these into the host flag set and validates the merged whole. Kept self-contained here so the manifest schema generator resolves it without importing the feature-flags module."
+    },
+    "ExtensionRequirements": {
+      "type": "object",
+      "properties": {
+        "wiqd": {
+          "type": "string",
+          "description": "Semver range for the wiqd host; the host refuses to load if its version is out of range."
+        },
+        "node": {
+          "type": "string",
+          "description": "Documented minimum Node.js version. Not enforced by wiqd."
+        }
+      }
+    },
+    "ExtensionResourceDir": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Directory path relative to the extension package root."
+        }
+      },
+      "required": ["path"]
+    },
+    "ManifestCommandDef": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional names under which this command is registered in the CLI. Commander wires each alias via `.alias()` so help text, completion, and routing all resolve the alternative names to the same handler. Distinct from `alias` on `ExtensionArg`, which is for option short-flags."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionArg"
+          }
+        },
+        "preflight": {
+          "type": "array",
+          "items": {}
+        },
+        "validate": {
+          "type": "array",
+          "items": {}
+        },
+        "softWarn": {
+          "type": "array",
+          "items": {}
+        },
+        "snapshot": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "spinner": {
+          "type": "string"
+        },
+        "preTransform": {
+          "$ref": "#/definitions/PreTransformConfig"
+        },
+        "preTransformPostActions": {
+          "type": "array",
+          "items": {},
+          "description": "Post-preTransform upstream mutations gated on what preTransform observed (e.g. enabling an experimental upstream flag). Each entry is a `{ when?, upstreamCall }` action."
+        },
+        "argMap": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {}
+            }
+          ]
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ErrorRule"
+          }
+        },
+        "postconditions": {
+          "type": "array",
+          "items": {}
+        },
+        "computed": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "postSpawn": {
+          "type": "array",
+          "items": {}
+        },
+        "confirm": {},
+        "transform": {
+          "type": "string"
+        },
+        "render": {},
+        "noUpstream": {
+          "type": "boolean"
+        },
+        "container": {
+          "type": "boolean",
+          "description": "Marks this as a pure command GROUP (e.g. `agent add`) that exists only to carry a `--help` description for its subcommands. The builder sets the description but attaches NO action handler, so invoking the bare group shows help instead of dispatching an (empty) upstream call. A container MUST NOT declare `options` or `argMap`: the host skips registering them (they would be inert since no action ever runs), and `validateManifest()` flags a container that declares either as an `invalid-container` finding."
+        },
+        "skipUpstreamWhen": {
+          "type": "string",
+          "description": "Skip the upstream spawn step when this expression is truthy."
+        },
+        "devuiProxy": {
+          "type": "object",
+          "properties": {
+            "when": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "body": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "timeoutMs": {
+              "type": "number"
+            }
+          },
+          "description": "Optionally route the upstream call through the local Work IQ DevUI proxy when `when` is truthy and DevUI is reachable, so the call is captured + inspectable there. The DevUI response (the upstream's own `--json` shape) replaces the upstream output, so the command's transform/render are unchanged. ANY failure (DevUI unreachable, non-2xx) silently falls back to spawning the binary."
+        },
+        "exitIf": {
+          "$ref": "#/definitions/ExitIfConfig",
+          "description": "Convert a passing spawn into a failure when `condition` is truthy."
+        },
+        "exitCode": {
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "ignore"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        },
+        "omitRawResponse": {
+          "type": "boolean",
+          "description": "When true, `buildJsonData` does NOT auto-inject `data.response = upstream.stdout.trim()`. Use this when the command runs a post-upstream transform that already exposes structured fields (e.g. `responseText`, `conversationId`) and the raw upstream stdout would be redundant or leak ANSI/prose. Verbose mode still surfaces the raw stdout on stderr."
+        },
+        "jsonOmitPath": {
+          "type": "boolean",
+          "description": "When true, `buildJsonData` does NOT auto-inject `data.path` (the resolved output/cwd path). Use this for API-backed commands whose JSON envelope is a fixed, documented field set (e.g. `account.enroll`) where an absolute filesystem path is meaningless and leaks the caller's cwd into scripted output."
+        },
+        "subcommands": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ManifestCommandDef"
+          }
+        },
+        "delegateWhen": {
+          "$ref": "#/definitions/DelegateWhenConfig"
+        },
+        "nativeDryRunHandler": {
+          "type": "string",
+          "description": "When set, and the user passes `--dry-run`, the executor delegates to this named native TypeScript handler instead of spawning the upstream binary. The name must be registered in the host's dry-run handler registry. This lets an ATK-backed command (e.g. `agent publish`) expose a no-submit validation path without any host code knowing which command it is — the manifest owns the routing decision."
+        },
+        "stdioPassthrough": {
+          "type": "boolean"
+        },
+        "writeFile": {
+          "$ref": "#/definitions/WriteFileConfig"
+        },
+        "gatedBy": {
+          "type": "string",
+          "description": "Optional command-availability feature-flag gate for the manifest-driven command definition (e.g. the opt-in `monitor` command). When set, the host skips registering this command unless the named boolean flag is enabled."
+        }
+      }
+    },
+    "ManifestCommandSet": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string"
+        },
+        "definitions": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ManifestCommandDef"
+          }
+        },
+        "additionalNamespaces": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ManifestNamespace"
+          }
+        }
+      },
+      "required": ["definitions"]
+    },
+    "ManifestMockConfig": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "$ref": "#/definitions/ManifestMockResponse"
+        },
+        "default": {
+          "$ref": "#/definitions/ManifestMockResponse"
+        },
+        "responses": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ManifestMockResponseEntry"
+          }
+        }
+      }
+    },
+    "ManifestMockResponse": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "type": "string",
+          "description": "Optional guard expression evaluated against the command scope. Only meaningful inside a variant list — the first variant whose `when` is truthy (or absent) wins."
+        },
+        "stdout": {
+          "type": "string"
+        },
+        "stderr": {
+          "type": "string"
+        },
+        "stdoutFile": {
+          "type": "string",
+          "description": "Path (relative to the extension's manifest directory) to a file whose contents supply the upstream stdout. Mutually exclusive with `stdout` — lets large, realistic payloads live in readable `mocks/*.json` fixtures instead of escaped one-line strings. The file content is `${...}` interpolated against the command scope, same as inline `stdout`."
+        },
+        "stderrFile": {
+          "type": "string",
+          "description": "File-backed counterpart to `stderr`. Mutually exclusive with `stderr`."
+        },
+        "exitCode": {
+          "type": "number"
+        },
+        "writes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManifestMockWrite"
+          }
+        }
+      }
+    },
+    "ManifestMockResponseEntry": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ManifestMockResponse"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManifestMockResponse"
+          }
+        }
+      ],
+      "description": "A response entry is either a single response or an ordered list of variants. When it is a list, the first variant whose `when` expression is truthy (or that has no `when`) is selected. This lets a command declare a conditional error path (e.g. an error variant gated on a sentinel input) ahead of its unconditional success variant — without making the success path always fail."
+    },
+    "ManifestMockWrite": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "contentBase64": {
+          "type": "string"
+        },
+        "copyFrom": {
+          "type": "string",
+          "description": "Copy an existing file's bytes into `path` — the faithful analogue of a local copy-from-source op (e.g. `agent env add` copying `env/.env.<from>`). The value is `${...}` interpolated. The resolved source MUST live within the destination file's directory subtree, so a manifest can never read arbitrary host files. Mutually exclusive with `content`/`contentBase64`/`clear`."
+        },
+        "clear": {
+          "type": "boolean",
+          "description": "Truncate the existing file at `path` to empty — the faithful analogue of `agent env reset`. Uses `truncateSync`, so it fails if the target is absent; the command's preflight is the user-facing guard. Mutually exclusive with `content`/`contentBase64`/`copyFrom`."
+        }
+      },
+      "required": ["path"]
+    },
+    "ManifestNamespace": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/ManifestCommandDef"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "description": "A command group mounted under a non-primary namespace (e.g. `feedback`). Every key is a command definition, except two reserved meta keys: - `_description` — string help text for the namespace command. - `_gatedBy` — a boolean feature-flag name; when its gate is closed the host hides the ENTIRE namespace this extension contributes (the container is never created and no child is registered). Fail-closed, mirroring the per-command and per-option gates."
+    },
+    "PreTransformConfig": {
+      "type": "object",
+      "properties": {
+        "skipIf": {
+          "type": "string"
+        },
+        "upstreamCalls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/UpstreamCall"
+          }
+        },
+        "transform": {
+          "type": "string"
+        },
+        "as": {
+          "type": "string"
+        }
+      }
+    },
+    "UpstreamCall": {
+      "type": "object",
+      "properties": {
+        "as": {
+          "type": "string"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "array",
+              "items": {}
+            }
+          ]
+        }
+      },
+      "required": ["as"]
+    },
+    "UpstreamConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "binary": {
+          "type": "string"
+        },
+        "pathEnvVar": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "alwaysArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nonInteractiveArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extraEnv": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "timeoutSeconds": {
+          "type": "number"
+        },
+        "installHint": {
+          "type": "string"
+        },
+        "installCommand": {
+          "type": "string",
+          "description": "The exact, argv-splittable shell command (no quoted args) that installs this upstream binary — distinct from `installHint`, which is a human sentence that MAY wrap the command in prose. The prerequisite preflight gate's consent-gated install offer runs this command verbatim, so it must be runnable as-is. Bundled tools (ATK, eval, workiq) set this to the wiqd installer command rather than a direct sub-package install: all three are transitive dependencies of the wiqd package, so reinstalling wiqd is what actually restores them at the tested/pinned version. It is also exactly what `wiqd update` runs, and matches the pre-existing `wiqd doctor` remediation convention, so this offer can never disagree with doctor's guidance. Omit when the tool has no single runnable install command at all; the gate then falls back to printing `installHint` without offering to run anything."
+        }
+      },
+      "required": ["name"]
+    },
+    "WriteFileConfig": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        },
+        "boundary": {
+          "type": "string",
+          "description": "Interpolated directory that the resolved write path must stay within (path-traversal guard). Defaults to the process working directory. Commands that target a project via an option such as --path MUST set this to the same resolved root as `path` (e.g. `${path | absoluteOrCwd}`), otherwise a valid --path write is refused as \"outside project directory\"."
+        }
+      },
+      "required": ["path", "content"]
+    }
+  }
+}

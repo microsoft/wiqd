@@ -1,0 +1,53 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT License.
+
+name: 🐛 Bug report
+description: Something in wiqd is not working the way it should.
+title: '[Bug]: '
+labels:
+  - feedback
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! If you have the `wiqd` CLI installed, running `wiqd feedback submit --type bug` is usually faster — it fills in the environment details below automatically and opens this same kind of issue for you.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+      placeholder: Tell us what you expected to happen, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact commands or actions that trigger the problem.
+      placeholder: |
+        1. Run `wiqd ...`
+        2. ...
+        3. See error
+    validations:
+      required: false
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Version and platform details. Run `wiqd --version` and `wiqd doctor` to gather most of these.
+      value: |
+        - wiqd version:
+        - OS:
+        - Node.js version:
+        - gh CLI version:
+        - Shell/Terminal:
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, or anything else that would help us understand the issue.
+    validations:
+      required: false
