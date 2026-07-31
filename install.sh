@@ -58,8 +58,20 @@ VSCODE_EXTENSION_ID="Microsoft.wiqd"
 # so it evaluates to false in the 3P mirror where no setter ever runs.
 plugin_force_recompose=false
 
+# The plugin step is a loop over possibly-multiple hosts (copilot, claude), so
+# "succeeded" (>=1 host installed cleanly) and "failed" (>=1 host errored) are
+# tracked separately from install_success. A host being ABSENT is a graceful
+# skip, never a failure; only an attempted-and-errored install trips failed.
+# plugin_install_failed/succeeded/skipped/cancelled (+ failed_plugin_hosts)
+# drive the summary banners, the skills-list gate, and the final exit code.
+plugin_install_failed=false
+plugin_install_succeeded=false
+plugin_install_skipped=false
+plugin_install_cancelled=false
+failed_plugin_hosts=()
+
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.9.0"
+WIQD_INSTALLER_VERSION="0.10.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -455,16 +467,37 @@ print_wiqd_quickstart() {
         echo ""
     fi
     if $copilot_present || $claude_present; then
-        printf "${CYAN} Installed wiqd skills:${RESET}\n"
-        local name
-        if (( ${#installed_skills[@]} > 0 )); then
-            for name in "${installed_skills[@]}"; do
-                printf "${WHITE}   /%s${RESET}\n" "$name"
-            done
-        else
-            printf "${GRAY}   (No installed skills detected — see https://aka.ms/wiqd/docs)${RESET}\n"
+        # Gate the skills list on the plugin step actually SUCCEEDING this run,
+        # never on host presence alone — get_wiqd_installed_skills reads the npm
+        # bundle on disk, which exists regardless of whether `wiqd component
+        # plugin install` ever ran or failed, so host-presence-only gating
+        # produced a phantom list. Require a CLEAN run (succeeded AND not
+        # failed): in a multi-host loop one host can succeed while another
+        # fails, and the bundle-derived list has no way to attribute skills to
+        # a specific host, so ANY attempted failure must suppress the blanket
+        # list rather than overstate success next to a partial-install banner.
+        if $plugin_install_succeeded && ! $plugin_install_failed && ! $plugin_install_cancelled; then
+            printf "${CYAN} Installed wiqd skills:${RESET}\n"
+            local name
+            if (( ${#installed_skills[@]} > 0 )); then
+                for name in "${installed_skills[@]}"; do
+                    printf "${WHITE}   /%s${RESET}\n" "$name"
+                done
+            else
+                printf "${GRAY}   (No installed skills detected — see https://aka.ms/wiqd/docs)${RESET}\n"
+            fi
+            echo ""
+        elif ! $plugin_install_skipped && ! $plugin_install_cancelled; then
+            printf "${YELLOW} wiqd skills are not installed for this host yet.${RESET}\n"
+            # Prefer a host we KNOW failed over the present-host fallback, so a
+            # mixed-host run (one succeeded, one failed) points the retry hint
+            # at the host that actually needs it instead of a working one.
+            local retry_host="claude"
+            if $copilot_present; then retry_host="copilot"; fi
+            if (( ${#failed_plugin_hosts[@]} > 0 )); then retry_host="${failed_plugin_hosts[0]}"; fi
+            printf "${WHITE}   Run 'wiqd component plugin install --cli %s' to install them${RESET}\n" "$retry_host"
+            echo ""
         fi
-        echo ""
     else
         printf "${CYAN} To use wiqd inside an agent, install Copilot CLI or Claude Code, then run:${RESET}\n"
         printf "${WHITE}   wiqd component plugin install    (add --cli claude for Claude Code)${RESET}\n"
@@ -1073,6 +1106,10 @@ fi
 # Step N: Copilot CLI Plugin (automatic)
 # ─────────────────────────────────────────────
 
+if $SKIP_PLUGIN; then
+    plugin_install_skipped=true
+fi
+
 if ! $SKIP_PLUGIN; then
     plugin_step_num=4
     if ! $SKIP_VSCODE; then plugin_step_num=5; fi
@@ -1111,12 +1148,27 @@ if ! $SKIP_PLUGIN; then
                 fi
                 if plugin_output=$(wiqd "${plugin_install_args[@]}" 2>&1); then
                     write_ok "wiqd plugin installed for $plugin_host"
+                    plugin_install_succeeded=true
                 else
-                    write_warn "Could not install wiqd plugin for $plugin_host (exit code $?)"
+                    # Capture the command's own rc immediately — anything evaluated
+                    # between the failed substitution and this point (even a failed
+                    # `[[ ]]` test) would otherwise clobber $? before it's read.
+                    rc=$?
+                    if [[ "$rc" -eq 130 ]]; then
+                        write_warn "wiqd plugin install cancelled for $plugin_host (exit code 130)"
+                        if [[ -n "$plugin_output" ]]; then
+                            write_warn "  $plugin_output"
+                        fi
+                        plugin_install_cancelled=true
+                        break
+                    fi
+                    write_warn "Could not install wiqd plugin for $plugin_host (exit code $rc)"
                     if [[ -n "$plugin_output" ]]; then
                         write_warn "  $plugin_output"
                     fi
                     write_hint "Run 'wiqd component plugin install --cli $plugin_host' to retry"
+                    plugin_install_failed=true
+                    failed_plugin_hosts+=("$plugin_host")
                 fi
             done
         fi
@@ -1131,7 +1183,10 @@ fi
 # ─────────────────────────────────────────────
 
 echo ""
-if $install_success; then
+# The full-success banner requires BOTH the CLI-on-PATH probe AND a clean
+# plugin step — a plugin failure must never be masked by "success" text, even
+# though the CLI itself is fully usable (see the elif branch below).
+if $install_success && ! $plugin_install_failed && ! $plugin_install_cancelled; then
     printf "${GREEN} ╔══════════════════════════════════════╗${RESET}\n"
     printf "${GREEN} ║    ✓ wiqd installed successfully!    ║${RESET}\n"
     printf "${GREEN} ╚══════════════════════════════════════╝${RESET}\n"
@@ -1142,6 +1197,45 @@ if $install_success; then
     if [ "$EULA_CHOICE" = "accepted" ]; then
         wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
     fi
+
+    print_wiqd_quickstart
+elif $install_success && $plugin_install_cancelled; then
+    printf "${YELLOW} ╔══════════════════════════════════════╗${RESET}\n"
+    printf "${YELLOW} ║ ⚠ wiqd installed — plugin cancelled  ║${RESET}\n"
+    printf "${YELLOW} ╚══════════════════════════════════════╝${RESET}\n"
+    echo ""
+
+    if [ "$EULA_CHOICE" = "accepted" ]; then
+        wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
+    fi
+
+    printf "${YELLOW} ⚠  wiqd plugin install was cancelled by the user.${RESET}\n"
+    echo ""
+
+    print_wiqd_quickstart
+elif $install_success && $plugin_install_failed; then
+    # The wiqd CLI installed and is fully usable — a failed plugin step is a
+    # partial, not a fatal, outcome. Say so honestly instead of the full-success
+    # banner, and repeat the per-host retry hint here (in the FINAL summary),
+    # not only at the point of failure a screen-full of output ago.
+    printf "${YELLOW} ╔══════════════════════════════════════╗${RESET}\n"
+    printf "${YELLOW} ║ ⚠ wiqd installed — plugin incomplete ║${RESET}\n"
+    printf "${YELLOW} ╚══════════════════════════════════════╝${RESET}\n"
+    echo ""
+
+    # Persist EULA acceptance the same as the full-success path — the CLI is
+    # on PATH and usable regardless of the plugin outcome, so EULA persistence
+    # must not be gated on the (optional, host-side) plugin step.
+    if [ "$EULA_CHOICE" = "accepted" ]; then
+        wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
+    fi
+
+    printf "${YELLOW} ⚠  wiqd plugin install did not complete for:${RESET}\n"
+    for failed_host in "${failed_plugin_hosts[@]}"; do
+        printf "${WHITE}   - %s${RESET}\n" "$failed_host"
+        printf "${GRAY}     Run 'wiqd component plugin install --cli %s' to retry${RESET}\n" "$failed_host"
+    done
+    echo ""
 
     print_wiqd_quickstart
 else
@@ -1157,4 +1251,16 @@ else
         printf "${GRAY} After restarting, run: wiqd eula accept wiqd${RESET}\n"
     fi
     echo ""
+fi
+
+if $plugin_install_cancelled; then
+    exit 130
+fi
+
+# A partial install (CLI on PATH, plugin step attempted-and-failed) must exit
+# non-zero so CI and scripted installs can detect and act on it, even though
+# nothing here aborts the run early — the CLI install itself always completes
+# and the summary above already gave the user the full retry story.
+if $plugin_install_failed; then
+    exit 1
 fi

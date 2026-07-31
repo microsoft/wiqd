@@ -64,6 +64,14 @@
     "upstream": {
       "$ref": "#/definitions/UpstreamConfig"
     },
+    "runtime": {
+      "$ref": "#/definitions/RuntimeConfig",
+      "description": "Trusted in-process runtime backend. Mutually exclusive with `upstream`: an extension picks at most one command/auth execution backend. Its mere presence does not import code — a command or auth action must declare `handler` to actually invoke the factory-created adapter."
+    },
+    "activationWhen": {
+      "type": "string",
+      "description": "Conditional participation gate. A single `<flag> == <value>` equality that gates the WHOLE extension on a feature-flag value, so one flag can select exactly one member of a mutually-exclusive set (e.g. `plugin-core-engine` choosing the atk subprocess backend vs. the fxcore in-process backend). The host branches only on the flag name/value, never on extension identity. Absent means the extension always participates."
+    },
     "auth": {
       "$ref": "#/definitions/ExtensionAuthConfig"
     },
@@ -220,6 +228,10 @@
         },
         "say": {
           "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "Stable machine-readable code surfaced as `error.code` in the `--json` envelope. Lives in the manifest so failure classes stay a domain concern — the host only plumbs whatever the extension declares."
         }
       }
     },
@@ -375,6 +387,10 @@
           "type": "boolean",
           "description": "When true, this arg is registered as a commander POSITIONAL argument (`wiqd agent review gate <name>`) instead of a `--flag`. The builder uses commander's optional `[name]` form and leaves `required: true` enforcement to ManifestExecutor, so parent command args never block child subcommand dispatch and `defaultFrom` can populate values before the final required check. The parsed value threads into the executor's expression/argMap context under the bare arg `name` (no leading `--`), so a positional and a flag are interchangeable from the manifest's `argMap`/`bindArgs` point of view. Defaults to `false` (flag behavior)."
         },
+        "discover": {
+          "type": "string",
+          "description": "Command that finds this option's value, shown when the option is missing. \"You're missing --id\" is half an error; the other half is where to get one. Declared per option because only the extension knows which lookup applies."
+        },
         "hidden": {
           "type": "boolean"
         },
@@ -418,6 +434,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "handler": {
+          "$ref": "#/definitions/HandlerConfig",
+          "description": "Trusted in-process invocation for a runtime-backed auth action. Present instead of subprocess-only fields (`args`, `signedInPattern`, etc.) when the extension is runtime-backed; the action resolves through the same cached adapter as ordinary handler commands (in-process-manifest-handler.md §12). An auth command MUST NOT mix subprocess and handler shapes."
         },
         "interactive": {
           "type": "boolean",
@@ -590,6 +610,26 @@
       },
       "required": ["path"]
     },
+    "HandlerConfig": {
+      "type": "object",
+      "properties": {
+        "target": {
+          "type": "string",
+          "description": "Dot-separated own-property path from the factory result (e.g. `engine`, `auth.session`)."
+        },
+        "method": {
+          "type": "string",
+          "description": "Callable own-property name on the resolved target."
+        },
+        "args": {
+          "type": "array",
+          "items": {},
+          "description": "Ordered method arguments; nested strings support recursive `${...}` resolution. Defaults to []."
+        }
+      },
+      "required": ["target", "method"],
+      "description": "Trusted in-process invocation target (manifest-schema.md §5.2). Replaces the subprocess spawn stage with a method call on the extension's `runtime` adapter. `target`/`method` are resolved by safe own-property walking (no eval); the host appends the effective AbortSignal after the resolved `args`."
+    },
     "ManifestCommandDef": {
       "type": "object",
       "properties": {
@@ -684,6 +724,10 @@
           "type": "string",
           "description": "Skip the upstream spawn step when this expression is truthy."
         },
+        "requiresAuth": {
+          "type": "boolean",
+          "description": "Run the extension's subprocess auth status probe before spawning. A definitive signed-out verdict returns exit 2; unavailable or inconclusive probes fail open. Subprocess-backed commands only."
+        },
         "devuiProxy": {
           "type": "object",
           "properties": {
@@ -736,6 +780,10 @@
         },
         "delegateWhen": {
           "$ref": "#/definitions/DelegateWhenConfig"
+        },
+        "handler": {
+          "$ref": "#/definitions/HandlerConfig",
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, errors, exitCode, omitRawResponse, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "nativeDryRunHandler": {
           "type": "string",
@@ -894,6 +942,29 @@
           "type": "string"
         }
       }
+    },
+    "RuntimeConfig": {
+      "type": "object",
+      "properties": {
+        "module": {
+          "type": "string",
+          "description": "Relative ESM JavaScript path; absolute/URL/bare/built-in/escaping paths are invalid."
+        },
+        "factory": {
+          "type": "string",
+          "description": "Own, callable named export matching /^[A-Za-z_$][A-Za-z0-9_$]*$/ returning the adapter."
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "const": "logger"
+          },
+          "description": "Host capabilities handed to the factory. Only `logger` in v1; defaults to []."
+        }
+      },
+      "required": ["module", "factory"],
+      "description": "Trusted in-process runtime declaration (manifest-schema.md §3.5). The host imports `module` (a relative ESM path contained by the extension root), resolves `factory` as an own callable named export, calls it once per process, and passes only the requested `capabilities`. Execution, trust, caching, and disposal live in in-process-manifest-handler.md."
     },
     "UpstreamCall": {
       "type": "object",

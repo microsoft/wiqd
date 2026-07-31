@@ -102,9 +102,21 @@ $VSCodeExtensionId = "Microsoft.wiqd"
 # so it evaluates to falsy in the 3P mirror where no setter ever runs.
 $script:PluginForceRecompose = $false
 
+# The plugin step is a foreach over possibly-multiple hosts (copilot, claude),
+# so "succeeded" (>=1 host installed cleanly) and "failed" (>=1 host errored)
+# are tracked separately from $installSuccess. A host being ABSENT is a
+# graceful skip, never a failure; only an attempted-and-errored install trips
+# Failed/Succeeded/Skipped/Cancelled (+ FailedPluginHosts) drive the
+# summary banners, the skills-list gate, and the final exit code.
+$script:PluginInstallFailed = $false
+$script:PluginInstallSucceeded = $false
+$script:PluginInstallSkipped = $false
+$script:PluginInstallCancelled = $false
+$script:FailedPluginHosts = @()
+
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.9.0"
+$script:WiqdVersion = "0.10.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -590,15 +602,34 @@ function Write-WiqdQuickstart {
         Write-Host ""
     }
     if ($copilotPresent -or $claudePresent) {
-        Write-Host " Installed wiqd skills:" -ForegroundColor Cyan
-        if ($installedSkills.Count -gt 0) {
-            foreach ($name in $installedSkills) {
-                Write-Host "   /$name" -ForegroundColor White
+        # Gate the skills list on the plugin step actually SUCCEEDING this run,
+        # never on host presence alone — Get-WiqdInstalledSkills reads the npm
+        # bundle on disk, which exists regardless of whether `wiqd component
+        # plugin install` ever ran or failed, so host-presence-only gating
+        # produced a phantom list. Require a CLEAN run (succeeded AND not
+        # failed): in a multi-host loop one host can succeed while another
+        # fails, and the bundle-derived list has no way to attribute skills to
+        # a specific host, so ANY attempted failure must suppress the blanket
+        # list rather than overstate success next to a partial-install banner.
+        if ($script:PluginInstallSucceeded -and -not $script:PluginInstallFailed -and -not $script:PluginInstallCancelled) {
+            Write-Host " Installed wiqd skills:" -ForegroundColor Cyan
+            if ($installedSkills.Count -gt 0) {
+                foreach ($name in $installedSkills) {
+                    Write-Host "   /$name" -ForegroundColor White
+                }
+            } else {
+                Write-Host "   (No installed skills detected — see https://aka.ms/wiqd/docs)" -ForegroundColor Gray
             }
-        } else {
-            Write-Host "   (No installed skills detected — see https://aka.ms/wiqd/docs)" -ForegroundColor Gray
+            Write-Host ""
+        } elseif (-not $script:PluginInstallSkipped -and -not $script:PluginInstallCancelled) {
+            Write-Host " wiqd skills are not installed for this host yet." -ForegroundColor Yellow
+            # Prefer a host we KNOW failed over the present-host fallback, so a
+            # mixed-host run (one succeeded, one failed) points the retry hint
+            # at the host that actually needs it instead of a working one.
+            $retryHost = if ($script:FailedPluginHosts.Count -gt 0) { $script:FailedPluginHosts[0] } elseif ($copilotPresent) { 'copilot' } else { 'claude' }
+            Write-Host "   Run 'wiqd component plugin install --cli $retryHost' to install them" -ForegroundColor White
+            Write-Host ""
         }
-        Write-Host ""
     } else {
         Write-Host " To use wiqd inside an agent, install Copilot CLI or Claude Code, then run:" -ForegroundColor Cyan
         Write-Host "   wiqd component plugin install    (add --cli claude for Claude Code)" -ForegroundColor White
@@ -1009,6 +1040,10 @@ if (-not $SkipVSCode) {
 # Step N: Copilot CLI Plugin (automatic)
 # ─────────────────────────────────────────────
 
+if ($SkipPlugin) {
+    $script:PluginInstallSkipped = $true
+}
+
 if (-not $SkipPlugin) {
     $pluginStepNum = 4
     if (-not $SkipVSCode) { $pluginStepNum = 5 }
@@ -1045,19 +1080,33 @@ if (-not $SkipPlugin) {
                     $pluginInstallArgs = @('component', 'plugin', 'install', '--cli', $pluginHost)
                     if ($script:PluginForceRecompose) { $pluginInstallArgs += '--force' }
                     $pluginOutput = & wiqd @pluginInstallArgs 2>&1
-                    if ($LASTEXITCODE -eq 0) {
+                    $pluginExitCode = $LASTEXITCODE
+                    if ($pluginExitCode -eq 0) {
                         Write-Ok "wiqd plugin installed for $pluginHost"
+                        $script:PluginInstallSucceeded = $true
+                    } elseif ($pluginExitCode -eq 130) {
+                        Write-Warn "wiqd plugin install cancelled for $pluginHost (exit code 130)"
+                        $pluginDetail = ($pluginOutput | Out-String).Trim()
+                        if ($pluginDetail) {
+                            Write-Warn "  $pluginDetail"
+                        }
+                        $script:PluginInstallCancelled = $true
+                        break
                     } else {
-                        Write-Warn "Could not install wiqd plugin for $pluginHost (exit code $LASTEXITCODE)"
+                        Write-Warn "Could not install wiqd plugin for $pluginHost (exit code $pluginExitCode)"
                         $pluginDetail = ($pluginOutput | Out-String).Trim()
                         if ($pluginDetail) {
                             Write-Warn "  $pluginDetail"
                         }
                         Write-Hint "Run 'wiqd component plugin install --cli $pluginHost' to retry"
+                        $script:PluginInstallFailed = $true
+                        $script:FailedPluginHosts += $pluginHost
                     }
                 } catch {
                     Write-Warn "Could not install wiqd plugin for ${pluginHost}: $_"
                     Write-Hint "Run 'wiqd component plugin install --cli $pluginHost' to retry"
+                    $script:PluginInstallFailed = $true
+                    $script:FailedPluginHosts += $pluginHost
                 }
             }
         }
@@ -1072,7 +1121,10 @@ if (-not $SkipPlugin) {
 # ─────────────────────────────────────────────
 
 Write-Host ""
-if ($installSuccess) {
+# The full-success banner requires BOTH the CLI-on-PATH probe AND a clean
+# plugin step — a plugin failure must never be masked by "success" text, even
+# though the CLI itself is fully usable (see the elseif branch below).
+if ($installSuccess -and -not $script:PluginInstallFailed -and -not $script:PluginInstallCancelled) {
     Write-Host " ╔══════════════════════════════════════╗" -ForegroundColor Green
     Write-Host " ║    ✓ wiqd installed successfully!    ║" -ForegroundColor Green
     Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Green
@@ -1092,6 +1144,53 @@ if ($installSuccess) {
     }
 
     Write-WiqdQuickstart
+} elseif ($installSuccess -and $script:PluginInstallCancelled) {
+    Write-Host " ╔══════════════════════════════════════╗" -ForegroundColor Yellow
+    Write-Host " ║ ⚠ wiqd installed — plugin cancelled  ║" -ForegroundColor Yellow
+    Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Yellow
+    Write-Host ""
+
+    if ($eulaChoice -eq 'accepted') {
+        try {
+            Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
+        } catch {
+            # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
+        }
+    }
+
+    Write-Host " ⚠  wiqd plugin install was cancelled by the user." -ForegroundColor Yellow
+    Write-Host ""
+
+    Write-WiqdQuickstart
+} elseif ($installSuccess -and $script:PluginInstallFailed) {
+    # The wiqd CLI installed and is fully usable — a failed plugin step is a
+    # partial, not a fatal, outcome. Say so honestly instead of the full-success
+    # banner, and repeat the per-host retry hint here (in the FINAL summary),
+    # not only at the point of failure a screen-full of output ago.
+    Write-Host " ╔══════════════════════════════════════╗" -ForegroundColor Yellow
+    Write-Host " ║ ⚠ wiqd installed — plugin incomplete ║" -ForegroundColor Yellow
+    Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Yellow
+    Write-Host ""
+
+    # Persist EULA acceptance the same as the full-success path — the CLI is
+    # on PATH and usable regardless of the plugin outcome, so EULA persistence
+    # must not be gated on the (optional, host-side) plugin step.
+    if ($eulaChoice -eq 'accepted') {
+        try {
+            Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
+        } catch {
+            # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
+        }
+    }
+
+    Write-Host " ⚠  wiqd plugin install did not complete for:" -ForegroundColor Yellow
+    foreach ($failedHost in $script:FailedPluginHosts) {
+        Write-Host "   - $failedHost" -ForegroundColor White
+        Write-Host "     Run 'wiqd component plugin install --cli $failedHost' to retry" -ForegroundColor Gray
+    }
+    Write-Host ""
+
+    Write-WiqdQuickstart
 } else {
     Write-Host " ╔══════════════════════════════════════╗" -ForegroundColor Yellow
     Write-Host " ║  ⚠  wiqd installed — restart shell   ║" -ForegroundColor Yellow
@@ -1105,4 +1204,16 @@ if ($installSuccess) {
         Write-Host " After restarting, run: wiqd eula accept wiqd" -ForegroundColor Gray
     }
     Write-Host ""
+}
+
+if ($script:PluginInstallCancelled) {
+    exit 130
+}
+
+# A partial install (CLI on PATH, plugin step attempted-and-failed) must exit
+# non-zero so CI and scripted installs can detect and act on it, even though
+# nothing here aborts the run early — the CLI install itself always completes
+# and the summary above already gave the user the full retry story.
+if ($script:PluginInstallFailed) {
+    exit 1
 }
