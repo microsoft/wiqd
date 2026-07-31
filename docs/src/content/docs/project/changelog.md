@@ -2,6 +2,14 @@
 title: Changelog
 ---
 
+## 0.10.0 — 2026-07-30
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Fixes
+
+- Fail fast with sign-in guidance before tenant-backed commands
+
 ## 0.9.0 — 2026-07-29
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

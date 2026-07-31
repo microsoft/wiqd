@@ -12,6 +12,8 @@ Work IQ Dev Tools do not run their own authentication flow. Each `auth` command 
 
 After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired (re-probing the provider's status) before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Login and logout target the same provider session (for ATK, the `m365` account), so a `wiqd auth logout` followed by `wiqd auth login` performs a real re-sign-in rather than a silent no-op.
 
+Commands that interact with your tenant—including agent and plugin provisioning and sharing, plus agent info, uninstall, and publish—check the provider's status first. When the provider definitively reports that you are signed out, the command exits with code `2` and instructions to run `wiqd auth login` instead of waiting on an invisible upstream sign-in prompt. An unavailable or inconclusive status check does not block the command.
+
 ## Sign In
 
 ```bash
