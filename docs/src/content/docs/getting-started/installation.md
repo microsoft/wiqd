@@ -122,10 +122,10 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --version 0.1.9
 
 ## npm
 
-`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path (they also handle Node.js, the VS Code extension, and the Copilot CLI plugin), but a manual install works too. During the preview period, pin the `preview` dist-tag explicitly — `latest` does not carry the shipping prerelease build:
+`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path (they also handle Node.js, the VS Code extension, and the Copilot CLI plugin), but a manual install works too:
 
 ```bash
-npm install -g @microsoft/wiqd@preview
+npm install -g @microsoft/wiqd
 ```
 
 ## Verify Installation
@@ -211,9 +211,8 @@ npm uninstall -g @microsoft/wiqd
 npm cache clean --force
 # Either the official installer:
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
-# …or a plain global install now works on its own (pin @preview during the
-# preview period — @latest does not carry the shipping prerelease build):
-npm install -g @microsoft/wiqd@preview
+# …or a plain global install now works on its own:
+npm install -g @microsoft/wiqd
 ```
 
 **Verifying you have the fix:**

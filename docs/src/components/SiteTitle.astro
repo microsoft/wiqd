@@ -5,13 +5,10 @@
 // build-time VERSION — never a hardcoded, driftable literal.
 import { logos } from 'virtual:starlight/user-images';
 import config from 'virtual:starlight/user-config';
-import { version } from '../site-config.mjs';
+import { version, isPreview } from '../site-config.mjs';
 const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
 
-// A SemVer prerelease suffix (e.g. "-rc.1") is the build-time signal that this
-// is a preview build — derived from VERSION itself so the "Preview" tag
-// disappears automatically at 1.0 with no manual edit anywhere.
-const isPreview = version.includes('-');
+// isPreview is derived from the build-time VERSION in site-config.mjs (pre-1.0 → preview).
 ---
 
 <a href={siteTitleHref} class="site-title sl-flex">

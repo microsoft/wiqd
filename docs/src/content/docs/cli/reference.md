@@ -170,6 +170,26 @@ per-command tables below.
 | [`wiqd agent eval`](#wiqd-agent-eval) | Copilot Eval | Run quality evaluations against a deployed declarative agent. |
 | [`wiqd agent eval init`](#wiqd-agent-eval-init) | Copilot Eval | Initialize an evaluation prompts.json for a project (drops a starter suite tailored to the default declarative-agent template, plus env/.env.<env>.user from your Azure OpenAI / tenant env vars). |
 
+**wiqd plugin**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd plugin`](#wiqd-plugin) | wiqd (core) | Build, validate, package, and publish standalone plugins (agent + skills + connector) |
+| [`wiqd plugin add`](#wiqd-plugin-add) | Agents Toolkit | add |
+| [`wiqd plugin add agent`](#wiqd-plugin-add-agent) | Agents Toolkit | Add a declarative agent component to a plugin. |
+| [`wiqd plugin add skill`](#wiqd-plugin-add-skill) | Agents Toolkit | Scaffold a SKILL.md skill folder and register it in the plugin manifest. |
+| [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | Agents Toolkit | Add a remote MCP agent connector to the plugin manifest. |
+| [`wiqd plugin show`](#wiqd-plugin-show) | Agents Toolkit | Show a summary of a standalone plugin project. |
+| [`wiqd plugin list`](#wiqd-plugin-list) | Agents Toolkit | List standalone plugin projects under a directory. |
+| [`wiqd plugin provision`](#wiqd-plugin-provision) | Agents Toolkit | Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd plugin package`](#wiqd-plugin-package) | Agents Toolkit | Package the plugin into a deployable .zip. |
+| [`wiqd plugin share`](#wiqd-plugin-share) | Agents Toolkit | Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd plugin delete`](#wiqd-plugin-delete) | Agents Toolkit | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd plugin create`](#wiqd-plugin-create) | Agents Toolkit | Scaffold a new, empty standalone plugin project from ATK's blank app template. |
+| [`wiqd plugin import`](#wiqd-plugin-import) | Agents Toolkit | Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project. |
+| [`wiqd plugin export`](#wiqd-plugin-export) | Agents Toolkit | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
+| [`wiqd plugin validate`](#wiqd-plugin-validate) | Manifest Validation & LSP | Validate a standalone plugin project (static MVL; --mode deep validates the built package via ATK). |
+
 **wiqd feedback**
 
 | Command | Extension | Description |
@@ -464,6 +484,7 @@ wiqd update [options]
 | `--force` | Deprecated: update always reinstalls; kept for compatibility |
 | `--dry-run` | Show what would be done without doing it |
 | `--skip-extension` | Skip VS Code extension update |
+| `--skip-plugin` | Skip Copilot CLI plugin refresh |
 
 **Examples**
 
@@ -1502,7 +1523,7 @@ wiqd agent validate [options]
 | --- | --- |
 | `--path <value>` | Agent project directory |
 | `--env <value>` | Target environment (default: "local") |
-| `--mode <value>` | Validation mode: static or deep (default: "static") |
+| `--mode <value>` | Validation mode: static or deep (choices: "static", "deep", default: "static") |
 | `--package-file <value>` | Path to a built .zip (deep mode only) |
 
 **Examples**
@@ -1647,6 +1668,389 @@ wiqd agent eval init [options]
 wiqd agent eval init
 wiqd agent eval init --path <value> --env <value>
 wiqd agent eval init --json
+```
+
+## wiqd plugin
+
+Build, validate, package, and publish standalone plugins (agent + skills + connector)
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd plugin <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin
+wiqd plugin add
+wiqd plugin --help
+```
+
+### wiqd plugin add
+
+add
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin add <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin add
+wiqd plugin add agent
+wiqd plugin add skill
+wiqd plugin add connector
+wiqd plugin add --help
+```
+
+### wiqd plugin add agent
+
+Add a declarative agent component to a plugin.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin add agent [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin add agent
+wiqd plugin add agent --folder <value>
+wiqd plugin add agent --json
+```
+
+### wiqd plugin add skill
+
+Scaffold a SKILL.md skill folder and register it in the plugin manifest.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin add skill [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-n, --name <value>` | Skill display name |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin add skill
+wiqd plugin add skill --name <value> --folder <value>
+wiqd plugin add skill --json
+```
+
+### wiqd plugin add connector
+
+Add a remote MCP agent connector to the plugin manifest.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin add connector [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-n, --name <value>` | Connector display name |
+| `--description <value>` | Connector description |
+| `--url <value>` | Remote MCP server https:// URL |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin add connector
+wiqd plugin add connector --name <value> --description <value>
+wiqd plugin add connector --json
+```
+
+### wiqd plugin show
+
+Show a summary of a standalone plugin project.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin show [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+| `-n, --name <value>` | Plugin name to locate under CWD (exact match) |
+
+**Examples**
+
+```bash
+wiqd plugin show
+wiqd plugin show --path <value> --name <value>
+wiqd plugin show --json
+```
+
+### wiqd plugin list
+
+List standalone plugin projects under a directory.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin list [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-n, --name <value>` | Filter by plugin name substring |
+| `--top <value>` | Limit the number of results |
+| `--root <value>` | Root directory to scan (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin list
+wiqd plugin list --name <value> --top <value>
+wiqd plugin list --json
+```
+
+### wiqd plugin provision
+
+Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login`.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin provision [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-e, --env <value>` | Target environment (default: "local") |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin provision
+wiqd plugin provision --env <value> --path <value>
+wiqd plugin provision --json
+```
+
+### wiqd plugin package
+
+Package the plugin into a deployable .zip.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin package [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--env <value>` | Environment to resolve variables from (default: "local") |
+| `--output <value>` | Output path for the zip package |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin package
+wiqd plugin package --env <value> --output <value>
+wiqd plugin package --json
+```
+
+### wiqd plugin share
+
+Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin share [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--scope <value>` | Share scope: 'users' or 'tenant' (choices: "users", "tenant", default: "users") |
+| `--email <value>` | Comma-separated email addresses |
+| `--env <value>` | Target environment (default: "local") |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin share
+wiqd plugin share --scope users --email <value>
+wiqd plugin share --json
+```
+
+### wiqd plugin delete
+
+Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`.
+
+**Extension:** Agents Toolkit
+
+**Aliases:** `uninstall`
+
+```bash
+wiqd plugin delete [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-e, --env <value>` | Environment to delete (ignored when --title-id is set) (default: "local") |
+| `--path <value>` | Plugin project path (ignored when --title-id is set) |
+| `--title-id <value>` | Title ID of the plugin to delete (e.g. T_xxx or T_xxx.declarativeAgent). When set, deletes via title-id mode and skips project/env checks. |
+| `--keep-env-file` | Keep the local env file after deletion (project mode only) |
+| `--yes` | Skip confirmation prompt |
+
+**Examples**
+
+```bash
+wiqd plugin delete
+wiqd plugin delete --env <value> --path <value>
+wiqd plugin delete --json
+```
+
+### wiqd plugin create
+
+Scaffold a new, empty standalone plugin project from ATK's blank app template.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin create [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-n, --name <value>` | Plugin project name |
+| `-o, --output <value>` | Output directory (defaults to CWD) |
+| `--force` | Re-scaffold over a non-empty destination, discarding what is there now |
+
+**Examples**
+
+```bash
+wiqd plugin create
+wiqd plugin create --name <value> --output <value>
+wiqd plugin create --json
+```
+
+### wiqd plugin import
+
+Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin import [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-p, --path <value>` | Source Open Plugin directory |
+| `-o, --output <value>` | Destination project directory (defaults to ./<plugin-name>) |
+| `--privacy-url <value>` | Privacy statement URL (required unless the source carries the round-trip block) |
+| `--terms-url <value>` | Terms-of-use URL (required unless the source carries the round-trip block) |
+| `--website-url <value>` | Website URL (ATK falls back to plugin.json homepage/author URL) |
+| `--app-id <value>` | Teams/M365 app id (UUID) to stamp |
+| `--default-auth-type <value>` | Default plugin auth type (ATK default: Auto) (choices: "Auto", "None", "OAuthPluginVault", "ApiKeyPluginVault") |
+| `--package-name <value>` | Reverse-DNS package name |
+
+**Examples**
+
+```bash
+wiqd plugin import
+wiqd plugin import --path <value> --output <value>
+wiqd plugin import --json
+```
+
+### wiqd plugin export
+
+Export a plugin project to Open Plugin (or Claude/Cursor) format.
+
+**Extension:** Agents Toolkit
+
+```bash
+wiqd plugin export [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-p, --path <value>` | Plugin project path (defaults to CWD) |
+| `-o, --output <value>` | Output Open Plugin directory (defaults to <path>/export/<format>) |
+| `--format <value>` | Target manifest kind (choices: "open-plugin", "claude-plugin", "cursor-plugin", default: "open-plugin") |
+
+**Examples**
+
+```bash
+wiqd plugin export
+wiqd plugin export --path <value> --output <value>
+wiqd plugin export --json
+```
+
+### wiqd plugin validate
+
+Validate a standalone plugin project (static MVL; --mode deep validates the built package via ATK).
+
+**Extension:** Manifest Validation & LSP
+
+```bash
+wiqd plugin validate [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Plugin project directory (defaults to CWD) |
+| `--env <value>` | Target environment (default: "local") |
+| `--mode <value>` | Validation mode: static or deep (choices: "static", "deep", default: "static") |
+| `--package-file <value>` | Path to a built .zip (deep mode only) |
+
+**Examples**
+
+```bash
+wiqd plugin validate
+wiqd plugin validate --path <value> --env <value>
+wiqd plugin validate --json
 ```
 
 ## wiqd feedback
@@ -1840,7 +2244,6 @@ never sent in telemetry. Manage flags with [`wiqd config flags`](#wiqd-config-fl
 | Flag | Type | Default | Stage | Owner | Since | Description |
 |---|---|---|---|---|---|---|
 | `plugin-core-engine` | `string-enum` | `atk` | `internal` | wiqd-core | 0.9.0 | Selects the backend that services the agent lifecycle commands: the ATK subprocess (atk) or the in-process fx-core engine (fxcore). |
-| `wiqd-plugin` | `boolean` | `false` | `alpha` | microsoft.atk | 0.6.1 | Enables the alpha wiqd plugin command tree (create, add, validate, package, provision, share). Opt in. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
 | `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `agent ask` and `agent list` are always available. |
 <!-- END: generated-flag-table -->
@@ -1851,7 +2254,6 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 | Flag | Env var |
 |---|---|
 | `plugin-core-engine` | `WIQD_FLAG_PLUGIN_CORE_ENGINE` |
-| `wiqd-plugin` | `WIQD_FLAG_WIQD_PLUGIN` |
 | `devui` | `WIQD_FLAG_DEVUI` |
 | `workiq-monitor` | `WIQD_FLAG_WORKIQ_MONITOR` |
 <!-- END: generated-env-table -->

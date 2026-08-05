@@ -89,6 +89,13 @@
       },
       "description": "Feature flags this extension declares; merged into the host flag registry."
     },
+    "configKeys": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ExtensionConfigKey"
+      },
+      "description": "Persisted `wiqd config set` keys this extension declares: the host merges these into its known-key set generically — it never hardcodes a domain key name — so `wiqd config set <key>=<value>` can validate/store/ clear an extension's own settings with zero host change."
+    },
     "mock": {
       "$ref": "#/definitions/ManifestMockConfig"
     }
@@ -219,6 +226,37 @@
           "description": "Match condition. Every present field must match; an omitted `when` is a catch-all."
         }
       }
+    },
+    "EnvironmentOption": {
+      "type": "object",
+      "properties": {
+        "flag": {
+          "type": "string",
+          "description": "Canonical long flag, e.g. `--environment`. MUST be a long flag: a short-style `-e` renders as `---e` once combined with the alias list, and commander rejects it."
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "At most ONE additional long flag. Commander accepts a maximum of two long flags per option and the canonical `flag` occupies the second slot, so a longer list is rejected at build time. An alias that collides with a flag the command already declares is dropped; the canonical `flag` is still registered."
+        },
+        "env": {
+          "type": "string",
+          "description": "Env var the per-invocation value is injected into on the child process. MUST match `^[A-Z][A-Z0-9_]*$`; process-influencing names (`NODE_OPTIONS`, `LD_PRELOAD`, `PATH`, ...) are refused at runtime."
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": ["flag", "env"],
+      "description": "Companion type for UpstreamConfig.environmentOption (see above)."
     },
     "ErrorRule": {
       "type": "object",
@@ -539,6 +577,28 @@
       },
       "required": ["name"]
     },
+    "ExtensionConfigKey": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "clearable": {
+          "type": "boolean"
+        },
+        "enumValues": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": ["key"],
+      "description": "A persisted config key declared by an extension's manifest. Mirrors the host's own hardcoded `VALID_KEYS` shape (commands/config-set.ts) so `wiqd config set`/`config` treat a contributed key exactly like a built-in one: validated against `enumValues` when present, clearable via `key=` when `clearable` is true, and echoed un-redacted (contributed keys are assumed non-secret; an extension needing secret handling should not use this generic mechanism)."
+    },
     "ExtensionDoctorConfig": {
       "type": "object",
       "properties": {
@@ -771,6 +831,13 @@
         "jsonOmitPath": {
           "type": "boolean",
           "description": "When true, `buildJsonData` does NOT auto-inject `data.path` (the resolved output/cwd path). Use this for API-backed commands whose JSON envelope is a fixed, documented field set (e.g. `account.enroll`) where an absolute filesystem path is meaningless and leaks the caller's cwd into scripted output."
+        },
+        "jsonOmitComputed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Computed keys to withhold from the `--json` envelope. Computed values are spread wholesale into `data`, so an intermediate declared only to feed a later expression would otherwise become part of the published contract."
         },
         "subcommands": {
           "type": "object",
@@ -1031,6 +1098,14 @@
         "installCommand": {
           "type": "string",
           "description": "The exact, argv-splittable shell command (no quoted args) that installs this upstream binary — distinct from `installHint`, which is a human sentence that MAY wrap the command in prose. The prerequisite preflight gate's consent-gated install offer runs this command verbatim, so it must be runnable as-is. Bundled tools (ATK, eval, workiq) set this to the wiqd installer command rather than a direct sub-package install: all three are transitive dependencies of the wiqd package, so reinstalling wiqd is what actually restores them at the tested/pinned version. It is also exactly what `wiqd update` runs, and matches the pre-existing `wiqd doctor` remediation convention, so this offer can never disagree with doctor's guidance. Omit when the tool has no single runnable install command at all; the gate then falls back to printing `installHint` without offering to run anything."
+        },
+        "timeoutHint": {
+          "type": "string",
+          "description": "Extension-owned recovery sentence appended when the host kills this upstream for exceeding `timeoutSeconds`. The generic host cannot know why a given tool stalls, so domain-specific advice belongs to the extension. Omit to print the neutral message alone."
+        },
+        "environmentOption": {
+          "$ref": "#/definitions/EnvironmentOption",
+          "description": "A generic per-invocation environment-selector flag: the host adds this as a shared Commander option on every command the extension contributes and forwards the parsed value to the upstream process as the named env var. The host has no knowledge of what the flag or env var MEAN — it just wires option → env var — so a new extension can add its own per-invocation selector with zero host change."
         }
       },
       "required": ["name"]
