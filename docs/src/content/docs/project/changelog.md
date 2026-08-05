@@ -2,6 +2,25 @@
 title: Changelog
 ---
 
+## 0.11.0 — 2026-08-03
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- Build a plugin end to end with the `wiqd plugin` commands, including OpenPlugin import and export
+- Sign in to Microsoft 365 directly through `wiqd auth login`, so authentication no longer needs a separate CLI installed
+
+### Fixes
+
+- Report upstream tool timeouts clearly, with recovery guidance that matches the actual failure
+- Accept an agent-relayed EULA consent without naming a version, and accept more natural URL phrasing
+- Recognize an agent project even when its marker file name differs in casing
+- Honor the EULA you accept during install, so the installer finishes setting up the Copilot plugin
+- Refresh the Copilot and Claude plugin during `wiqd update`, so skills no longer go stale after an upgrade
+- Fix 26 defects across the `wiqd plugin` lifecycle, so `plugin create` no longer overwrites an existing provisioned project
+- Route a standalone plugin request to the plugin commands instead of agent scaffolding, and restore the skill description so Copilot reliably picks up wiqd in a conversation
+
 ## 0.10.0 — 2026-07-30
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

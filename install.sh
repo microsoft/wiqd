@@ -45,6 +45,7 @@ VERSION="latest"
 REPO="microsoft/wiqd"
 SKIP_VSCODE=false
 SKIP_PLUGIN=false
+PLUGIN_NON_FATAL=false
 INSIDERS=false
 NODE_VERSION="24"
 FORCE=false
@@ -71,7 +72,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.10.0"
+WIQD_INSTALLER_VERSION="0.11.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -116,6 +117,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-plugin)
             SKIP_PLUGIN=true
+            shift
+            ;;
+        # internal: wiqd update passes this so a plugin-only failure is non-fatal
+        --plugin-non-fatal)
+            PLUGIN_NON_FATAL=true
             shift
             ;;
         --insiders)
@@ -548,6 +554,16 @@ install_npm_global_packages() {
     shift || true
     local packages=("$@")
 
+    # R35: reset the EEXIST file-conflict flag at the start of every install
+    # attempt. It is reset here inside the shared primitive (not at top level)
+    # so it always initializes even where top-level globals are stripped from
+    # the generated public installer — under set -u an unset read in the
+    # auto-mode guard would otherwise be fatal.
+    NPM_INSTALL_CONFLICT=0
+    # R35: same for the EACCES/EPERM permission flag — reset here so it is
+    # always initialized under set -u in the stripped public installer.
+    NPM_INSTALL_PERMISSION=0
+
     write_info "Installing $display_name..."
 
     if ! command_exists npm; then
@@ -567,6 +583,43 @@ install_npm_global_packages() {
     # --loglevel=error suppresses npm's own deprecation warnings.
     local npm_output
     if ! npm_output=$(npm install -g "${packages[@]}" --loglevel=error 2>&1); then
+        # Classify an EEXIST file conflict distinctly from a network/registry
+        # failure (R35). npm aborts the whole global install with EEXIST when a
+        # launcher target already exists but isn't owned by the installing
+        # package — a purely LOCAL problem the GitHub/EMU fallback can't fix (it
+        # would hit the identical conflict). Name the exact conflicting file and
+        # the removal command, raise the conflict flag so the auto-mode caller
+        # skips the misleading network fallback, and stop. Delete nothing.
+        if printf '%s' "$npm_output" | grep -q 'EEXIST'; then
+            NPM_INSTALL_CONFLICT=1
+            local conflict_path
+            conflict_path=$(printf '%s' "$npm_output" | sed -n 's/^[[:space:]]*npm error path[[:space:]]*//p' | head -1 | tr -d '\r')
+            write_err "npm install failed: a file already exists (EEXIST)."
+            if [[ -n "$conflict_path" ]]; then
+                write_hint "rm -f '$conflict_path'   (then re-run this installer)"
+            fi
+            return 1
+        fi
+        # Classify an EACCES/EPERM permission failure distinctly from a
+        # network/registry failure (R35). npm aborts the global install when it
+        # can't write to the global prefix — a purely LOCAL problem the
+        # GitHub/EMU fallback can't fix. Lead with the npm-recommended remedy
+        # (point npm at a user-writable prefix), offer elevation as the
+        # alternative, and stop. Change nothing. npm itself discourages
+        # `sudo npm install -g`, so re-running with sudo is the fallback, not
+        # the headline.
+        if printf '%s' "$npm_output" | grep -qE 'EACCES|EPERM'; then
+            NPM_INSTALL_PERMISSION=1
+            local npm_prefix
+            npm_prefix=$(npm config get prefix --loglevel=error 2>/dev/null | head -1 | tr -d '\r' || true)
+            write_err "npm install failed: permission denied on the npm global prefix (EACCES/EPERM)."
+            write_hint "Point npm at a user-writable prefix, or re-run with sudo:"
+            if [[ -n "$npm_prefix" ]]; then
+                write_hint "  (current global prefix: $npm_prefix)"
+            fi
+            write_hint "  npm config set prefix <dir>   (then re-run this installer)"
+            return 1
+        fi
         write_warn "npm install failed for $display_name"
         # Surface the captured npm output so the first failing run is
         # self-diagnosing; otherwise the real cause (e.g. an EACCES on the
@@ -605,6 +658,143 @@ seed_wiqd_defaults() {
     write_warn "Could not seed default extensions automatically."
     write_hint "Run 'wiqd doctor' to restore them, or 'wiqd ext add <id>' per default."
     return 1
+}
+
+# Renders the post-install dependency verdict for the downstream CLIs, sourced
+# from `wiqd doctor --json` so the installer and doctor never disagree on presence.
+# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED dep
+# (atk) is fatal and the caller must stop the install; a missing OPTIONAL dep
+# (eval/workiq/EULA) degrades gracefully and only warns. Returns 0 to continue,
+# 1 when a required dependency is missing (caller exits 1). Fails closed with
+# the canonical reinstall hint when the probe is unavailable or its JSON can't
+# be parsed. Node is guaranteed on PATH (Step 1) and wiqd is itself a
+# node CLI, so it parses the envelope into TAB-separated name/status/message.
+show_dependency_status() {
+    local json checks
+    json=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd doctor --json 2>/dev/null || true)
+    if [[ -z "$json" ]]; then
+        write_err "Could not verify required downstream components."
+        write_hint "Re-run: npm install -g @microsoft/wiqd"
+        return 1
+    fi
+    checks=$(printf '%s' "$json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=((JSON.parse(s).data)||{}).checks||[];for(const x of c)process.stdout.write(`${x.name||""}\t${x.status||""}\t${x.message||""}\n`);}catch(e){}});' 2>/dev/null || true)
+    if [[ -z "$checks" ]]; then
+        write_err "Could not verify required downstream components."
+        write_hint "Re-run: npm install -g @microsoft/wiqd"
+        return 1
+    fi
+
+    # Materialize the checks as ordered arrays so rows can consume matches
+    # positionally. This matters when workiq is MISSING: doctor collapses BOTH
+    # the "workiq --json" and "workiq EULA" checks to the bare name "workiq", so
+    # matching by name alone would assign one entry to both rows. Consuming in
+    # declaration order (probe before EULA) assigns each to the right row.
+    local -a c_name=() c_status=() c_msg=() consumed=()
+    local nm st ms
+    while IFS=$'\t' read -r nm st ms; do
+        [[ -z "$nm" ]] && continue
+        c_name+=("$nm"); c_status+=("$st"); c_msg+=("$ms"); consumed+=(0)
+    done <<< "$checks"
+
+    # Display rows: "candidates::label::required::ok-word::note::extension-id::rerun".
+    # Candidates are '|'-separated; `required=1` makes a miss fatal. An empty
+    # check uses the extension id to print a registration repair; an emitted
+    # failure uses doctor's own trimmed message and reinstalls wiqd's pinned deps.
+    local rows=(
+        "atk::atk::1::Installed::(required for \`wiqd agent\` commands)::microsoft.atk::1"
+        "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1"
+        "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1"
+        "workiq EULA|workiq::workiq EULA::0::Accepted::::microsoft.workiq::0"
+    )
+
+    # Widest label (+ colon) governs alignment.
+    local label_width=0 row
+    local -a parts
+    for row in "${rows[@]}"; do
+        IFS=$'\x1e' read -ra parts <<< "${row//::/$'\x1e'}"
+        (( ${#parts[1]} + 1 > label_width )) && label_width=$(( ${#parts[1]} + 1 ))
+    done
+    local cont_indent
+    printf -v cont_indent '%*s' $(( label_width + 6 )) ''
+
+    local all_ok=true fatal=false
+    local out=""
+    local cands label required okword note extension_id rerun status message padded idx k cc is_ok repair
+    local -a cand_arr
+    for row in "${rows[@]}"; do
+        IFS=$'\x1e' read -ra parts <<< "${row//::/$'\x1e'}"
+        cands=${parts[0]}; label=${parts[1]}; required=${parts[2]}
+        okword=${parts[3]}; note=${parts[4]}; extension_id=${parts[5]}; rerun=${parts[6]}
+
+        # First unconsumed check whose name matches any candidate.
+        IFS='|' read -ra cand_arr <<< "$cands"
+        idx=-1
+        for ((k = 0; k < ${#c_name[@]}; k++)); do
+            [[ ${consumed[$k]} == 1 ]] && continue
+            for cc in "${cand_arr[@]}"; do
+                if [[ "${c_name[$k]}" == "$cc" ]]; then idx=$k; break; fi
+            done
+            [[ $idx -ge 0 ]] && break
+        done
+        if [[ $idx -ge 0 ]]; then
+            consumed[$idx]=1; status=${c_status[$idx]}; message=${c_msg[$idx]}
+        else
+            status=""; message=""
+        fi
+        is_ok=false
+        [[ "$status" == "ok" ]] && is_ok=true
+        if ! $is_ok; then
+            all_ok=false
+            [[ "$required" == "1" ]] && fatal=true
+        fi
+
+        printf -v padded '%-*s' "$label_width" "${label}:"
+        if $is_ok; then
+            if [[ -n "$note" ]]; then
+                out+="${GREEN}   ✓ ${padded} ${okword}  ${note}${RESET}\n"
+            else
+                out+="${GREEN}   ✓ ${padded} ${okword}${RESET}\n"
+            fi
+            continue
+        fi
+
+        # Missing: required rows are a red ✗, optional rows a yellow ⚠.
+        if [[ $idx -lt 0 ]]; then
+            lead="Extension check unavailable (${extension_id} is inactive)."
+        else
+            # Trim doctor's message to its lead clause (em-dash / sentence).
+            lead=${message%% — *}
+            lead=${lead%%. *}
+            [[ -z "$lead" ]] && lead="Not found"
+        fi
+        if [[ "$required" == "1" ]]; then
+            out+="${RED}   ✗ ${padded} ${lead}${RESET}\n"
+        else
+            out+="${YELLOW}   ⚠ ${padded} ${lead}${RESET}\n"
+        fi
+        if [[ "$rerun" == "1" ]]; then
+            if [[ $idx -lt 0 ]]; then repair="wiqd ext add ${extension_id}"; else repair="npm install -g @microsoft/wiqd"; fi
+            out+="${cont_indent}${GRAY}Re-run: ${CYAN}${repair}${RESET}\n"
+        fi
+    done
+
+    printf "\n"
+    if $all_ok; then
+        printf "${GREEN} ✓ All required components are installed and ready.${RESET}\n"
+    elif $fatal; then
+        printf "${YELLOW} ⚠ Setup incomplete.${RESET}\n"
+        printf "${YELLOW} Required components are missing; repair them before using wiqd.${RESET}\n"
+    else
+        printf "${YELLOW} ⚠ Optional components need attention.${RESET}\n"
+        printf "${YELLOW} wiqd is installed; affected optional commands may be unavailable.${RESET}\n"
+    fi
+    printf "%b" "$out"
+    printf "\n"
+
+    if $fatal; then
+        return 1
+    fi
+    return 0
 }
 
 
@@ -989,6 +1179,16 @@ else
     fi
     
     if ! install_from_npm_registry "$WIQD_PACKAGE" "$target_version"; then
+        if [[ "$NPM_INSTALL_CONFLICT" == 1 ]]; then
+            # EEXIST advisory already printed by the install primitive (R35);
+            # a local file conflict is not a network problem.
+            exit 1
+        fi
+        if [[ "$NPM_INSTALL_PERMISSION" == 1 ]]; then
+            # EACCES/EPERM advisory already printed by the install primitive
+            # (R35); a local permission failure is not a network problem.
+            exit 1
+        fi
         write_err "wiqd installation failed."
         echo ""
         write_hint "Make sure npm can reach the public registry, then re-run this installer."
@@ -1064,7 +1264,20 @@ else
     exit 1
 fi
 
-write_hint "Run 'wiqd doctor' to verify ATK, eval, and workiq are resolved."
+# A missing REQUIRED dependency (atk) is fatal: stop before the VS Code /
+# plugin steps so the user fixes the broken install first.
+if ! show_dependency_status; then
+    exit 1
+fi
+
+# Persist EULA acceptance now that the wiqd CLI is verified on PATH — BEFORE the
+# host-integration steps (VS Code, plugin) that themselves invoke EULA-gated
+# wiqd commands. The human already accepted at the top-of-script prompt; this
+# only records the version-stamped acceptance so those steps run un-gated.
+# Non-fatal: the user can still accept manually if this write fails.
+if [ "$EULA_CHOICE" = "accepted" ]; then
+    wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
+fi
 
 # ─────────────────────────────────────────────
 # Step 4: VS Code Extension (optional)
@@ -1193,21 +1406,12 @@ if $install_success && ! $plugin_install_failed && ! $plugin_install_cancelled; 
     echo ""
 
 
-    # Persist EULA acceptance via the hidden --installer-stamp flag.
-    if [ "$EULA_CHOICE" = "accepted" ]; then
-        wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
-    fi
-
     print_wiqd_quickstart
 elif $install_success && $plugin_install_cancelled; then
     printf "${YELLOW} ╔══════════════════════════════════════╗${RESET}\n"
     printf "${YELLOW} ║ ⚠ wiqd installed — plugin cancelled  ║${RESET}\n"
     printf "${YELLOW} ╚══════════════════════════════════════╝${RESET}\n"
     echo ""
-
-    if [ "$EULA_CHOICE" = "accepted" ]; then
-        wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
-    fi
 
     printf "${YELLOW} ⚠  wiqd plugin install was cancelled by the user.${RESET}\n"
     echo ""
@@ -1222,13 +1426,6 @@ elif $install_success && $plugin_install_failed; then
     printf "${YELLOW} ║ ⚠ wiqd installed — plugin incomplete ║${RESET}\n"
     printf "${YELLOW} ╚══════════════════════════════════════╝${RESET}\n"
     echo ""
-
-    # Persist EULA acceptance the same as the full-success path — the CLI is
-    # on PATH and usable regardless of the plugin outcome, so EULA persistence
-    # must not be gated on the (optional, host-side) plugin step.
-    if [ "$EULA_CHOICE" = "accepted" ]; then
-        wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
-    fi
 
     printf "${YELLOW} ⚠  wiqd plugin install did not complete for:${RESET}\n"
     for failed_host in "${failed_plugin_hosts[@]}"; do
@@ -1262,5 +1459,9 @@ fi
 # nothing here aborts the run early — the CLI install itself always completes
 # and the summary above already gave the user the full retry story.
 if $plugin_install_failed; then
+    # See the PowerShell installer's -PluginNonFatal flag: it makes a
+    # plugin-only failure exit 75 (CLI ok, plugin deferred) so wiqd update
+    # reports success with a close-your-agents warning; bootstrap/CI keep 1.
+    if $PLUGIN_NON_FATAL; then exit 75; fi
     exit 1
 fi

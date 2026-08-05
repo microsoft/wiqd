@@ -54,6 +54,7 @@ param(
     [string]$Repo = "microsoft/wiqd",
     [switch]$SkipVSCode,
     [switch]$SkipPlugin,
+    [switch]$PluginNonFatal,
     [switch]$Insiders,
     [string]$NodeVersion = "24",
     [switch]$Force
@@ -77,7 +78,13 @@ if ($PSVersionTable.PSVersion.Major -lt 7) {
     # it captures stderr (not the Write-Host host stream) to build its failure
     # message — without this line the user gets a generic "update failed".
     [Console]::Error.WriteLine("Windows PowerShell $($PSVersionTable.PSVersion) is not supported. wiqd requires PowerShell 7 or later. Install it with: winget install Microsoft.PowerShell")
-    exit 1
+    $global:LASTEXITCODE = 1
+    # Under the `iex "& { $(irm ...) }"` web one-liner the installer body runs inside the
+    # caller's interactive host, where `exit` would terminate the user's session. Only call
+    # exit when running as a real on-disk script (pwsh -File / CI / wiqd update), detected by
+    # a populated $PSCommandPath; otherwise fall back to `return` which unwinds only the block.
+    if (-not [string]::IsNullOrEmpty($PSCommandPath)) { exit 1 }
+    return
 }
 
 $ErrorActionPreference = 'Stop'
@@ -116,7 +123,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.10.0"
+$script:WiqdVersion = "0.11.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -126,7 +133,6 @@ $script:WiqdVersion = "0.10.0"
 $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
 $script:NpmExe = if ($npmCmd) { $npmCmd.Source } else { $null }
-
 
 # ─────────────────────────────────────────────
 # Helpers
@@ -366,6 +372,43 @@ function Install-NpmGlobalPackages {
     $npmOutput = $r.StdOut
 
     if ($r.ExitCode -ne 0) {
+        # Classify an EEXIST file conflict distinctly from a network/registry
+        # failure (R35). npm aborts the whole global install with EEXIST when a
+        # launcher target already exists but isn't owned by the installing
+        # package — a purely LOCAL problem the GitHub/EMU fallback can't fix (it
+        # would hit the identical conflict). Name the exact conflicting file and
+        # the removal command, raise the conflict flag so the auto-mode caller
+        # skips the misleading network fallback, and stop. Delete nothing.
+        $combined = ($r.Combined -join "`n")
+        if ($combined -match 'EEXIST') {
+            $script:NpmInstallConflict = $true
+            $conflictPath = if ($combined -match '(?im)^\s*npm error path\s+(.+?)\s*$') { $Matches[1].Trim() } else { $null }
+            Write-Err "npm install failed: a file already exists (EEXIST)."
+            if ($conflictPath) {
+                Write-Hint "Remove-Item '$conflictPath' -Force   (then re-run this installer)"
+            }
+            return $false
+        }
+        # Classify an EACCES/EPERM permission failure distinctly from a
+        # network/registry failure (R35). npm aborts the global install when it
+        # can't write to the global prefix — a purely LOCAL problem the
+        # GitHub/EMU fallback can't fix. Lead with the npm-recommended remedy
+        # (point npm at a user-writable prefix), offer elevation as the
+        # alternative, and stop. Change nothing. npm itself discourages
+        # `sudo npm install -g`, so re-running as Administrator is the fallback,
+        # not the headline.
+        if ($combined -match 'EACCES' -or $combined -match 'EPERM') {
+            $script:NpmInstallPermission = $true
+            $prefixResult = Invoke-Native { & $script:NpmExe config get prefix --loglevel=error }
+            $npmPrefix = if ($prefixResult.StdOut.Count -gt 0) { $prefixResult.StdOut[0].Trim() } else { $null }
+            Write-Err "npm install failed: permission denied on the npm global prefix (EACCES/EPERM)."
+            Write-Hint "Point npm at a user-writable prefix, or re-run this installer as Administrator:"
+            if ($npmPrefix) {
+                Write-Hint "  (current global prefix: $npmPrefix)"
+            }
+            Write-Hint "  npm config set prefix <dir>   (then re-run this installer)"
+            return $false
+        }
         Write-Warn "npm install failed for $DisplayName"
         if ($r.StdErr.Count -gt 0) {
             Write-Hint ($r.StdErr -join ' ')
@@ -405,6 +448,128 @@ function Invoke-WiqdSeedDefaults {
     }
     Write-Ok "Default extensions registered"
     return $true
+}
+
+# Renders the post-install dependency verdict for the downstream CLIs, sourced
+# from `wiqd doctor --json` so the installer and doctor never disagree on presence.
+# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED dep
+# (atk) is fatal and the caller must stop the install; a missing OPTIONAL dep
+# (eval/workiq/EULA) degrades gracefully and only warns. Returns $true to
+# continue, $false when a required dependency is missing (caller exits 1).
+# Fails closed with the canonical reinstall hint when the probe is unavailable
+# or its JSON can't be parsed because required ATK presence cannot be verified.
+function Show-DependencyStatus {
+    # Ordered display rows. `Keys` maps onto the doctor check `name`s: the
+    # healthy workiq probe is named "workiq --json", but a missing one collapses
+    # to "workiq", so both names are accepted for the workiq row. `ExtensionId`
+    # supplies the registration repair when doctor omitted the check entirely;
+    # emitted failures use doctor's own trimmed message.
+    $rows = @(
+        @{ Keys = @('atk');                     Label = 'atk';         Required = $true;  OkWord = 'Installed'; Note = '(required for `wiqd agent` commands)';       ExtensionId = 'microsoft.atk';    ReRun = $true }
+        @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true }
+        @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true }
+        @{ Keys = @('workiq EULA', 'workiq');   Label = 'workiq EULA'; Required = $false; OkWord = 'Accepted';  Note = '';                                            ExtensionId = 'microsoft.workiq'; ReRun = $false }
+    )
+
+    $probe = Invoke-WiqdProbe { & wiqd doctor --json }
+    $checks = $null
+    if ($probe.StdOut.Count -gt 0) {
+        try {
+            $checks = (($probe.StdOut -join "`n") | ConvertFrom-Json).data.checks
+        } catch {
+            $checks = $null
+        }
+    }
+    if (-not $checks) {
+        Write-Err "Could not verify required downstream components."
+        Write-Hint "Re-run: npm install -g @microsoft/wiqd"
+        return $false
+    }
+
+    # Materialize the checks as an ordered list so rows can consume matches
+    # positionally. This matters when workiq is MISSING: doctor collapses BOTH
+    # the "workiq --json" and "workiq EULA" checks to the bare name "workiq", so
+    # a name→single-value map would lose one. Consuming in declaration order
+    # (probe before EULA) assigns each collapsed "workiq" entry to the right row.
+    $checkList = @($checks)
+    $consumed = New-Object 'bool[]' $checkList.Count
+
+    $labelWidth = (($rows | ForEach-Object { $_.Label.Length } | Measure-Object -Maximum).Maximum) + 2
+    $contIndent = ' ' * ($labelWidth + 6)  # aligns wrapped lines under the message column
+
+    $resolved = @()
+    $allOk = $true
+    $fatal = $false
+    foreach ($row in $rows) {
+        $check = $null
+        for ($i = 0; $i -lt $checkList.Count; $i++) {
+            if ($consumed[$i]) { continue }
+            if ($row.Keys -contains [string]$checkList[$i].name) {
+                $check = $checkList[$i]
+                $consumed[$i] = $true
+                break
+            }
+        }
+        $isOk = ($null -ne $check) -and ([string]$check.status -eq 'ok')
+        if (-not $isOk) {
+            $allOk = $false
+            if ($row.Required) { $fatal = $true }
+        }
+        $resolved += @{ Row = $row; Check = $check; IsOk = $isOk }
+    }
+
+    Write-Host ""
+    if ($allOk) {
+        Write-Host " ✓ All required components are installed and ready." -ForegroundColor Green
+    } elseif ($fatal) {
+        Write-Host " ⚠ Setup incomplete." -ForegroundColor Yellow
+        Write-Host " Required components are missing; repair them before using wiqd." -ForegroundColor Yellow
+    } else {
+        Write-Host " ⚠ Optional components need attention." -ForegroundColor Yellow
+        Write-Host " wiqd is installed; affected optional commands may be unavailable." -ForegroundColor Yellow
+    }
+
+    foreach ($item in $resolved) {
+        $row = $item.Row
+        $label = ($row.Label + ':').PadRight($labelWidth)
+        if ($item.IsOk) {
+            $text = "   ✓ $label $($row.OkWord)"
+            if ($row.Note) { $text += "  $($row.Note)" }
+            Write-Host $text -ForegroundColor Green
+            continue
+        }
+
+        # Not OK: required rows are a red ✗, optional rows a yellow ⚠.
+        $icon = if ($row.Required) { '✗' } else { '⚠' }
+        $color = if ($row.Required) { 'Red' } else { 'DarkYellow' }
+        $lead = if ($null -eq $item.Check) {
+            "Extension check unavailable ($($row.ExtensionId) is inactive)."
+        } else {
+            Get-ShortDoctorMessage $item.Check
+        }
+        Write-Host "   $icon $label $lead" -ForegroundColor $color
+        if ($row.ReRun) {
+            $repair = if ($null -eq $item.Check) { "wiqd ext add $($row.ExtensionId)" } else { 'npm install -g @microsoft/wiqd' }
+            Write-Host "${contIndent}Re-run: " -ForegroundColor Gray -NoNewline
+            Write-Host $repair -ForegroundColor Cyan
+        }
+    }
+    Write-Host ""
+
+    return -not $fatal
+}
+
+# Trims a doctor check message to its lead clause for compact install-time
+# display: cuts at the first em-dash or sentence boundary so a long remediation
+# message collapses to e.g. "workiq not found" / "EULA not accepted".
+function Get-ShortDoctorMessage {
+    param($check)
+    if (-not $check) { return 'Not available' }
+    $msg = [string]$check.message
+    if (-not $msg) { return 'Not available' }
+    $msg = ($msg -split ' — ')[0]
+    $msg = ($msg -split '\. ')[0]
+    return $msg.Trim()
 }
 
 
@@ -649,6 +814,15 @@ function Write-WiqdQuickstart {
 # sentinel value to discover or abuse.
 if ($env:WIQD_INSTALLER_TEST_MODE -and $MyInvocation.InvocationName -eq '.') { return }
 
+# The entire imperative install program is wrapped in a function that RETURNS
+# its 0/1/2/130 result code instead of calling `exit`. Under the canonical
+# `iex "& { $(irm ...) }"` one-liner, the block runs inside the caller's
+# interactive host — an `exit` anywhere in this body would terminate the
+# user's whole PowerShell session instead of just this install run. The single
+# terminal call site (at the very end of this file) is the only place that
+# ever calls `exit`, and only when this is a real on-disk invocation.
+function Invoke-WiqdInstall {
+
 # ─────────────────────────────────────────────
 # Banner — Witch hat + gradient WIQD block letters
 # Matches the CLI's Banner.cs output using ANSI true-color
@@ -809,13 +983,13 @@ $eulaChoice = Read-EulaAcceptance
 if ($eulaChoice -eq 'declined') {
     Write-Host ""
     Write-Warn "Cancelled — EULA not accepted. Nothing was installed."
-    exit 1
+    return 1
 }
 
 if ($eulaChoice -eq 'non-interactive') {
     Write-Host ""
     Write-Warn "Cannot proceed without EULA acceptance in non-interactive mode."
-    exit 1
+    return 1
 }
 
 # $eulaChoice is 'accepted' or 'already-accepted' — continue with install.
@@ -841,7 +1015,7 @@ if (-not $nodeVer) {
     Write-Host " Install Node.js v$MinNodeVersion or newer, then re-run this installer:" -ForegroundColor Yellow
     Write-Host "   https://nodejs.org/en/download/" -ForegroundColor White
     Write-Host ""
-    exit 1
+    return 1
 }
 if ($nodeVer -lt $MinNodeVersion) {
     Write-Err "Node.js v$nodeVer found, but wiqd requires v$MinNodeVersion or newer."
@@ -849,7 +1023,7 @@ if ($nodeVer -lt $MinNodeVersion) {
     Write-Host " Upgrade Node.js, then re-run this installer:" -ForegroundColor Yellow
     Write-Host "   https://nodejs.org/en/download/" -ForegroundColor White
     Write-Host ""
-    exit 1
+    return 1
 }
 Write-Ok "Node.js v$nodeVer detected"
 
@@ -862,7 +1036,7 @@ $script:NpmExe = if ($npmCmd) { $npmCmd.Source } else { $null }
 if (-not (Test-CommandExists "npm")) {
     Write-Err "npm not found despite Node.js being installed."
     Write-Hint "Restart your terminal and re-run this installer."
-    exit 1
+    return 1
 }
 $npmVerResult = Invoke-Native { & $script:NpmExe --version }
 $npmVer = if ($npmVerResult.StdOut.Count -gt 0) { $npmVerResult.StdOut[0] } else { 'unknown' }
@@ -904,13 +1078,27 @@ if ($skipInstall) {
         Write-Info "Updating wiqd (current: v$currentVersion)..."
     }
 
+    $script:NpmInstallConflict = $false
+    $script:NpmInstallPermission = $false
     $installOk = Install-FromNpmRegistry -package $WiqdPackage -version $targetVersion
 
     if (-not $installOk) {
+        if ($script:NpmInstallConflict) {
+            # EEXIST advisory (exact file + removal command) already printed by
+            # the install primitive (R35). A local file conflict is not a
+            # network problem, so don't add the connectivity hint.
+            return 1
+        }
+        if ($script:NpmInstallPermission) {
+            # EACCES/EPERM advisory (prefix fix + elevation) already printed by
+            # the install primitive (R35). A local permission failure is not a
+            # network problem, so don't add the connectivity hint.
+            return 1
+        }
         Write-Err "wiqd installation failed."
         Write-Host ""
         Write-Hint "Check your network connection and that npm can reach the registry, then re-run."
-        exit 1
+        return 1
     }
 
     Remove-WiqdPowerShellShim
@@ -967,7 +1155,7 @@ $missingArtifacts = @(Test-WiqdInstallComplete)
 if ($missingArtifacts.Count -gt 0) {
     Write-Err "installation incomplete. Repair:"
     Write-Hint "  npm uninstall -g $WiqdPackage, then re-run this installer."
-    exit 1
+    return 1
 }
 
 try {
@@ -988,15 +1176,32 @@ try {
         # code is honest, with the uninstall-first repair as the fallback.
         Write-Err "wiqd installed, but not yet on PATH. Restart your terminal."
         Write-Hint "  Still failing? npm uninstall -g $WiqdPackage, then re-run this installer."
-        exit 1
+        return 1
     }
 } catch {
     Write-Err "wiqd installed, but not yet on PATH. Restart your terminal."
     Write-Hint "  Still failing? npm uninstall -g $WiqdPackage, then re-run this installer."
-    exit 1
+    return 1
 }
 
-Write-Hint "Run 'wiqd doctor' to verify ATK, eval, and workiq are resolved."
+# A missing REQUIRED dependency (atk) is fatal: stop before the VS Code /
+# plugin steps so the user fixes the broken install first.
+if (-not (Show-DependencyStatus)) {
+    return 1
+}
+
+# Persist EULA acceptance now that the wiqd CLI is verified on PATH — BEFORE the
+# host-integration steps (VS Code, plugin) that themselves invoke EULA-gated
+# wiqd commands. The human already accepted at the installer's own interactive
+# prompt; this only records the version-stamped acceptance so those steps run
+# un-gated. Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
+if ($eulaChoice -eq 'accepted') {
+    try {
+        Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
+    } catch {
+        # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
+    }
+}
 
 # ─────────────────────────────────────────────
 # Step 4: VS Code Extension (optional)
@@ -1131,32 +1336,12 @@ if ($installSuccess -and -not $script:PluginInstallFailed -and -not $script:Plug
     Write-Host ""
 
 
-    # Persist EULA acceptance via the hidden --installer-stamp flag. The human
-    # already accepted at the installer's own interactive prompt (or was already
-    # accepted on upgrade). This records the version-stamped { id, version }
-    # acceptance so subsequent product commands run un-gated.
-    if ($eulaChoice -eq 'accepted') {
-        try {
-            Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
-        } catch {
-            # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
-        }
-    }
-
     Write-WiqdQuickstart
 } elseif ($installSuccess -and $script:PluginInstallCancelled) {
     Write-Host " ╔══════════════════════════════════════╗" -ForegroundColor Yellow
     Write-Host " ║ ⚠ wiqd installed — plugin cancelled  ║" -ForegroundColor Yellow
     Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Yellow
     Write-Host ""
-
-    if ($eulaChoice -eq 'accepted') {
-        try {
-            Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
-        } catch {
-            # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
-        }
-    }
 
     Write-Host " ⚠  wiqd plugin install was cancelled by the user." -ForegroundColor Yellow
     Write-Host ""
@@ -1171,17 +1356,6 @@ if ($installSuccess -and -not $script:PluginInstallFailed -and -not $script:Plug
     Write-Host " ║ ⚠ wiqd installed — plugin incomplete ║" -ForegroundColor Yellow
     Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Yellow
     Write-Host ""
-
-    # Persist EULA acceptance the same as the full-success path — the CLI is
-    # on PATH and usable regardless of the plugin outcome, so EULA persistence
-    # must not be gated on the (optional, host-side) plugin step.
-    if ($eulaChoice -eq 'accepted') {
-        try {
-            Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
-        } catch {
-            # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
-        }
-    }
 
     Write-Host " ⚠  wiqd plugin install did not complete for:" -ForegroundColor Yellow
     foreach ($failedHost in $script:FailedPluginHosts) {
@@ -1207,7 +1381,7 @@ if ($installSuccess -and -not $script:PluginInstallFailed -and -not $script:Plug
 }
 
 if ($script:PluginInstallCancelled) {
-    exit 130
+    return 130
 }
 
 # A partial install (CLI on PATH, plugin step attempted-and-failed) must exit
@@ -1215,5 +1389,45 @@ if ($script:PluginInstallCancelled) {
 # nothing here aborts the run early — the CLI install itself always completes
 # and the summary above already gave the user the full retry story.
 if ($script:PluginInstallFailed) {
-    exit 1
+    # Under -PluginNonFatal (wiqd update), the CLI itself already updated
+    # successfully; a plugin refresh blocked by an in-use agent must not be
+    # reported as a failed update. Signal the distinct "CLI ok, plugin
+    # deferred" code so `wiqd update` can report success with a
+    # close-your-agents warning. Bootstrap/CI omit the flag and keep exit 1
+    # for partial-install detection.
+    if ($PluginNonFatal) { return 75 }
+    return 1
 }
+
+return 0
+}
+
+# Single terminal call site. Invoke-WiqdInstall returns the 0/1/2/130 result code instead
+# of calling exit, because under the `iex "& { $(irm ...) }"` one-liner an `exit` inside the
+# block terminates the caller's interactive session. Record the code in $global:LASTEXITCODE
+# (observable by scripted/CI callers in the surviving shell) and only truly `exit` when this
+# is a real on-disk invocation (pwsh -File / CI / wiqd update), where exit sets the child
+# process code without touching any interactive host.
+try {
+    # PowerShell returns EVERYTHING left on the success pipeline, not just the `return N`
+    # value. Any stray uncaptured output inside Invoke-WiqdInstall's body would make the
+    # result an array and corrupt the exit code, so collect the pipeline and take the last
+    # element — `return N` is terminal, so the 0/1/2/130 code is always last — then coerce.
+    $__out = @(Invoke-WiqdInstall)
+} catch {
+    # An unexpected terminating error still must not skip the exit-code contract; map it to
+    # the documented user/upstream-error code and surface the message.
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    $__out = @(1)
+}
+$__wiqdInstallResult = 0
+if ($__out.Count -gt 0) {
+    $__last = $__out[-1]
+    if ($__last -is [int]) { $__wiqdInstallResult = $__last }
+    elseif ($__last -is [string] -and $__last -match '^\d+$') { $__wiqdInstallResult = [int]$__last }
+}
+$global:LASTEXITCODE = $__wiqdInstallResult
+# `exit` in the `iex "& { $(irm ...) }"` one-liner terminates the caller's interactive host.
+# Only call exit for a real on-disk invocation (pwsh -File / CI / wiqd update), detected by a
+# populated $PSCommandPath; otherwise leave $LASTEXITCODE set and fall off the end.
+if (-not [string]::IsNullOrEmpty($PSCommandPath)) { exit $__wiqdInstallResult }

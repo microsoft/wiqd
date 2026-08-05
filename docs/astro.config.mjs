@@ -75,6 +75,7 @@ export default defineConfig({
             { label: 'Overview', slug: 'getting-started' },
             { label: 'Installation', slug: 'getting-started/installation' },
             { label: 'Quickstart', slug: 'getting-started/quickstart' },
+            { label: 'Build a plugin', slug: 'getting-started/build-a-plugin' },
             { label: 'Authentication', slug: 'getting-started/authentication' },
           ],
         },
@@ -82,6 +83,7 @@ export default defineConfig({
           label: 'Concepts',
           items: [
             { label: 'Overview', slug: 'concepts' },
+            { label: 'Plugins', slug: 'concepts/plugins' },
             { label: 'Declarative agents', slug: 'concepts/declarative-agents' },
             { label: 'Agent lifecycle', slug: 'concepts/agent-lifecycle' },
             { label: 'Host vs extensions', slug: 'concepts/host-vs-extensions' },
