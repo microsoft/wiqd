@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@microsoft/wiqd)](https://www.npmjs.com/package/@microsoft/wiqd)
 
 <p align="center">
-  <img src="docs/public/banner.svg" alt="Work IQ Dev Tools banner — witch hat above the WIQD wordmark with the tagline: Defy limits. Build wicked things." width="640" />
+  <img src="docs/public/banner-wide.png" alt="Work IQ Dev Tools banner — witch hat beside the WIQD wordmark with the tagline: Defy limits. Build wicked things." width="900" />
 </p>
 
 <p align="center">

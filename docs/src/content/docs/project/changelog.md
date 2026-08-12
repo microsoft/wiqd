@@ -2,6 +2,24 @@
 title: Changelog
 ---
 
+## 0.12.0 — 2026-08-11
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- Share an agent through a guided flow that helps you pick the target — one or more people, a mail-enabled security group, or your whole tenant — and inspects the project first so you confirm what will be shared before it happens
+
+### Fixes
+
+- `wiqd plugin import` and `wiqd plugin export` now refuse a plugin whose declarative agent references a file outside the plugin's own package, and stop on a corrupt source manifest instead of quietly importing without the agent. `wiqd plugin create` now tells a non-empty destination apart from an unreadable one and reports the real inspection error
+- With the `devui` preview flag enabled (`wiqd config flags set devui true`), `wiqd devui start` now runs the server in its own visible console window on interactive, non-CI Windows runs unless `--no-window` is used; on macOS and Linux it still runs in the background. The new `wiqd devui stop` command shuts down servers started by this release cleanly. The server no longer holds a lock on its own install directory, so upgrades and uninstalls are not blocked. When upgrading from an earlier release, if a DevUI server is already running and the installer reports a locked file, end the `node` process listening on port 7317 or reboot, then retry. If its preferred trace port is busy, DevUI now listens on a free port and prints the exact `workiq config set otlpEndpoint=...` command needed to point tracing at it
+- Validate agents against declarative agent manifest v1.7 and v1.8, and offer both when completing the `$schema` field. Validation selects its rules from the manifest's `version` field — set `version` to pin a schema version; `$schema` drives editor completion and hover only
+
+### Changes
+
+- Agent authoring guidance now covers the `EmailActions` and `MeetingActions` capabilities, which require declarative agent manifest v1.8 or later, and no longer pins a "latest" manifest version anywhere — it explains how to look up the current published version instead, so the guidance stays correct as new versions ship
+
 ## 0.11.0 — 2026-08-03
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
@@ -46,6 +64,7 @@ title: Changelog
 - Distinguish active from installed extensions in `wiqd ext list`, with clearer version reporting
 - Report upstream and precondition failures with actionable diagnostics
 - Describe the `wiqd agent add` command group properly in help output
+- apply --log-level to the shared logger before command actions
 
 ## 0.8.0-rc.1 — 2026-07-22
 

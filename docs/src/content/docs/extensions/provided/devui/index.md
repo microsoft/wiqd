@@ -34,13 +34,16 @@ wiqd devui ask -q "Summarize the latest sales deck" --agent "Sales Copilot Assis
 
 # 4. Mint tokens with your own Entra app registration instead of the workiq CLI
 wiqd devui config --client-id <your-app-id> --tenant contoso.onmicrosoft.com
+
+# 5. Stop the server when you're done
+wiqd devui stop
 ```
 
-Starting DevUI is **fire-and-forget**: the server starts detached in the background, the browser opens, and the command returns immediately. A healthy running instance is reused rather than started twice.
+`wiqd devui start` returns immediately once the server is healthy, and a healthy running instance is reused rather than started twice. On Windows, interactively, the server runs in its own console window you can Ctrl+C; on a piped/CI run, with `--no-window`, or on macOS/Linux it runs headlessly and is stopped with `wiqd devui stop`.
 
 ## Where to look in the codebase
 
-- `packages/wiqd-ext-devui/wiqd-extension.json` — manifest declaring the `start`/`ask`/`config` commands and the `devui` feature flag.
+- `packages/wiqd-ext-devui/wiqd-extension.json` — manifest declaring the `start`/`ask`/`stop`/`config` commands and the `devui` feature flag.
 - `packages/wiqd-ext-devui/server/` — the Express bridge that spawns/proxies `workiq` and serves the built client.
 - `packages/wiqd-ext-devui/client/` — the Vite + React + Fluent UI v9 web app.
 - `packages/wiqd-cli/src/manifest/manifest-executor.ts` — the host runtime that drives each command through this manifest.

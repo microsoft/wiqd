@@ -27,7 +27,7 @@ Every other command — `wiqd agent create`, `wiqd agent provision`, `wiqd agent
 - Doctor health checks that `wiqd doctor` aggregates.
 - Optionally, Copilot skills and a VS Code companion.
 
-Work IQ Dev Tools ship with six extensions out of the box (see [Provided Extensions](/extensions/provided/)). You don't install them separately — they come with `wiqd`.
+Work IQ Dev Tools ship with seven extensions out of the box (see [Provided Extensions](/extensions/provided/)). You don't install them separately — they come with `wiqd`. Both the ATK and in-process core backends are installed and registered; `plugin-core-engine` selects one, so the unselected backend is hidden rather than absent.
 
 ## How a command flows
 
