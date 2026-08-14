@@ -25,7 +25,7 @@ See [Installation](/getting-started/installation/) for all options.
 Sign in to your Microsoft 365 account:
 
 ```bash
-wiqd auth login
+wiqd auth login --interactive
 ```
 
 Verify your session:

@@ -14,12 +14,12 @@ After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that 
 
 Some extensions are **runtime-backed** instead of subprocess-backed: they run their sign-in in-process and return a structured signed-in / signed-out / error state directly, so no separate status subprocess or output pattern is used for them. Either way, Work IQ Dev Tools own no identity, client ID, or token cache — the provider does.
 
-Commands that interact with your tenant—including agent and plugin provisioning and sharing, plus agent info, uninstall, and publish—check the provider's status first. When the provider definitively reports that you are signed out, the command exits with code `2` and instructions to run `wiqd auth login` instead of waiting on an invisible upstream sign-in prompt. An unavailable or inconclusive status check does not block the command.
+Commands that interact with your tenant—including agent and plugin provisioning and sharing, plus agent info, uninstall, and publish—check the provider's status first. When the provider definitively reports that you are signed out, the command exits with code `2` and instructions to run `wiqd auth login --interactive` instead of waiting on an invisible upstream sign-in prompt. An unavailable or inconclusive status check does not block the command.
 
 ## Sign In
 
 ```bash
-wiqd auth login
+wiqd auth login --interactive
 ```
 
 ### Options
@@ -33,7 +33,7 @@ wiqd auth login
 Sign in to all installed extension providers:
 
 ```bash
-wiqd auth login
+wiqd auth login --interactive
 ```
 
 Force interactive login:
@@ -58,11 +58,27 @@ wiqd auth logout
 
 ## Brokered authentication
 
-The extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. On platforms that support it, credentials are managed by the operating system's authentication broker (e.g., WAM on Windows).
+Extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. On platforms that support it, credentials are managed by the operating system's authentication broker (for example, WAM on Windows). Providers that support browser authentication open the system browser when the native broker is unavailable; on macOS and Linux this is the normal interactive sign-in path.
 
 :::note
-If brokered authentication is not available or causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`.
+If brokered authentication causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`. Providers that honor this setting use the system browser for their next interactive sign-in.
 :::
+
+## Automation and non-interactive shells
+
+Providers that support it resolve your session **before** deciding whether a sign-in prompt is needed, so a valid session works in a pipe, a redirected shell, or a CI step without any extra configuration. Piping stdout — what `--json` consumers do — never changes an auth outcome.
+
+Such a command only fails for lack of a terminal when it genuinely needs to prompt. When that happens it says so, and points at the command that fixes it — for example:
+
+```
+✗ <provider> sign-in requires an interactive terminal. Run 'wiqd auth login --interactive' in a terminal first, then retry.
+
+  Fix it:
+    1. wiqd auth login --interactive   # run once in an interactive terminal
+    2. wiqd auth status                # confirm the session is active
+```
+
+A well-behaved provider does not destroy a session you already had when a sign-in fails: its token cache is replaced only on a confirmed successful sign-in, or cleared by an explicit `wiqd auth logout`.
 
 ## See Also
 

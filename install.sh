@@ -51,6 +51,17 @@ NODE_VERSION="24"
 FORCE=false
 MIN_NODE_VERSION="24.15.0"
 WIQD_PACKAGE="@microsoft/wiqd"
+
+# The canonical public npm registry. Named once so the probe and the install
+# that must be pinned to it can never drift apart.
+PUBLIC_NPM_REGISTRY="https://registry.npmjs.org/"
+
+# Extra npm arguments appended to every global install. Empty by default, so a
+# plain install honours whatever registry (corporate proxy, mirror) the machine
+# is configured with. Declared here, in the shared area, so it is always an
+# initialized empty array in the generated public installer where no setter
+# ever runs — an unset read under `set -u` would otherwise be fatal.
+NPM_REGISTRY_ARGS=()
 VSCODE_EXTENSION_ID="Microsoft.wiqd"
 # Some install paths activate additional extensions as part of the same run,
 # so the plugin-compose step below must force a rebuild even when `wiqd`
@@ -72,7 +83,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.11.0"
+WIQD_INSTALLER_VERSION="0.12.2"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -581,8 +592,13 @@ install_npm_global_packages() {
     # 2>&1 (not 2>/dev/null) so npm warnings don't crash the script via set -e,
     # AND so the success-line grep below can see real npm output.
     # --loglevel=error suppresses npm's own deprecation warnings.
+    # NPM_REGISTRY_ARGS is empty on the plain path (the machine's own registry
+    # config wins) and pins public npm on the 1P path, where the artifact's
+    # signing is the whole point of the source preference. The
+    # ${arr[@]+"${arr[@]}"} form expands to nothing when the array is empty
+    # instead of tripping `set -u` on macOS's default bash 3.2.
     local npm_output
-    if ! npm_output=$(npm install -g "${packages[@]}" --loglevel=error 2>&1); then
+    if ! npm_output=$(npm install -g "${packages[@]}" ${NPM_REGISTRY_ARGS[@]+"${NPM_REGISTRY_ARGS[@]}"} --loglevel=error 2>&1); then
         # Classify an EEXIST file conflict distinctly from a network/registry
         # failure (R35). npm aborts the whole global install with EEXIST when a
         # launcher target already exists but isn't owned by the installing
@@ -660,10 +676,27 @@ seed_wiqd_defaults() {
     return 1
 }
 
+extensions_check_has_id() {
+    local status="$1" message="$2" list_name="$3" expected_id="$4"
+    [[ "$list_name" != "active" || "$status" != "error" ]] || return 1
+
+    local listed_ids candidate
+    local -a candidates
+    listed_ids=$(printf '%s\n' "$message" | sed -nE "s/(^|.*; )[0-9]+ ${list_name} \(([^)]*)\).*/\2/p")
+    [[ -n "$listed_ids" ]] || return 1
+    IFS=',' read -ra candidates <<< "$listed_ids"
+    for candidate in "${candidates[@]}"; do
+        candidate="${candidate#"${candidate%%[![:space:]]*}"}"
+        candidate="${candidate%"${candidate##*[![:space:]]}"}"
+        [[ "$candidate" == "$expected_id" ]] && return 0
+    done
+    return 1
+}
+
 # Renders the post-install dependency verdict for the downstream CLIs, sourced
 # from `wiqd doctor --json` so the installer and doctor never disagree on presence.
-# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED dep
-# (atk) is fatal and the caller must stop the install; a missing OPTIONAL dep
+# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED
+# lifecycle backend is fatal and the caller must stop the install; a missing OPTIONAL dep
 # (eval/workiq/EULA) degrades gracefully and only warns. Returns 0 to continue,
 # 1 when a required dependency is missing (caller exits 1). Fails closed with
 # the canonical reinstall hint when the probe is unavailable or its JSON can't
@@ -700,8 +733,45 @@ show_dependency_status() {
     # Candidates are '|'-separated; `required=1` makes a miss fatal. An empty
     # check uses the extension id to print a registration repair; an emitted
     # failure uses doctor's own trimmed message and reinstalls wiqd's pinned deps.
+    local active_backend_count=0 active_backend_id="" k
+    for ((k = 0; k < ${#c_name[@]}; k++)); do
+        [[ "${c_name[$k]}" == "Extensions" ]] || continue
+        if [[ "${c_status[$k]}" != "error" ]] && extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" active "microsoft.atk"; then
+            active_backend_count=$((active_backend_count + 1)); active_backend_id="microsoft.atk"
+        fi
+        if [[ "${c_status[$k]}" != "error" ]] && extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" active "microsoft.wiqd.core"; then
+            active_backend_count=$((active_backend_count + 1)); active_backend_id="microsoft.wiqd.core"
+        fi
+        local inactive_backend_count=0 inactive_backend_id=""
+        if extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" inactive "microsoft.atk"; then
+            inactive_backend_count=$((inactive_backend_count + 1)); inactive_backend_id="microsoft.atk"
+        fi
+        if extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" inactive "microsoft.wiqd.core"; then
+            inactive_backend_count=$((inactive_backend_count + 1)); inactive_backend_id="microsoft.wiqd.core"
+        fi
+        break
+    done
+    if [[ $active_backend_count -ne 1 ]]; then
+        if [[ $active_backend_count -eq 0 && ${inactive_backend_count:-0} -eq 1 ]]; then
+            write_err "Lifecycle backend extension is inactive."
+            write_hint "Re-run: wiqd ext add ${inactive_backend_id}"
+            return 1
+        fi
+        write_err "Could not determine the active lifecycle backend from wiqd doctor."
+        write_hint "Run 'wiqd doctor' and ensure exactly one of microsoft.atk or microsoft.wiqd.core is active."
+        return 1
+    fi
+
+    local backend_row="atk::atk::1::Installed::(required for \`wiqd agent\` commands)::::1"
+    if [[ "$active_backend_id" == "microsoft.wiqd.core" ]]; then
+        backend_row="Extensions::fx-core::1::Active::(required for \`wiqd agent\` commands)::::1"
+    elif ! printf '%s\n' "${c_name[@]}" | grep -qxF 'atk'; then
+        write_err "Could not verify the active ATK backend from wiqd doctor."
+        write_hint "Run 'wiqd doctor' and repair the reported extension state."
+        return 1
+    fi
     local rows=(
-        "atk::atk::1::Installed::(required for \`wiqd agent\` commands)::microsoft.atk::1"
+        "$backend_row"
         "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1"
         "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1"
         "workiq EULA|workiq::workiq EULA::0::Accepted::::microsoft.workiq::0"
@@ -742,7 +812,11 @@ show_dependency_status() {
             status=""; message=""
         fi
         is_ok=false
-        [[ "$status" == "ok" ]] && is_ok=true
+        if [[ "$label" == "fx-core" ]]; then
+            extensions_check_has_id "$status" "$message" active "microsoft.wiqd.core" && is_ok=true
+        else
+            [[ "$status" == "ok" ]] && is_ok=true
+        fi
         if ! $is_ok; then
             all_ok=false
             [[ "$required" == "1" ]] && fatal=true
@@ -759,8 +833,10 @@ show_dependency_status() {
         fi
 
         # Missing: required rows are a red ✗, optional rows a yellow ⚠.
-        if [[ $idx -lt 0 ]]; then
+        if [[ $idx -lt 0 && -n "$extension_id" ]]; then
             lead="Extension check unavailable (${extension_id} is inactive)."
+        elif [[ $idx -lt 0 ]]; then
+            lead="Required doctor check unavailable."
         else
             # Trim doctor's message to its lead clause (em-dash / sentence).
             lead=${message%% — *}
@@ -773,7 +849,7 @@ show_dependency_status() {
             out+="${YELLOW}   ⚠ ${padded} ${lead}${RESET}\n"
         fi
         if [[ "$rerun" == "1" ]]; then
-            if [[ $idx -lt 0 ]]; then repair="wiqd ext add ${extension_id}"; else repair="npm install -g @microsoft/wiqd"; fi
+            if [[ $idx -lt 0 && -n "$extension_id" ]]; then repair="wiqd ext add ${extension_id}"; else repair="npm install -g @microsoft/wiqd"; fi
             out+="${cont_indent}${GRAY}Re-run: ${CYAN}${repair}${RESET}\n"
         fi
     done

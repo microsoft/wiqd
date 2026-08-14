@@ -47,7 +47,7 @@ per-command tables below.
 | `--json` | Emit machine-readable JSON output (default is a human-readable table) (default: false) |
 | `--verbose` | Show verbose output (default: false) |
 | `--no-banner` | Suppress the ASCII art banner |
-| `--account <email>` | The account email to use for authentication |
+| `--account <email>` | Global account hint; provider-specific account selection is not implemented |
 | `--log-level <level>` | Set logging level (choices: "trace", "debug", "info", "warning", "error", "critical", "none", default: "warning") |
 | `-h, --help` | display help for command |
 
@@ -149,20 +149,20 @@ per-command tables below.
 | [`wiqd agent add action`](#wiqd-agent-add-action) | Agents Toolkit | Add an OpenAPI-spec action to a declarative agent. |
 | [`wiqd agent add skill`](#wiqd-agent-add-skill) | Agents Toolkit | Add a skill to a declarative agent. |
 | [`wiqd agent add auth`](#wiqd-agent-add-auth) | Agents Toolkit | Add an auth configuration to a plugin manifest. |
-| [`wiqd agent provision`](#wiqd-agent-provision) | Agents Toolkit | Provision a declarative agent to an environment. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd agent provision`](#wiqd-agent-provision) | Agents Toolkit | Provision a declarative agent to an environment. Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent package`](#wiqd-agent-package) | Agents Toolkit | Package the agent into a deployable .zip. |
-| [`wiqd agent share`](#wiqd-agent-share) | Agents Toolkit | Share an agent with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`. |
-| [`wiqd agent share remove`](#wiqd-agent-share-remove) | Agents Toolkit | Remove user or owner access from an agent. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd agent share`](#wiqd-agent-share) | Agents Toolkit | Share an agent with specific users, a mail-enabled security group, or the entire tenant. Requires ATK sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd agent share remove`](#wiqd-agent-share-remove) | Agents Toolkit | Remove user or owner access from an agent. Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent share collaborator`](#wiqd-agent-share-collaborator) | Agents Toolkit | collaborator |
-| [`wiqd agent share collaborator add`](#wiqd-agent-share-collaborator-add) | Agents Toolkit | Grant a user collaborator access (Entra app + TDP agent). Requires ATK sign-in; use `wiqd auth login`. |
-| [`wiqd agent share collaborator list`](#wiqd-agent-share-collaborator-list) | Agents Toolkit | List the agent's collaborators. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd agent share collaborator add`](#wiqd-agent-share-collaborator-add) | Agents Toolkit | Grant a user collaborator access (Entra app + TDP agent). Requires ATK sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd agent share collaborator list`](#wiqd-agent-share-collaborator-list) | Agents Toolkit | List the agent's collaborators. Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent env`](#wiqd-agent-env) | Agents Toolkit | env |
 | [`wiqd agent env list`](#wiqd-agent-env-list) | Agents Toolkit | List the project's environments. |
 | [`wiqd agent env add`](#wiqd-agent-env-add) | Agents Toolkit | Add a new environment, copying from an existing one. |
 | [`wiqd agent env reset`](#wiqd-agent-env-reset) | Agents Toolkit | Reset (clear) an existing environment file. |
-| [`wiqd agent info`](#wiqd-agent-info) | Agents Toolkit | Show MOS3 launch / acquisition info for a deployed agent (proxies `atk launchinfo`). Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launchinfo JSON. Used by the DevUI portal. Requires ATK sign-in; use `wiqd auth login`. |
-| [`wiqd agent delete`](#wiqd-agent-delete) | Agents Toolkit | Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`. |
-| [`wiqd agent publish`](#wiqd-agent-publish) | Agents Toolkit | Publish an agent to the org catalog. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd agent info`](#wiqd-agent-info) | Agents Toolkit | Show MOS3 launch / acquisition info for a deployed agent (proxies `atk launchinfo`). Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launchinfo JSON. Used by the DevUI portal. Requires ATK sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd agent delete`](#wiqd-agent-delete) | Agents Toolkit | Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd agent publish`](#wiqd-agent-publish) | Agents Toolkit | Publish an agent to the org catalog. Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent validate`](#wiqd-agent-validate) | Manifest Validation & LSP | Validate agent manifests (static or deep). |
 | [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the Insights Agent about a provisioned agent's performance and usage. |
 | [`wiqd agent ask`](#wiqd-agent-ask) | Work IQ | Send a message directly to a declarative agent. |
@@ -181,10 +181,10 @@ per-command tables below.
 | [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | Agents Toolkit | Add a remote MCP agent connector to the plugin manifest. |
 | [`wiqd plugin show`](#wiqd-plugin-show) | Agents Toolkit | Show a summary of a standalone plugin project. |
 | [`wiqd plugin list`](#wiqd-plugin-list) | Agents Toolkit | List standalone plugin projects under a directory. |
-| [`wiqd plugin provision`](#wiqd-plugin-provision) | Agents Toolkit | Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd plugin provision`](#wiqd-plugin-provision) | Agents Toolkit | Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin package`](#wiqd-plugin-package) | Agents Toolkit | Package the plugin into a deployable .zip. |
-| [`wiqd plugin share`](#wiqd-plugin-share) | Agents Toolkit | Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`. |
-| [`wiqd plugin delete`](#wiqd-plugin-delete) | Agents Toolkit | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`. |
+| [`wiqd plugin share`](#wiqd-plugin-share) | Agents Toolkit | Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd plugin delete`](#wiqd-plugin-delete) | Agents Toolkit | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin create`](#wiqd-plugin-create) | Agents Toolkit | Scaffold a new, empty standalone plugin project from ATK's blank app template. |
 | [`wiqd plugin import`](#wiqd-plugin-import) | Agents Toolkit | Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project. |
 | [`wiqd plugin export`](#wiqd-plugin-export) | Agents Toolkit | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
@@ -204,6 +204,7 @@ per-command tables below.
 | --- | --- | --- |
 | [`wiqd devui`](#wiqd-devui) | wiqd (core) | Launch the local Work IQ DevUI web experience |
 | [`wiqd devui start`](#wiqd-devui-start) | Work IQ DevUI | Start (or reuse) the local Work IQ DevUI and open it in the browser. |
+| [`wiqd devui stop`](#wiqd-devui-stop) | Work IQ DevUI | Stop the running local Work IQ DevUI (release its server and the install-directory lock). |
 | [`wiqd devui ask`](#wiqd-devui-ask) | Work IQ DevUI | Ask an agent and watch the turn run live in the local Work IQ DevUI (deep-linked + auto-sent). |
 | [`wiqd devui config`](#wiqd-devui-config) | Work IQ DevUI | Configure DevUI to mint access tokens with your own Entra app registration (skip the workiq CLI). Running start afterwards forces an initial sign-in. |
 
@@ -1079,7 +1080,7 @@ wiqd agent add action [options]
 | Option | Description |
 | --- | --- |
 | `--openapi-spec <value>` | OpenAPI spec path or URL |
-| `--operations <value>` | Operation IDs (comma-separated) |
+| `--operations <value>` | OpenAPI operation selectors as METHOD /path (comma-separated) |
 | `-f, --folder <value>` | Project folder |
 
 **Examples**
@@ -1134,7 +1135,10 @@ wiqd agent add auth [options]
 | --- | --- |
 | `--plugin-manifest <value>` | Plugin manifest path |
 | `--auth-name <value>` | Auth configuration name |
+| `--operations <value>` | Plugin function IDs to secure (comma-separated; inferred when only one is available) |
 | `--auth-type <value>` | Auth type |
+| `--api-key-in <value>` | API-key location (used only with --auth-type api-key) (choices: "header", "query", default: "header") |
+| `--api-key-name <value>` | API-key header or query parameter name (required for api-key auth) |
 | `--authorization-url <value>` | OAuth authorization URL |
 | `--token-url <value>` | OAuth token URL |
 | `--scope <value>` | OAuth scope |
@@ -1150,7 +1154,7 @@ wiqd agent add auth --json
 
 ### wiqd agent provision
 
-Provision a declarative agent to an environment. Requires ATK sign-in; use `wiqd auth login`.
+Provision a declarative agent to an environment. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1201,7 +1205,7 @@ wiqd agent package --json
 
 ### wiqd agent share
 
-Share an agent with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`.
+Share an agent with specific users, a mail-enabled security group, or the entire tenant. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1214,7 +1218,7 @@ wiqd agent share [options] <command>
 | Option | Description |
 | --- | --- |
 | `--scope <value>` | Share scope: 'users' or 'tenant' (default: "users") |
-| `--email <value>` | Comma-separated email addresses |
+| `--email <value>` | Comma-separated email addresses of individual users and/or a mail-enabled security group's address |
 | `--env <value>` | Target environment (default: "local") |
 | `--path <value>` | Project path |
 
@@ -1228,7 +1232,7 @@ wiqd agent share --help
 
 ### wiqd agent share remove
 
-Remove user or owner access from an agent. Requires ATK sign-in; use `wiqd auth login`.
+Remove user or owner access from an agent. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1274,7 +1278,7 @@ wiqd agent share collaborator --help
 
 ### wiqd agent share collaborator add
 
-Grant a user collaborator access (Entra app + TDP agent). Requires ATK sign-in; use `wiqd auth login`.
+Grant a user collaborator access (Entra app + TDP agent). Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1300,7 +1304,7 @@ wiqd agent share collaborator add --json
 
 ### wiqd agent share collaborator list
 
-List the agent's collaborators. Requires ATK sign-in; use `wiqd auth login`.
+List the agent's collaborators. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1421,7 +1425,7 @@ wiqd agent env reset --json
 
 ### wiqd agent info
 
-Show MOS3 launch / acquisition info for a deployed agent (proxies `atk launchinfo`). Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launchinfo JSON. Used by the DevUI portal. Requires ATK sign-in; use `wiqd auth login`.
+Show MOS3 launch / acquisition info for a deployed agent (proxies `atk launchinfo`). Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launchinfo JSON. Used by the DevUI portal. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1447,7 +1451,7 @@ wiqd agent info --json
 
 ### wiqd agent delete
 
-Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`.
+Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1477,7 +1481,7 @@ wiqd agent delete --json
 
 ### wiqd agent publish
 
-Publish an agent to the org catalog. Requires ATK sign-in; use `wiqd auth login`.
+Publish an agent to the org catalog. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1837,7 +1841,7 @@ wiqd plugin list --json
 
 ### wiqd plugin provision
 
-Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login`.
+Provision a plugin to an environment. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1888,7 +1892,7 @@ wiqd plugin package --json
 
 ### wiqd plugin share
 
-Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login`.
+Share a plugin with users or the entire tenant. Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -1915,7 +1919,7 @@ wiqd plugin share --json
 
 ### wiqd plugin delete
 
-Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login`.
+Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires ATK sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** Agents Toolkit
 
@@ -2141,8 +2145,6 @@ wiqd devui <command>
 ```bash
 wiqd devui
 wiqd devui start
-wiqd devui ask
-wiqd devui config
 wiqd devui --help
 ```
 
@@ -2166,6 +2168,7 @@ wiqd devui start [options]
 | `-q, --query <value>` | Prompt to prefill in the GUI |
 | `--no-send` | With --query, prefill the composer without auto-sending |
 | `--no-open` | Do not open a browser; print the URL instead |
+| `--no-window` | Never open a separate console window (Windows); run the server headless |
 
 **Examples**
 
@@ -2173,6 +2176,30 @@ wiqd devui start [options]
 wiqd devui start
 wiqd devui start --agent <value> --transport direct
 wiqd devui start --json
+```
+
+### wiqd devui stop
+
+Stop the running local Work IQ DevUI (release its server and the install-directory lock).
+
+**Extension:** Work IQ DevUI
+
+```bash
+wiqd devui stop [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--port <value>` | Loopback port the DevUI is served on (default: 7317) |
+
+**Examples**
+
+```bash
+wiqd devui stop
+wiqd devui stop --port <value>
+wiqd devui stop --json
 ```
 
 ### wiqd devui ask
@@ -2239,6 +2266,11 @@ extension). They resolve with strict precedence — **env var > persisted > regi
 env var name is `WIQD_FLAG_<UPPER_SNAKE_CASE_NAME>` (so `workiq-monitor` is overridden by
 `WIQD_FLAG_WORKIQ_MONITOR`). Persisted values live under the `"flags"` key in `~/.wiqd/.wiqd.json` and are
 never sent in telemetry. Manage flags with [`wiqd config flags`](#wiqd-config-flags) `list|show|set|reset`.
+
+After successfully setting or clearing `plugin-core-engine`, wiqd silently refreshes an already-installed
+plugin so its composed workflow and references match the selected backend. Other flag changes do not
+trigger a plugin reinstall. The backend refresh is a no-op when the plugin is not installed. If it fails,
+the flag change remains successful and wiqd prints a recovery hint; rerun `wiqd install plugin` manually.
 
 <!-- BEGIN: generated-flag-table -->
 | Flag | Type | Default | Stage | Owner | Since | Description |

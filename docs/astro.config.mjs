@@ -76,6 +76,7 @@ export default defineConfig({
             { label: 'Installation', slug: 'getting-started/installation' },
             { label: 'Quickstart', slug: 'getting-started/quickstart' },
             { label: 'Build a plugin', slug: 'getting-started/build-a-plugin' },
+            { label: 'Plugin authoring reference', slug: 'getting-started/plugin-reference' },
             { label: 'Authentication', slug: 'getting-started/authentication' },
           ],
         },

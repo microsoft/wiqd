@@ -2,32 +2,32 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "52bcedb0abeebf5979edcc0ad9aac02c3f113b304ec673e1d0b54c581932679a",
+  "inputDigest": "c1d8c3b404750c86a44bdbf4f26799ec59db6e79c01ae3bd765dbb5692bc819f",
   "componentCount": 683,
   "components": [
     {
       "name": "@apidevtools/json-schema-ref-parser",
       "version": "11.7.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@apidevtools/openapi-schemas",
       "version": "2.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@apidevtools/swagger-methods",
       "version": "3.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@apidevtools/swagger-parser",
       "version": "10.1.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/abort-controller",
@@ -39,55 +39,55 @@
       "name": "@azure/abort-controller",
       "version": "2.1.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/arm-appservice",
       "version": "13.0.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/arm-resources",
       "version": "5.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/arm-storage",
       "version": "17.2.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/arm-subscriptions",
       "version": "5.1.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-auth",
       "version": "1.10.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-client",
       "version": "1.10.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-http-compat",
       "version": "2.4.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-lro",
       "version": "2.7.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-paging",
@@ -99,25 +99,25 @@
       "name": "@azure/core-rest-pipeline",
       "version": "1.23.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-tracing",
       "version": "1.3.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-util",
       "version": "1.13.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/core-xml",
       "version": "1.5.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/identity",
@@ -129,7 +129,7 @@
       "name": "@azure/logger",
       "version": "1.3.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/monitor-opentelemetry-exporter",
@@ -195,19 +195,19 @@
       "name": "@azure/storage-blob",
       "version": "12.31.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@azure/storage-common",
       "version": "12.3.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@babel/runtime",
       "version": "7.29.7",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@colors/colors",
@@ -231,7 +231,7 @@
       "name": "@feathersjs/hooks",
       "version": "0.6.5",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@floating-ui/core",
@@ -657,19 +657,19 @@
       "name": "@jsdevtools/ono",
       "version": "7.1.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/app-manifest",
       "version": "1.0.7",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "bundled"
     },
     {
       "name": "@microsoft/app-manifest",
       "version": "1.0.8",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/app-manifest",
@@ -681,19 +681,19 @@
       "name": "@microsoft/dev-tunnels-contracts",
       "version": "1.1.9",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/dev-tunnels-management",
       "version": "1.1.9",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/kiota",
       "version": "1.31.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/m365-copilot-eval",
@@ -703,15 +703,9 @@
     },
     {
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.2.14",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "@microsoft/m365-spec-parser",
       "version": "0.2.15",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/m365agentstoolkit-cli",
@@ -729,7 +723,7 @@
       "name": "@microsoft/teamsfx-api",
       "version": "0.23.15",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "bundled"
     },
     {
       "name": "@microsoft/teamsfx-api",
@@ -741,7 +735,7 @@
       "name": "@microsoft/teamsfx-core",
       "version": "3.0.14",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "bundled"
     },
     {
       "name": "@microsoft/teamsfx-core",
@@ -759,7 +753,7 @@
       "name": "@modelcontextprotocol/sdk",
       "version": "1.29.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@monaco-editor/loader",
@@ -1083,7 +1077,7 @@
       "name": "@typespec/ts-http-runtime",
       "version": "0.3.5",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@ungap/structured-clone",
@@ -1095,7 +1089,7 @@
       "name": "@xmldom/xmldom",
       "version": "0.8.13",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "accepts",
@@ -1125,25 +1119,25 @@
       "name": "address",
       "version": "1.2.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "adm-zip",
       "version": "0.6.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "agent-base",
       "version": "6.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "agent-base",
       "version": "7.1.4",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "agent-base",
@@ -1161,7 +1155,7 @@
       "name": "ajv-draft-04",
       "version": "1.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "ajv-formats",
@@ -1215,7 +1209,7 @@
       "name": "array-timsort",
       "version": "1.0.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "assertion-error",
@@ -1245,25 +1239,25 @@
       "name": "asynckit",
       "version": "0.4.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "at-least-node",
       "version": "1.0.0",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "axios",
       "version": "1.18.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "axios-retry",
       "version": "3.9.1",
       "license": "Apache-2.0",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "bail",
@@ -1305,11 +1299,11 @@
       "name": "boolbase",
       "version": "1.0.0",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "brace-expansion",
-      "version": "5.0.8",
+      "version": "5.0.9",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -1359,7 +1353,7 @@
       "name": "call-me-maybe",
       "version": "1.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "ccount",
@@ -1479,7 +1473,7 @@
       "name": "combined-stream",
       "version": "1.0.8",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "comma-separated-tokens",
@@ -1527,7 +1521,7 @@
       "name": "comment-json",
       "version": "4.6.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "content-disposition",
@@ -1599,31 +1593,31 @@
       "name": "cryptr",
       "version": "6.4.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "css-select",
       "version": "5.2.2",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "css-what",
       "version": "6.2.2",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "cssom",
       "version": "0.5.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "data-uri-to-buffer",
       "version": "4.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "date-format",
@@ -1641,7 +1635,7 @@
       "name": "debug",
       "version": "4.4.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "decode-named-character-reference",
@@ -1659,7 +1653,7 @@
       "name": "deep-diff",
       "version": "1.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "deep-eql",
@@ -1701,7 +1695,7 @@
       "name": "delayed-stream",
       "version": "1.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "depd",
@@ -1725,7 +1719,7 @@
       "name": "detect-port",
       "version": "1.6.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "devlop",
@@ -1749,31 +1743,31 @@
       "name": "dom-serializer",
       "version": "2.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "domelementtype",
       "version": "2.3.0",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "domhandler",
       "version": "5.0.3",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "domutils",
       "version": "3.2.2",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "dotenv",
       "version": "8.6.0",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "dotenv",
@@ -1827,13 +1821,13 @@
       "name": "entities",
       "version": "4.5.0",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "entities",
       "version": "7.0.1",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "es-define-property",
@@ -1857,7 +1851,7 @@
       "name": "es-set-tostringtag",
       "version": "2.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "es6-promise",
@@ -1893,7 +1887,7 @@
       "name": "esprima",
       "version": "4.0.1",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "estree-util-is-identifier-name",
@@ -1917,13 +1911,13 @@
       "name": "eventsource",
       "version": "3.0.7",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "eventsource-parser",
       "version": "3.0.8",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "expand-template",
@@ -1965,11 +1959,11 @@
       "name": "fast-safe-stringify",
       "version": "2.1.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "fast-uri",
-      "version": "3.1.4",
+      "version": "3.1.5",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
@@ -1983,13 +1977,13 @@
       "name": "fast-xml-parser",
       "version": "5.8.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "fetch-blob",
       "version": "3.2.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "figures",
@@ -2019,19 +2013,19 @@
       "name": "follow-redirects",
       "version": "1.16.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "form-data",
       "version": "4.0.6",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "formdata-polyfill",
       "version": "4.0.10",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "forwarded",
@@ -2061,7 +2055,7 @@
       "name": "fs-extra",
       "version": "7.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "fs-extra",
@@ -2073,13 +2067,13 @@
       "name": "fs-extra",
       "version": "9.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "fs-extra",
       "version": "11.3.5",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "function-bind",
@@ -2121,7 +2115,7 @@
       "name": "glob",
       "version": "13.0.6",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "gopd",
@@ -2133,13 +2127,13 @@
       "name": "graceful-fs",
       "version": "4.2.11",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "handlebars",
       "version": "4.7.9",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "has-flag",
@@ -2151,7 +2145,7 @@
       "name": "has-flag",
       "version": "4.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "has-symbols",
@@ -2163,7 +2157,7 @@
       "name": "has-tostringtag",
       "version": "1.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "hasown",
@@ -2205,7 +2199,7 @@
       "name": "htmlparser2",
       "version": "10.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "http-errors",
@@ -2217,25 +2211,25 @@
       "name": "http-proxy-agent",
       "version": "7.0.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "http2-client",
       "version": "1.3.5",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "https-proxy-agent",
       "version": "5.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "https-proxy-agent",
       "version": "7.0.6",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "https-proxy-agent",
@@ -2253,7 +2247,7 @@
       "name": "iconv-lite",
       "version": "0.6.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "iconv-lite",
@@ -2271,7 +2265,7 @@
       "name": "ignore",
       "version": "5.3.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "import-in-the-middle",
@@ -2367,7 +2361,7 @@
       "name": "is-retry-allowed",
       "version": "2.2.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "is-wsl",
@@ -2397,19 +2391,19 @@
       "name": "js-base64",
       "version": "3.7.8",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "js-yaml",
-      "version": "4.3.0",
+      "version": "4.3.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "json-parse-even-better-errors",
       "version": "2.3.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "json-schema-traverse",
@@ -2427,19 +2421,19 @@
       "name": "jsonfile",
       "version": "4.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "jsonfile",
       "version": "6.2.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "jsonschema",
       "version": "1.5.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "jsonwebtoken",
@@ -2475,19 +2469,19 @@
       "name": "klaw",
       "version": "3.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "linkedom",
       "version": "0.18.12",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "lodash",
       "version": "4.18.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "lodash.camelcase",
@@ -2841,7 +2835,7 @@
       "name": "mime",
       "version": "2.6.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "mime-db",
@@ -2931,7 +2925,7 @@
       "name": "mustache",
       "version": "4.2.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "mute-stream",
@@ -2973,7 +2967,7 @@
       "name": "neverthrow",
       "version": "3.2.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "node-abi",
@@ -2991,7 +2985,7 @@
       "name": "node-domexception",
       "version": "1.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "node-fetch",
@@ -3003,19 +2997,19 @@
       "name": "node-fetch",
       "version": "3.3.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "node-fetch-h2",
       "version": "2.3.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "node-forge",
       "version": "1.4.0",
       "license": "(BSD-3-Clause OR GPL-2.0)",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "node-machine-id",
@@ -3033,19 +3027,19 @@
       "name": "npm-normalize-package-bin",
       "version": "1.0.1",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "nth-check",
       "version": "2.1.1",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "oas-kit-common",
       "version": "1.0.8",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "oas-linter",
@@ -3057,13 +3051,13 @@
       "name": "oas-resolver",
       "version": "2.5.6",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "oas-schema-walker",
       "version": "1.1.5",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "oas-validator",
@@ -3099,13 +3093,13 @@
       "name": "office-addin-manifest-converter",
       "version": "0.4.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "office-addin-project",
       "version": "1.0.9",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "office-addin-usage-data",
@@ -3117,7 +3111,7 @@
       "name": "office-addin-usage-data",
       "version": "2.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "on-finished",
@@ -3207,7 +3201,7 @@
       "name": "pkce-challenge",
       "version": "5.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "prebuild-install",
@@ -3225,7 +3219,7 @@
       "name": "proper-lockfile",
       "version": "4.1.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "property-information",
@@ -3309,7 +3303,7 @@
       "name": "read-package-json-fast",
       "version": "2.0.3",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "readable-stream",
@@ -3327,13 +3321,13 @@
       "name": "reflect-metadata",
       "version": "0.1.14",
       "license": "Apache-2.0",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "reftools",
       "version": "1.1.9",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "remark-gfm",
@@ -3375,7 +3369,7 @@
       "name": "retry",
       "version": "0.12.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "rfdc",
@@ -3435,7 +3429,7 @@
       "name": "sax",
       "version": "1.6.0",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "scheduler",
@@ -3453,7 +3447,7 @@
       "name": "semver",
       "version": "7.8.5",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "send",
@@ -3501,7 +3495,7 @@
       "name": "shell-quote",
       "version": "1.10.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "shimmer",
@@ -3573,7 +3567,7 @@
       "name": "signal-exit",
       "version": "3.0.7",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "signal-exit",
@@ -3597,7 +3591,7 @@
       "name": "source-map",
       "version": "0.6.1",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "source-map-support",
@@ -3657,13 +3651,13 @@
       "name": "strip-bom",
       "version": "4.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "strip-bom",
       "version": "5.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "strip-json-comments",
@@ -3708,10 +3702,16 @@
       "origin": "runtime"
     },
     {
+      "name": "supports-color",
+      "version": "8.1.1",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
       "name": "swagger2openapi",
       "version": "7.0.8",
       "license": "BSD-3-Clause",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "tabster",
@@ -3723,7 +3723,7 @@
       "name": "tar",
       "version": "7.5.20",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "tar-fs",
@@ -3747,7 +3747,7 @@
       "name": "tmp",
       "version": "0.2.7",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "bundled"
     },
     {
       "name": "toidentifier",
@@ -3783,7 +3783,7 @@
       "name": "tslib",
       "version": "2.8.1",
       "license": "0BSD",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "tunnel-agent",
@@ -3819,7 +3819,7 @@
       "name": "typedi",
       "version": "0.10.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "uglify-js",
@@ -3831,7 +3831,7 @@
       "name": "uhyphen",
       "version": "0.2.0",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "underscore",
@@ -3891,13 +3891,13 @@
       "name": "universalify",
       "version": "0.1.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "universalify",
       "version": "2.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "unpipe",
@@ -3933,7 +3933,7 @@
       "name": "uuid",
       "version": "11.1.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "uuid",
@@ -3945,7 +3945,7 @@
       "name": "validator",
       "version": "13.15.35",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "vary",
@@ -3969,19 +3969,19 @@
       "name": "vscode-jsonrpc",
       "version": "4.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "vscode-jsonrpc",
       "version": "8.2.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "web-streams-polyfill",
       "version": "3.3.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "webidl-conversions",
@@ -4041,13 +4041,13 @@
       "name": "xml2js",
       "version": "0.5.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "xmlbuilder",
       "version": "11.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "y18n",
@@ -4065,13 +4065,13 @@
       "name": "yaml",
       "version": "1.10.3",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "yaml",
       "version": "2.9.0",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "yargs",
@@ -4095,13 +4095,13 @@
       "name": "zod",
       "version": "4.4.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "zod-to-json-schema",
       "version": "3.25.2",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     }
   ]
 }

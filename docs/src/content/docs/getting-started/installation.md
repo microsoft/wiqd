@@ -153,12 +153,64 @@ iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -Force"
 
 | Requirement | Minimum | Notes |
 |-------------|---------|-------|
-| Node.js | 24.0+ | Auto-installed by one-liner installer (via fnm on Windows) |
+| Node.js | 24.15+ | Auto-installed by one-liner installer (via fnm on Windows) |
 | npm | (bundled with Node.js) | Included with Node.js 24+ |
 | OS | Windows 10+, macOS, Linux | All platforms supported via installer scripts |
 | Internet | Required | For package downloads |
 
 ## Troubleshooting
+
+### wiqd can't find Node.js
+
+If `wiqd` fails with:
+
+```
+✗ wiqd: Node.js 24.15+ is required but no node executable was found.
+  Already installed? Add it to PATH, or set WIQD_NODE to its full path.
+  Not installed? Get it from https://nodejs.org, then re-run wiqd.
+```
+
+then the launcher wiqd installed could not locate a Node executable. This applies to the launchers wiqd writes: the Windows global `wiqd.ps1` and the per-worktree `.bin/` launchers. This is common with version managers such as fnm and nvm, whose shell hook only puts Node on `PATH` once your shell profile has run — a terminal opened before that hook was in place has Node on disk but not on `PATH`.
+
+Two install paths use npm's own launcher instead, which resolves `node` from `PATH` only. On both, `WIQD_NODE` has no effect and the fix is to put Node back on `PATH`:
+
+- **A global install on macOS or Linux.**
+- **Windows, after the one-liner installer, or after `wiqd update`.** Those paths remove wiqd's own `wiqd.ps1` so a `Restricted` or `AllSigned` execution policy cannot hard-fail the command, so PowerShell resolves npm's `wiqd.cmd` instead. Installing directly with `npm install -g @microsoft/wiqd` leaves wiqd's own launcher in place, so `WIQD_NODE` does apply there. On the npm-launcher paths, the error you will see is cmd's own, not the message above:
+
+  ```
+  '"node"' is not recognized as an internal or external command,
+  operable program or batch file.
+  ```
+
+wiqd's own launcher looks for Node in this order, and uses the first one that exists:
+
+1. `WIQD_NODE`, if you set it to the full path of a `node` executable.
+2. A `node.exe` sitting next to the launcher in the npm global directory (Windows).
+3. `node` on your `PATH`.
+4. The absolute path to the Node the launcher was written under — at install time for the global launcher, at `install.ps1 -Worktree` time for a worktree launcher. It is deliberately last, so switching versions with fnm or nvm still takes effect. A POSIX worktree launcher generated on Windows has no rung 4 at all, because a Windows Node path is meaningless under WSL or Git Bash.
+
+The two fixes, in order of preference:
+
+```powershell
+# 1. Put Node back on PATH — usually just opening a new terminal after your
+#    version manager's shell hook is installed.
+node --version
+
+# 2. Or point wiqd at a specific Node explicitly.
+$env:WIQD_NODE = 'C:\Program Files\nodejs\node.exe'
+wiqd --version
+```
+
+```bash
+# 1. Put Node back on PATH
+node --version
+
+# 2. Or point wiqd at a specific Node explicitly
+export WIQD_NODE=/usr/local/bin/node
+wiqd --version
+```
+
+`WIQD_NODE` is an escape hatch, not a permanent fix — if you find yourself needing it every session, your Node version manager's shell hook is not being sourced. Run `wiqd doctor` for the manager-state report. If no Node is installed at all, install Node 24.15 or later from [nodejs.org](https://nodejs.org) and re-run the installer.
 
 ### I have multiple Node version managers installed
 

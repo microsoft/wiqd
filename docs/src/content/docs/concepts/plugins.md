@@ -58,9 +58,9 @@ wiqd plugin add skill --name "Triage Issues"        # add a SKILL.md skill
 wiqd plugin add connector --name "Tools" \
   --description "Toolbelt over MCP" --url https://tools.contoso.com/mcp
 wiqd plugin validate                                # static MVL check of the DA surface
+wiqd plugin provision                               # register with Microsoft 365 (writes env/.env.<env>)
 wiqd plugin package                                 # build a deployable .zip
 wiqd plugin validate --mode deep                    # full app-package validation via ATK/AVL
-wiqd plugin provision                               # register with Microsoft 365
 wiqd plugin share --scope users --email you@contoso.com
 ```
 
@@ -80,7 +80,7 @@ new to the plugin construct.
 | - | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | 1 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Scaffolds a `SKILL.md` folder and registers it in the **plugin's own app manifest** (`agentSkills[]`)          | A standalone plugin project (`wiqd.plugin.json`)                  |
 | 2 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Adds a skill to an existing **declarative agent** project's own skill surface, via ATK (`atk add skill`)       | An agent project (`m365agents.yml`)                                |
-| 3 | Extension-contributed **Copilot skills**            | The `SKILL.md` packages a wiqd *extension* bundles, that Copilot CLI itself loads as part of the `wiqd@wiqd` plugin | A wiqd extension's `skills/` directory, merged at `wiqd install plugin` time |
+| 3 | Extension-contributed **Copilot skills**            | The `SKILL.md` packages a wiqd *extension* bundles, that Copilot CLI itself loads as part of the `wiqd@wiqd` plugin | A wiqd extension's `skills/` directory, merged into the `wiqd@wiqd` plugin at install time |
 
 ### 1. `wiqd plugin add skill` — a plugin capability
 

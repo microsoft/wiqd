@@ -109,6 +109,16 @@ $VSCodeExtensionId = "Microsoft.wiqd"
 # so it evaluates to falsy in the 3P mirror where no setter ever runs.
 $script:PluginForceRecompose = $false
 
+# The canonical public npm registry. Named once so the probe and the install
+# that must be pinned to it can never drift apart.
+$script:PublicNpmRegistry = 'https://registry.npmjs.org/'
+
+# Extra npm arguments appended to every global install. Empty by default, so a
+# plain install honours whatever registry (corporate proxy, mirror) the machine
+# is configured with. Declared here, in the shared area, so it is always an
+# empty array in the 3P mirror where no setter ever runs.
+$script:NpmRegistryArgs = @()
+
 # The plugin step is a foreach over possibly-multiple hosts (copilot, claude),
 # so "succeeded" (>=1 host installed cleanly) and "failed" (>=1 host errored)
 # are tracked separately from $installSuccess. A host being ABSENT is a
@@ -123,7 +133,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.11.0"
+$script:WiqdVersion = "0.12.2"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -164,6 +174,15 @@ function Invoke-Native {
     $prev = if ($hadPrev) { $PSNativeCommandUseErrorActionPreference } else { $null }
     $PSNativeCommandUseErrorActionPreference = $false
 
+    # The wrapped command's exit status is reported ONLY through the returned
+    # object's ExitCode/Failed fields; a handled non-zero (e.g. an npm registry
+    # probe for a version that legitimately does not exist) must never leak into
+    # the caller's global $LASTEXITCODE. Otherwise a later bare `exit`, or a
+    # GitHub Actions `pwsh` step that ends on this call, would inherit that stray
+    # code and fail even though every assertion passed. Snapshot the pre-call
+    # value and restore it, so Invoke-Native is transparent to $LASTEXITCODE.
+    $entryLastExitCode = $global:LASTEXITCODE
+
     try {
         $stdout   = [System.Collections.Generic.List[string]]::new()
         $stderr   = [System.Collections.Generic.List[string]]::new()
@@ -197,6 +216,7 @@ function Invoke-Native {
         } else {
             Remove-Variable -Name PSNativeCommandUseErrorActionPreference -Scope Local -ErrorAction SilentlyContinue
         }
+        $global:LASTEXITCODE = $entryLastExitCode
     }
 }
 
@@ -368,7 +388,11 @@ function Install-NpmGlobalPackages {
     # @azure/msal-node-runtime's copyBinaries.js, which stages the MSAL native
     # binding. No --ignore-scripts, no in-dir backfill, no npm rebuild —
     # a single-pass npm install.
-    $r = Invoke-Native { & $script:NpmExe install -g @Packages --loglevel=error }
+    # $script:NpmRegistryArgs is empty on the plain path (the machine's own
+    # registry config wins) and pins public npm on the 1P path, where the
+    # artifact's signing is the whole point of the source preference.
+    $registryArgs = @($script:NpmRegistryArgs)
+    $r = Invoke-Native { & $script:NpmExe install -g @Packages @registryArgs --loglevel=error }
     $npmOutput = $r.StdOut
 
     if ($r.ExitCode -ne 0) {
@@ -410,6 +434,26 @@ function Install-NpmGlobalPackages {
             return $false
         }
         Write-Warn "npm install failed for $DisplayName"
+
+        # A hidden DevUI server (this bug's historical root cause) can hold an
+        # OS-level lock on files under its own install directory, which then
+        # surfaces here as an opaque npm `EBUSY`/"resource busy or locked"
+        # dump instead of a clear cause. Detect that specific shape and ADD
+        # the fix to the raw npm error rather than replacing it: an EBUSY
+        # anywhere else under the wiqd install (an editor, antivirus, a
+        # running LSP) is a different problem, and swallowing npm's own output
+        # would make it strictly harder to diagnose than before.
+        $combinedOutput = ($r.Combined + $r.StdErr) -join "`n"
+        $isDevUiLock = ($combinedOutput -match '(?i)EBUSY|resource busy or locked') -and
+            ($combinedOutput -match '(?i)wiqd-ext-devui')
+
+        if ($isDevUiLock) {
+            Write-Hint "A running Work IQ DevUI process is using these files, so the install could not replace them."
+            Write-Hint "Stop it first — press Ctrl+C in its console window, or run:  wiqd devui stop"
+            Write-Hint "If neither works (a server started before this fix has no window and no stop support),"
+            Write-Hint "end the 'node' process listening on port 7317 via Task Manager, or reboot."
+            Write-Hint "Then re-run this install."
+        }
         if ($r.StdErr.Count -gt 0) {
             Write-Hint ($r.StdErr -join ' ')
         }
@@ -452,8 +496,8 @@ function Invoke-WiqdSeedDefaults {
 
 # Renders the post-install dependency verdict for the downstream CLIs, sourced
 # from `wiqd doctor --json` so the installer and doctor never disagree on presence.
-# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED dep
-# (atk) is fatal and the caller must stop the install; a missing OPTIONAL dep
+# Severity is row-owned, NOT taken from doctor's status: a missing REQUIRED
+# lifecycle backend is fatal and the caller must stop the install; a missing OPTIONAL dep
 # (eval/workiq/EULA) degrades gracefully and only warns. Returns $true to
 # continue, $false when a required dependency is missing (caller exits 1).
 # Fails closed with the canonical reinstall hint when the probe is unavailable
@@ -461,11 +505,10 @@ function Invoke-WiqdSeedDefaults {
 function Show-DependencyStatus {
     # Ordered display rows. `Keys` maps onto the doctor check `name`s: the
     # healthy workiq probe is named "workiq --json", but a missing one collapses
-    # to "workiq", so both names are accepted for the workiq row. `ExtensionId`
-    # supplies the registration repair when doctor omitted the check entirely;
-    # emitted failures use doctor's own trimmed message.
-    $rows = @(
-        @{ Keys = @('atk');                     Label = 'atk';         Required = $true;  OkWord = 'Installed'; Note = '(required for `wiqd agent` commands)';       ExtensionId = 'microsoft.atk';    ReRun = $true }
+    # to "workiq", so both names are accepted for the workiq row. Optional rows
+    # use `ExtensionId` when doctor omits their check; emitted failures use
+    # doctor's own trimmed message.
+    $optionalRows = @(
         @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true }
         @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true }
         @{ Keys = @('workiq EULA', 'workiq');   Label = 'workiq EULA'; Required = $false; OkWord = 'Accepted';  Note = '';                                            ExtensionId = 'microsoft.workiq'; ReRun = $false }
@@ -485,6 +528,41 @@ function Show-DependencyStatus {
         Write-Hint "Re-run: npm install -g @microsoft/wiqd"
         return $false
     }
+
+    $extensionsCheck = @($checks | Where-Object { [string]$_.name -eq 'Extensions' }) | Select-Object -First 1
+    $activeBackendIds = @()
+    $inactiveBackendIds = @()
+    if (($null -ne $extensionsCheck) -and ([string]$extensionsCheck.status -ne 'error') -and ([string]$extensionsCheck.message -match '(?:^|;\s*)\d+ active \(([^)]*)\)')) {
+        $activeIds = @($Matches[1] -split ',' | ForEach-Object { $_.Trim() })
+        $activeBackendIds = @($activeIds | Where-Object { @('microsoft.atk', 'microsoft.wiqd.core') -ccontains $_ })
+    }
+    if (($null -ne $extensionsCheck) -and ([string]$extensionsCheck.message -match '(?:^|;\s*)\d+ inactive \(([^)]*)\)')) {
+        $inactiveIds = @($Matches[1] -split ',' | ForEach-Object { $_.Trim() })
+        $inactiveBackendIds = @($inactiveIds | Where-Object { @('microsoft.atk', 'microsoft.wiqd.core') -ccontains $_ })
+    }
+    if ($activeBackendIds.Count -ne 1) {
+        if (($activeBackendIds.Count -eq 0) -and ($inactiveBackendIds.Count -eq 1)) {
+            Write-Err "Lifecycle backend extension is inactive."
+            Write-Hint "Re-run: wiqd ext add $($inactiveBackendIds[0])"
+            return $false
+        }
+        Write-Err "Could not determine the active lifecycle backend from wiqd doctor."
+        Write-Hint "Run 'wiqd doctor' and ensure exactly one of microsoft.atk or microsoft.wiqd.core is active."
+        return $false
+    }
+
+    if ($activeBackendIds[0] -ceq 'microsoft.wiqd.core') {
+        $backendRow = @{ Keys = @('Extensions'); Label = 'fx-core'; Required = $true; OkWord = 'Active'; Note = '(required for `wiqd agent` commands)'; ReRun = $true; ActiveExtensionId = 'microsoft.wiqd.core' }
+    } else {
+        $atkCheck = @($checks | Where-Object { [string]$_.name -eq 'atk' }) | Select-Object -First 1
+        if ($null -eq $atkCheck) {
+            Write-Err "Could not verify the active ATK backend from wiqd doctor."
+            Write-Hint "Run 'wiqd doctor' and repair the reported extension state."
+            return $false
+        }
+        $backendRow = @{ Keys = @('atk'); Label = 'atk'; Required = $true; OkWord = 'Installed'; Note = '(required for `wiqd agent` commands)'; ReRun = $true }
+    }
+    $rows = @($backendRow) + $optionalRows
 
     # Materialize the checks as an ordered list so rows can consume matches
     # positionally. This matters when workiq is MISSING: doctor collapses BOTH
@@ -510,7 +588,15 @@ function Show-DependencyStatus {
                 break
             }
         }
-        $isOk = ($null -ne $check) -and ([string]$check.status -eq 'ok')
+        if ($row.ActiveExtensionId) {
+            $activeIds = @()
+            if (($null -ne $check) -and ([string]$check.status -ne 'error') -and ([string]$check.message -match '(?:^|;\s*)\d+ active \(([^)]*)\)')) {
+                $activeIds = @($Matches[1] -split ',' | ForEach-Object { $_.Trim() })
+            }
+            $isOk = $activeIds -ccontains $row.ActiveExtensionId
+        } else {
+            $isOk = ($null -ne $check) -and ([string]$check.status -eq 'ok')
+        }
         if (-not $isOk) {
             $allOk = $false
             if ($row.Required) { $fatal = $true }
@@ -542,14 +628,16 @@ function Show-DependencyStatus {
         # Not OK: required rows are a red ✗, optional rows a yellow ⚠.
         $icon = if ($row.Required) { '✗' } else { '⚠' }
         $color = if ($row.Required) { 'Red' } else { 'DarkYellow' }
-        $lead = if ($null -eq $item.Check) {
+        $lead = if (($null -eq $item.Check) -and $row.ExtensionId) {
             "Extension check unavailable ($($row.ExtensionId) is inactive)."
+        } elseif ($null -eq $item.Check) {
+            "Required doctor check unavailable."
         } else {
             Get-ShortDoctorMessage $item.Check
         }
         Write-Host "   $icon $label $lead" -ForegroundColor $color
         if ($row.ReRun) {
-            $repair = if ($null -eq $item.Check) { "wiqd ext add $($row.ExtensionId)" } else { 'npm install -g @microsoft/wiqd' }
+            $repair = if (($null -eq $item.Check) -and $row.ExtensionId) { "wiqd ext add $($row.ExtensionId)" } else { 'npm install -g @microsoft/wiqd' }
             Write-Host "${contIndent}Re-run: " -ForegroundColor Gray -NoNewline
             Write-Host $repair -ForegroundColor Cyan
         }
@@ -669,8 +757,11 @@ function Remove-WiqdPowerShellShim {
             return
         }
 
-        # Remove the .ps1 shim that npm creates — it's unsigned and blocked by
-        # restrictive PowerShell execution policies. The .cmd shim works fine.
+        # Remove the .ps1 shim wiqd's own postinstall writes over npm's — an
+        # unsigned .ps1 is refused under the Restricted and AllSigned execution
+        # policies, and because PATHEXT already selected it PowerShell errors
+        # outright rather than falling back to npm's .cmd. Any later
+        # `npm install -g @microsoft/wiqd` re-creates it.
         $ps1Shim = Join-Path $npmPrefix.Trim() "wiqd.ps1"
         Remove-Item $ps1Shim -Force -ErrorAction SilentlyContinue
     } catch {

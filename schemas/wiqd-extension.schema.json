@@ -714,15 +714,18 @@
         },
         "preflight": {
           "type": "array",
-          "items": {}
+          "items": {},
+          "description": "Gate rules run before the command's primary invocation. Each rule declares exactly one check — `fileExists`, `fileNotExists`, `dirEmpty`, or `binaryOnPath` — plus the optional modifiers `when` (skip unless truthy), `say` (the failure message), and `exitCode`. Left as `unknown[]` rather than a union so a manifest using a check newer than the last schema regeneration still type-checks. A rule declaring none of the checks above is rejected at run time rather than skipped."
         },
         "validate": {
           "type": "array",
-          "items": {}
+          "items": {},
+          "description": "Assertions evaluated after options are bound. A DIFFERENT rule shape from `preflight`: each rule declares `require` (an expression that must be truthy) plus the optional modifiers `when`, `say`, `exitCode`, `code`, `details`, and `remediation`. File checks are not evaluated here — express them as `require` over an expression, or put them in `preflight`. A rule without `require` is rejected at run time rather than skipped."
         },
         "softWarn": {
           "type": "array",
-          "items": {}
+          "items": {},
+          "description": "Advisory messages printed to stderr without failing the command. Each rule is a `when` condition and the `say` text to emit when it holds; no other check applies."
         },
         "snapshot": {
           "type": "object",
@@ -758,7 +761,8 @@
         },
         "postconditions": {
           "type": "array",
-          "items": {}
+          "items": {},
+          "description": "Assertions evaluated after a successful invocation, against a snapshot taken before it. Each rule declares one of `fileExists`, `fileNonEmpty`, `newFilesIn`, or `fileMtimeAfter` (the latter two naming a `snapshot` key), plus an optional `say`. A rule declaring none of them is rejected at run time rather than skipped."
         },
         "computed": {
           "type": "object",
@@ -766,7 +770,8 @@
         },
         "postSpawn": {
           "type": "array",
-          "items": {}
+          "items": {},
+          "description": "Filesystem side effects applied after a successful invocation. Beyond the `preflight` rule primitives these also accept `deleteFile`, whose resolved path is contained to an optional sibling `boundary` (defaulting to the cwd) exactly as `writeFile.boundary` works — a command whose delete target is rooted under a `--path`-style option MUST declare it."
         },
         "confirm": {},
         "transform": {
@@ -778,7 +783,7 @@
         },
         "container": {
           "type": "boolean",
-          "description": "Marks this as a pure command GROUP (e.g. `agent add`) that exists only to carry a `--help` description for its subcommands. The builder sets the description but attaches NO action handler, so invoking the bare group shows help instead of dispatching an (empty) upstream call. A container MUST NOT declare `options` or `argMap`: the host skips registering them (they would be inert since no action ever runs), and `validateManifest()` flags a container that declares either as an `invalid-container` finding."
+          "description": "Marks this as a pure command GROUP (e.g. `agent add`) that exists only to carry a `--help` description for its subcommands. The builder sets the description but attaches NO action handler, so invoking the bare group shows help instead of dispatching an (empty) upstream call. A container MUST NOT declare `handler`, `options`, `argMap`, or any other executable field because the host intentionally ignores them when no action runs."
         },
         "skipUpstreamWhen": {
           "type": "string",
@@ -824,6 +829,13 @@
             }
           ]
         },
+        "renderExitCodes": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "Data-bearing non-zero upstream exit codes that still run transform/render before the original code is returned. Unlisted non-zero codes retain normal fail-fast error handling."
+        },
         "omitRawResponse": {
           "type": "boolean",
           "description": "When true, `buildJsonData` does NOT auto-inject `data.response = upstream.stdout.trim()`. Use this when the command runs a post-upstream transform that already exposes structured fields (e.g. `responseText`, `conversationId`) and the raw upstream stdout would be redundant or leak ANSI/prose. Verbose mode still surfaces the raw stdout on stderr."
@@ -839,6 +851,11 @@
           },
           "description": "Computed keys to withhold from the `--json` envelope. Computed values are spread wholesale into `data`, so an intermediate declared only to feed a later expression would otherwise become part of the published contract."
         },
+        "jsonData": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Complete projected JSON success data; suppresses the default args/result merge when set."
+        },
         "subcommands": {
           "type": "object",
           "additionalProperties": {
@@ -850,7 +867,7 @@
         },
         "handler": {
           "$ref": "#/definitions/HandlerConfig",
-          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, errors, exitCode, omitRawResponse, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "nativeDryRunHandler": {
           "type": "string",
@@ -929,6 +946,11 @@
         },
         "exitCode": {
           "type": "number"
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Structured result returned by an in-process handler mock."
         },
         "writes": {
           "type": "array",
@@ -1052,6 +1074,10 @@
               "items": {}
             }
           ]
+        },
+        "propagateFailure": {
+          "type": "boolean",
+          "description": "Abort the pre-transform immediately and preserve a structured child error."
         }
       },
       "required": ["as"]
