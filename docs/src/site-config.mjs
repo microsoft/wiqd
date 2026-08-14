@@ -12,7 +12,7 @@ export const base = normalizedBase;
 
 // Baked at mirror-generation time from the repo-root VERSION; the mirror tree
 // has no VERSION file to read.
-export const version = '0.12.1';
+export const version = '0.12.2';
 
 // Preview status tracks pre-1.0 (major 0); mirror has no VERSION file.
 export function isPreviewVersion(v) {
