@@ -79,6 +79,7 @@ export default defineConfig({
             { label: 'Authentication', slug: 'getting-started/authentication' },
           ],
         },
+        { label: 'Cookbooks', slug: 'cookbooks' },
         {
           label: 'Concepts',
           items: [
