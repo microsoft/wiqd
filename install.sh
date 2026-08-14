@@ -83,7 +83,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.12.0"
+WIQD_INSTALLER_VERSION="0.12.1"
 
 # ─────────────────────────────────────────────
 # Parse arguments

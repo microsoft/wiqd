@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.12.1] — 2026-08-13
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+_Maintenance release — no user-facing changes to the CLI, skills, or references._
+
 ## [0.12.0] — 2026-08-11
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

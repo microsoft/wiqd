@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "7e0a6af51184932497df238aa113bdb9239ad7ad11a638519ab1c288319e6cb8",
+  "inputDigest": "c1d8c3b404750c86a44bdbf4f26799ec59db6e79c01ae3bd765dbb5692bc819f",
   "componentCount": 683,
   "components": [
     {
@@ -1303,7 +1303,7 @@
     },
     {
       "name": "brace-expansion",
-      "version": "5.0.8",
+      "version": "5.0.9",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -1963,7 +1963,7 @@
     },
     {
       "name": "fast-uri",
-      "version": "3.1.4",
+      "version": "3.1.5",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
@@ -2395,7 +2395,7 @@
     },
     {
       "name": "js-yaml",
-      "version": "4.3.0",
+      "version": "4.3.1",
       "license": "MIT",
       "origin": "both"
     },

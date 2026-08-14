@@ -12083,7 +12083,7 @@ Publisher:  Felix Boehm
 
 ------------------------------------------------------------------------------
 
-Package:    brace-expansion@5.0.8
+Package:    brace-expansion@5.0.9
 License:    MIT
 Repository: https://github.com/juliangruber/brace-expansion
 
@@ -15319,7 +15319,7 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    fast-uri@3.1.4
+Package:    fast-uri@3.1.5
 License:    BSD-3-Clause
 Repository: https://github.com/fastify/fast-uri
 Publisher:  Vincent Le Goff
@@ -17354,7 +17354,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ------------------------------------------------------------------------------
 
-Package:    js-yaml@4.3.0
+Package:    js-yaml@4.3.1
 License:    MIT
 Repository: nodeca/js-yaml
 Publisher:  Vladimir Zapparov
