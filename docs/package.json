@@ -13,8 +13,8 @@
     "generate:index": "node scripts/generate-docs-index.cjs --output ./public/docs-index.json"
   },
   "dependencies": {
-    "@astrojs/starlight": "0.39.3",
-    "astro": "6.4.8",
+    "@astrojs/starlight": "0.41.5",
+    "astro": "7.1.6",
     "sharp": "0.35.3",
     "starlight-theme-terminal": "1.2.0"
   }
