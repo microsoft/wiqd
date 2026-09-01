@@ -15,6 +15,7 @@ Work IQ Dev Tools provide a developer CLI for building, validating, and publishi
 1. **[Installation](/getting-started/installation/)** — Install `wiqd` with a single command.
 2. **[Quickstart](/getting-started/quickstart/)** — Create your first agent in 5 minutes.
 3. **[Authentication](/getting-started/authentication/)** — Sign in to your Microsoft 365 account.
+4. **[Cookbooks](/cookbooks/)** — Build useful agents with end-to-end, outcome-focused recipes.
 
 ## Prerequisites
 

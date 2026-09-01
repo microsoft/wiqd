@@ -9,16 +9,16 @@ description: Quality evaluations against deployed declarative agents
 
 ## What it does
 
-The Eval extension runs **quality evaluations** against a provisioned declarative agent. You write a YAML eval suite (prompts + expected behaviours), and the extension drives the agent through each prompt and scores the response. Use it to catch regressions before publishing, to enforce a quality threshold in CI, or to compare two versions of the same agent head-to-head.
+The Eval extension runs **quality evaluations** against a provisioned declarative agent. You write a JSON prompts file, and the extension drives the agent through each prompt and scores the response. Use it to catch regressions before publishing or to enforce a quality threshold in CI.
 
 ## Workflow walkthrough
 
 ```bash
-# 1. Scaffold a starter evals.yaml from the agent's name/description
+# 1. Copy the bundled starter suite to evals/prompts.json
 wiqd agent eval init
 
-# 2. Edit evals.yaml — add your prompts, expected behaviours, categories
-$EDITOR evals.yaml
+# 2. Edit the prompts and evaluators for your agent
+$EDITOR evals/prompts.json
 
 # 3. Provision the agent (eval needs a deployed target)
 wiqd agent provision --env local
@@ -26,19 +26,19 @@ wiqd agent provision --env local
 # 4. Run the full suite
 wiqd agent eval
 
-# 5. Run a single category with more workers
-wiqd agent eval --category Domain --concurrency 10
+# 5. Increase concurrency, up to the supported maximum of 5
+wiqd agent eval --concurrency 5
 
-# 6. Enforce a quality bar in CI — fail the build if score drops below 85
-wiqd agent eval --threshold 85 --json | tee eval-results.json
+# 6. Enforce an 85% quality bar in CI
+wiqd agent eval --threshold 0.85 --json | tee eval-results.json
 ```
 
-A passing run exits `0`. A run that finishes but scores below `--threshold` exits `1`. Infrastructure problems (no agent provisioned, no config file) exit `2`.
+A completed run exits `0` when any configured threshold is met. Failures exit `1`; in JSON mode, `error.code` distinguishes a threshold miss (`EXIT_CONDITION_MET`) from an upstream failure (`UPSTREAM_ERROR`). wiqd preflight or validation errors exit `2`, required EULA acceptance exits `3`, and cancellation exits `130`.
 
 ## Where to look in the codebase
 
 - `packages/wiqd-ext-eval/wiqd-extension.json` — manifest.
-- `packages/wiqd-cli/src/manifest/manifest-executor.ts` — host runtime that drives each command.
+- `packages/wiqd/src/manifest/manifest-executor.ts` — host runtime that drives each command.
 
 > **Note:** `wiqd agent eval` evaluates the **deployed M365 Copilot declarative agent** — not the wiqd CLI itself. The eval suite for wiqd's own behaviour lives in `packages/evals/` and is run via `./scripts/run-evals.ps1`. These are two unrelated evaluation systems that happen to share a name.
 

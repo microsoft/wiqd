@@ -62,8 +62,8 @@ jobs:
         run: npm ci --no-fund --loglevel=error
 
       - name: Build docs
-        # `npm run build` runs the prebuild search-index generator first, then
-        # scripts/build.mjs (the public, 3P-only Starlight build) into docs/dist.
+        # scripts/build.mjs regenerates the public search index inside the build,
+        # then runs the public, 3P-only Starlight build into docs/dist.
         working-directory: docs
         run: npm run build
 

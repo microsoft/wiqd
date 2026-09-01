@@ -2,8 +2,8 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "c1d8c3b404750c86a44bdbf4f26799ec59db6e79c01ae3bd765dbb5692bc819f",
-  "componentCount": 683,
+  "inputDigest": "073edd2c1ab26485b9f8c1198cd67bbd62cc51fed0f938baec20904dd992772b",
+  "componentCount": 676,
   "components": [
     {
       "name": "@apidevtools/json-schema-ref-parser",
@@ -145,12 +145,6 @@
     },
     {
       "name": "@azure/msal-common",
-      "version": "14.16.1",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "@azure/msal-common",
       "version": "15.17.0",
       "license": "MIT",
       "origin": "runtime"
@@ -168,14 +162,20 @@
       "origin": "runtime"
     },
     {
-      "name": "@azure/msal-node",
-      "version": "2.16.3",
+      "name": "@azure/msal-common",
+      "version": "16.12.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
       "name": "@azure/msal-node",
       "version": "5.2.3",
+      "license": "MIT",
+      "origin": "both"
+    },
+    {
+      "name": "@azure/msal-node",
+      "version": "5.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -661,19 +661,25 @@
     },
     {
       "name": "@microsoft/app-manifest",
-      "version": "1.0.7",
+      "version": "1.1.1",
+      "license": "MIT",
+      "origin": "runtime"
+    },
+    {
+      "name": "@microsoft/app-manifest",
+      "version": "1.1.2-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
       "name": "@microsoft/app-manifest",
-      "version": "1.0.8",
+      "version": "1.1.2-beta.2026081401.0",
       "license": "MIT",
-      "origin": "both"
+      "origin": "bundled"
     },
     {
       "name": "@microsoft/app-manifest",
-      "version": "1.1.0",
+      "version": "1.1.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -697,49 +703,49 @@
     },
     {
       "name": "@microsoft/m365-copilot-eval",
-      "version": "1.12.0",
+      "version": "1.15.0",
       "license": "MICROSOFT SOFTWARE LICENSE TERMS",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.2.15",
+      "version": "0.3.2-beta.2026081401.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "name": "@microsoft/m365-spec-parser",
+      "version": "0.3.2-beta.2026081803.0",
+      "license": "MIT",
+      "origin": "runtime"
+    },
+    {
+      "name": "@microsoft/m365agentstoolkit-cli",
+      "version": "1.1.16-beta.2026081803.0",
       "license": "MIT",
       "origin": "both"
     },
     {
-      "name": "@microsoft/m365agentstoolkit-cli",
-      "version": "1.1.13",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "@microsoft/teams-manifest",
-      "version": "0.1.9",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
       "name": "@microsoft/teamsfx-api",
-      "version": "0.23.15",
+      "version": "0.24.2-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
       "name": "@microsoft/teamsfx-api",
-      "version": "0.23.16",
+      "version": "0.24.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
       "name": "@microsoft/teamsfx-core",
-      "version": "3.0.14",
+      "version": "3.1.3-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
       "name": "@microsoft/teamsfx-core",
-      "version": "3.0.15",
+      "version": "3.1.3-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -747,7 +753,7 @@
       "name": "@microsoft/workiq",
       "version": "1.0.0",
       "license": "SEE EULA",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "@modelcontextprotocol/sdk",
@@ -1052,12 +1058,6 @@
     {
       "name": "@types/node",
       "version": "25.9.2",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "@types/node-fetch",
-      "version": "2.6.13",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -1489,12 +1489,6 @@
     },
     {
       "name": "commander",
-      "version": "6.2.1",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "commander",
       "version": "9.5.0",
       "license": "MIT",
       "origin": "runtime"
@@ -1502,12 +1496,6 @@
     {
       "name": "commander",
       "version": "13.1.0",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "commander",
-      "version": "14.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -2271,12 +2259,6 @@
       "name": "import-in-the-middle",
       "version": "3.0.1",
       "license": "Apache-2.0",
-      "origin": "runtime"
-    },
-    {
-      "name": "inherits",
-      "version": "2.0.3",
-      "license": "ISC",
       "origin": "runtime"
     },
     {
@@ -3079,13 +3061,7 @@
     },
     {
       "name": "office-addin-manifest",
-      "version": "1.13.6",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "office-addin-manifest",
-      "version": "2.1.5",
+      "version": "2.1.6",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -3097,19 +3073,13 @@
     },
     {
       "name": "office-addin-project",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "license": "MIT",
       "origin": "both"
     },
     {
       "name": "office-addin-usage-data",
-      "version": "1.6.14",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "office-addin-usage-data",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "license": "MIT",
       "origin": "both"
     },
@@ -3129,7 +3099,7 @@
       "name": "open",
       "version": "8.4.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "name": "open",
@@ -3154,12 +3124,6 @@
       "version": "1.3.3",
       "license": "MIT",
       "origin": "both"
-    },
-    {
-      "name": "path",
-      "version": "0.12.7",
-      "license": "MIT",
-      "origin": "runtime"
     },
     {
       "name": "path-expression-matcher",
@@ -3206,12 +3170,6 @@
     {
       "name": "prebuild-install",
       "version": "7.1.3",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "process",
-      "version": "0.11.10",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -3308,12 +3266,6 @@
     {
       "name": "readable-stream",
       "version": "3.6.2",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
-      "name": "readline-sync",
-      "version": "1.4.10",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -3721,7 +3673,7 @@
     },
     {
       "name": "tar",
-      "version": "7.5.20",
+      "version": "7.5.22",
       "license": "BlueOak-1.0.0",
       "origin": "both"
     },
@@ -3738,6 +3690,12 @@
       "origin": "runtime"
     },
     {
+      "name": "tas-client",
+      "version": "0.1.73",
+      "license": "MIT",
+      "origin": "runtime"
+    },
+    {
       "name": "terser",
       "version": "5.48.0",
       "license": "BSD-2-Clause",
@@ -3747,7 +3705,7 @@
       "name": "tmp",
       "version": "0.2.7",
       "license": "MIT",
-      "origin": "bundled"
+      "origin": "both"
     },
     {
       "name": "toidentifier",
@@ -3912,12 +3870,6 @@
       "origin": "bundled"
     },
     {
-      "name": "util",
-      "version": "0.10.4",
-      "license": "MIT",
-      "origin": "runtime"
-    },
-    {
       "name": "util-deprecate",
       "version": "1.0.2",
       "license": "MIT",
@@ -3938,6 +3890,12 @@
     {
       "name": "uuid",
       "version": "13.0.2",
+      "license": "MIT",
+      "origin": "runtime"
+    },
+    {
+      "name": "uuid",
+      "version": "14.0.1",
       "license": "MIT",
       "origin": "runtime"
     },

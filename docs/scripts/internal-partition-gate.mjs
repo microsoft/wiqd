@@ -21,20 +21,42 @@
 // Convention replaces the previous `featureFlag:` frontmatter gate: a page is
 // internal IFF it lives under the `internal/` partition. No per-page flag.
 
-import { rename, stat, readdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { rename, stat, readdir, rm } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 
 const INTERNAL_DIR_NAME = 'internal';
 // Stash lives at the docs package root (outside src/content) so the `docs`
 // content collection can never walk it during a public build.
 const STASH_DIR_NAME = '.internal-gated-off';
 
-async function pathExists(p) {
+async function pathExists(p, statPath = stat) {
   try {
-    await stat(p);
+    await statPath(p);
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+/** Astro writes generated types and content-layer state to separate caches. */
+export function resolveAstroCachePaths(docsRoot) {
+  return [join(docsRoot, '.astro'), join(docsRoot, 'node_modules', '.astro')];
+}
+
+/** Remove every Astro cache that can retain hidden collection entries. */
+export async function clearAstroBuildCaches(docsRoot) {
+  await Promise.all(
+    resolveAstroCachePaths(docsRoot).map((cacheRoot) =>
+      rm(cacheRoot, { recursive: true, force: true }),
+    ),
+  );
+}
+
+/** Fail closed when a public artifact contains a route from the hidden partition. */
+export async function assertPublicOutputIsIsolated(docsRoot, outDir) {
+  if (await pathExists(join(resolve(docsRoot, outDir), INTERNAL_DIR_NAME))) {
+    throw new Error(`public output '${outDir}' contains the internal/ partition`);
   }
 }
 

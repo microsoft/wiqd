@@ -11,7 +11,7 @@ Validation is the single fastest feedback loop in Work IQ Dev Tools. You run it 
 
 ```bash
 wiqd agent validate              # static (default)
-wiqd agent validate --mode deep  # static + ATK semantic checks
+wiqd agent validate --mode deep  # validate the resolved app package through wiqd Core
 ```
 
 ### Static mode
@@ -26,9 +26,18 @@ This is the mode you should run on every save, on every commit hook, and on ever
 
 ### Deep mode
 
-Deep mode runs everything static does, then hands off to the Agents Toolkit's semantic validator. That covers things only ATK knows about — for example, whether an action's OpenAPI spec is reachable and well-formed, whether a referenced plugin manifest declares the right auth scheme, and platform-specific manifest constraints that change with the M365 release cadence.
+Deep mode resolves an already-built app package and hands it to wiqd Core's
+in-process validation handler for platform-aware package checks. It does not
+build the package or run static validation first. Run the three steps explicitly:
 
-Deep mode is slower (a few seconds) and needs ATK installed. Use it before you provision or publish.
+```bash
+wiqd agent validate
+wiqd agent package
+wiqd agent validate --mode deep
+```
+
+Deep mode is slower (a few seconds) and does not require the ATK CLI. Use it
+before you provision or publish.
 
 ## Real-time validation in VS Code
 
@@ -37,10 +46,7 @@ The [VS Code extension](/concepts/vscode-extension/) starts a `wiqd agent lsp` s
 ## Where validation fits in the lifecycle
 
 ```text
-edit ─▶ validate ─▶ provision ─▶ package ─▶ publish
-          │
-          ├── static  (every save, every commit, every PR)
-          └── deep    (before provision/publish, in CI)
+edit ─▶ static validate ─▶ package ─▶ deep validate ─▶ provision/publish
 ```
 
 Treat validation as a precondition for every other command in the pipeline. Work IQ Dev Tools don't *force* you to validate before provisioning, but if you don't, you'll find out the same problems the slow way — through an upstream error halfway through a deploy.
@@ -48,13 +54,16 @@ Treat validation as a precondition for every other command in the pipeline. Work
 ## Exit codes
 
 ```text
-0    No diagnostics
-1    Validation errors (your manifest needs fixing)
+0    Command completed; for deep JSON output, inspect data.valid
+1    Static validation errors (your manifest needs fixing)
 2    Infrastructure error (not an agent project, missing binary)
 130  Cancelled (Ctrl+C)
 ```
 
-This is the same shape every Work IQ Dev Tools command uses — see [Exit codes & output](/concepts/exit-codes-output/) for the contract.
+Deep validation findings are a designed domain outcome: the command can exit `0`
+with `data.valid: false`. Automation must inspect that field rather than relying
+only on the process exit code. See [Exit codes & output](/concepts/exit-codes-output/)
+for the shared command contract.
 
 ## Go deeper
 

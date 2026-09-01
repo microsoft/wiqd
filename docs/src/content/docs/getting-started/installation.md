@@ -128,6 +128,8 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --version 0.1.9
 npm install -g @microsoft/wiqd
 ```
 
+If the installer reports `E404`, either the requested `wiqd` version or one of its dependencies is unavailable from the registry identified by the installer. Follow the attributed message: for public npm, use the printed recovery command after the package is published; for a configured registry, fix or update that registry and re-run the installer.
+
 ## Verify Installation
 
 ```bash

@@ -33,6 +33,10 @@
       },
       "description": "Advertised capability tags (e.g. \"commands\", \"workflows\", \"skills\"). Informational."
     },
+    "telemetry": {
+      "$ref": "#/definitions/ExtensionTelemetryConfig",
+      "description": "Generic telemetry classification contributed while this extension is registered."
+    },
     "requirements": {
       "$ref": "#/definitions/ExtensionRequirements"
     },
@@ -47,6 +51,10 @@
     "skills": {
       "$ref": "#/definitions/ExtensionResourceDir",
       "description": "Contributed-skills directory, relative to the extension package root."
+    },
+    "mcp": {
+      "$ref": "#/definitions/ExtensionMcpConfig",
+      "description": "MCP servers this extension contributes to the composed plugin's `.mcp.json`. Aggregated at `wiqd install plugin` time."
     },
     "commands": {
       "anyOf": [
@@ -103,38 +111,7 @@
   "required": ["id", "displayName", "version"],
   "description": "A wiqd extension manifest (`wiqd-extension.json`). Declares the commands, upstream tool, auth providers, doctor checks, and mock responses an extension contributes to the wiqd host.",
   "definitions": {
-    "CompletionSpec": {
-      "type": "object",
-      "properties": {
-        "provider": {
-          "type": "string",
-          "const": "envFiles",
-          "description": "Built-in primitive name. Unknown names yield no completions (fail closed)."
-        },
-        "args": {
-          "type": "object",
-          "additionalProperties": {},
-          "description": "Primitive-specific parameters (e.g. `{ dir: \"env\" }` for `envFiles`)."
-        }
-      },
-      "description": "Declarative completion source for an option value. Names a host-provided completion PRIMITIVE (a sync, local, fail-closed candidate generator that runs per keystroke inside the `__complete` process). Static value lists do NOT belong here — use `choices`/`enum`, which already become the option's commander choices and take precedence."
-    },
-    "DelegateWhenConfig": {
-      "type": "object",
-      "properties": {
-        "condition": {
-          "type": "string"
-        },
-        "extension": {
-          "type": "string"
-        },
-        "command": {
-          "type": "string"
-        }
-      },
-      "required": ["condition", "extension", "command"]
-    },
-    "DoctorCheck": {
+    "BinaryDoctorCheck": {
       "type": "object",
       "properties": {
         "name": {
@@ -170,7 +147,7 @@
         },
         "onError": {
           "$ref": "#/definitions/DoctorOutcome",
-          "description": "Outcome when the probe throws (spawn failure / timeout). Defaults to warn \"Could not probe <binary>\"."
+          "description": "Outcome when probing fails. Defaults to warn \"Could not probe <binary>\"."
         },
         "rules": {
           "type": "array",
@@ -178,10 +155,54 @@
             "$ref": "#/definitions/DoctorRule"
           },
           "description": "Ordered result rules; the first whose `when` matches the completed probe wins."
+        },
+        "handler": {
+          "not": {}
         }
       },
       "required": ["name", "binary", "rules"],
       "description": "A manifest-declared health check run by `wiqd doctor`. The host resolves `binary`, probes it with `args`, and maps the result to a row via the declarative outcomes — it never branches on the extension's identity. The shape is rich enough to express a tri-state probe (the workiq `--json` check): `missing` (binary absent), `onError` (probe threw), and an ordered `rules` list (first match wins) over the completed probe."
+    },
+    "CompletionSpec": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "const": "envFiles",
+          "description": "Built-in primitive name. Unknown names yield no completions (fail closed)."
+        },
+        "args": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Primitive-specific parameters (e.g. `{ dir: \"env\" }` for `envFiles`)."
+        }
+      },
+      "description": "Declarative completion source for an option value. Names a host-provided completion PRIMITIVE (a sync, local, fail-closed candidate generator that runs per keystroke inside the `__complete` process). Static value lists do NOT belong here — use `choices`/`enum`, which already become the option's commander choices and take precedence."
+    },
+    "DelegateWhenConfig": {
+      "type": "object",
+      "properties": {
+        "condition": {
+          "type": "string"
+        },
+        "extension": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        }
+      },
+      "required": ["condition", "extension", "command"]
+    },
+    "DoctorCheck": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/BinaryDoctorCheck"
+        },
+        {
+          "$ref": "#/definitions/HandlerDoctorCheck"
+        }
+      ]
     },
     "DoctorCondition": {
       "type": "object",
@@ -270,6 +291,37 @@
         "code": {
           "type": "string",
           "description": "Stable machine-readable code surfaced as `error.code` in the `--json` envelope. Lives in the manifest so failure classes stay a domain concern — the host only plumbs whatever the extension declares."
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "minItems": 2,
+            "maxItems": 2,
+            "additionalItems": false
+          }
+        },
+        "remediation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "Machine-readable fields interpolated into the JSON envelope's `error` object. The host reserves `message` and `code`."
+        },
+        "helpUrl": {
+          "type": "string"
         }
       }
     },
@@ -391,7 +443,10 @@
           "type": "string"
         },
         "code": {
-          "type": "number"
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 255,
+          "description": "Portable non-zero process exit code. Defaults to 1."
         },
         "say": {
           "type": "string"
@@ -647,6 +702,27 @@
       "required": ["name", "type", "default", "description"],
       "description": "A feature flag declared by an extension's manifest. Mirrors the host `FlagDefinition` (feature-flags/types.ts); the registry merges these into the host flag set and validates the merged whole. Kept self-contained here so the manifest schema generator resolves it without importing the feature-flags module."
     },
+    "ExtensionMcpConfig": {
+      "type": "object",
+      "properties": {
+        "servers": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/McpServerDefinition"
+          },
+          "description": "Server name → opaque server definition. Names are the collision key."
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/McpInputDefinition"
+          },
+          "description": "Optional opaque input prompts, merged into the aggregate `inputs` array by `id`."
+        }
+      },
+      "required": ["servers"],
+      "description": "MCP (Model Context Protocol) servers an extension contributes to the composed plugin's root `.mcp.json`. The shape mirrors the Copilot/VS Code `.mcp.json` contract — a `servers` map plus optional `inputs` prompts. wiqd treats each server definition as opaque: it is copied verbatim into the aggregate file so the host CLI (Copilot, Claude, VS Code) — not wiqd — owns launch semantics."
+    },
     "ExtensionRequirements": {
       "type": "object",
       "properties": {
@@ -665,10 +741,23 @@
       "properties": {
         "path": {
           "type": "string",
+          "minLength": 1,
           "description": "Directory path relative to the extension package root."
         }
       },
       "required": ["path"]
+    },
+    "ExtensionTelemetryConfig": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "type": "string",
+          "enum": ["1p", "3p"],
+          "description": "Audience stamped on telemetry when this extension is registered."
+        }
+      },
+      "required": ["audience"],
+      "additionalProperties": false
     },
     "HandlerConfig": {
       "type": "object",
@@ -689,6 +778,47 @@
       },
       "required": ["target", "method"],
       "description": "Trusted in-process invocation target (manifest-schema.md §5.2). Replaces the subprocess spawn stage with a method call on the extension's `runtime` adapter. `target`/`method` are resolved by safe own-property walking (no eval); the host appends the effective AbortSignal after the resolved `args`."
+    },
+    "HandlerDoctorCheck": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Default row label. The returned outcome MAY override it."
+        },
+        "description": {
+          "type": "string",
+          "description": "Documents the check's intent. Not rendered in the row."
+        },
+        "handler": {
+          "$ref": "#/definitions/HandlerConfig",
+          "description": "Trusted in-process runtime probe resolved from this extension's top-level runtime."
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "description": "Probe timeout in seconds. Defaults to 10."
+        },
+        "onError": {
+          "$ref": "#/definitions/DoctorOutcome",
+          "description": "Outcome when loading or invoking the runtime fails."
+        },
+        "binary": {
+          "not": {}
+        },
+        "pathEnvVar": {
+          "not": {}
+        },
+        "args": {
+          "not": {}
+        },
+        "missing": {
+          "not": {}
+        },
+        "rules": {
+          "not": {}
+        }
+      },
+      "required": ["name", "handler"]
     },
     "ManifestCommandDef": {
       "type": "object",
@@ -734,6 +864,10 @@
         "spinner": {
           "type": "string"
         },
+        "preHandler": {
+          "$ref": "#/definitions/PreHandlerConfig",
+          "description": "Optional read-only trusted guard invoked before computed values and confirmation."
+        },
         "preTransform": {
           "$ref": "#/definitions/PreTransformConfig"
         },
@@ -759,6 +893,10 @@
             "$ref": "#/definitions/ErrorRule"
           }
         },
+        "verify": {
+          "$ref": "#/definitions/VerifyConfig",
+          "description": "Post-upstream read-back used to confirm a mutation's real state when the upstream response alone is inconclusive, or to enrich a terminal response on a declared best-effort code. It costs nothing when the transform requests neither path."
+        },
         "postconditions": {
           "type": "array",
           "items": {},
@@ -776,6 +914,14 @@
         "confirm": {},
         "transform": {
           "type": "string"
+        },
+        "transformOptional": {
+          "type": "boolean",
+          "description": "Opts the top-level `transform` out of fail-closed handling when — and only when — the upstream write already succeeded and its postconditions passed. A presentation transform that fails after a durable mutation would otherwise report failure for a write that really happened, and automation reading that exit code may retry the mutation. Cancellation (130) and an unsuccessful upstream still fail. Requires a non-empty `transform` and a real upstream invocation; a `noUpstream` command has no durable mutation whose exit code needs preserving. The manifest schema and loader reject root `${transform.…}` references from `postconditions`, `postSpawn`, `writeFile`, `exitIf`, `render`, or `jsonData`, because those stages would make the transform load-bearing."
+        },
+        "transformFailureNonFatal": {
+          "type": "boolean",
+          "description": "When true, a FAILED post-invocation transform degrades the render instead of failing the command — but only where there is a real side effect to protect. A transform is a display step. On a WRITE command whose upstream already committed, letting a transform timeout or a module-resolution failure surface as a non-zero exit tells the caller their write failed when it did not, and invites them to repeat it. It does NOT apply when: nothing ran (a `noUpstream` command, where the transform IS the command, or a `skipUpstreamWhen` short-circuit, where the result's `success` is a synthesized placeholder rather than evidence of work); the run is mocked, where no side effect exists and degrading would announce work that never happened while hiding a broken transform from the suites that run in mock; the command declares `writeFile`, a postcondition that interpolates the same `${transform.*}` scope the failed transform was meant to fill, so degrading would exit 0 having silently skipped it; the command declares `exitIf`, a post-transform policy verdict that cannot be evaluated without transform data; or the transform was cancelled, which still exits 130."
         },
         "render": {},
         "noUpstream": {
@@ -867,7 +1013,7 @@
         },
         "handler": {
           "$ref": "#/definitions/HandlerConfig",
-          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "nativeDryRunHandler": {
           "type": "string",
@@ -883,7 +1029,129 @@
           "type": "string",
           "description": "Optional command-availability feature-flag gate for the manifest-driven command definition (e.g. the opt-in `monitor` command). When set, the host skips registering this command unless the named boolean flag is enabled."
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "transformOptional": {
+                "const": true
+              }
+            },
+            "required": ["transformOptional"]
+          },
+          "then": {
+            "required": ["transform"],
+            "allOf": [
+              {
+                "not": {
+                  "properties": {
+                    "noUpstream": {
+                      "const": true
+                    }
+                  },
+                  "required": ["noUpstream"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["verify"]
+                }
+              }
+            ],
+            "properties": {
+              "transform": {
+                "type": "string",
+                "pattern": "\\S"
+              },
+              "postconditions": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              },
+              "postSpawn": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              },
+              "writeFile": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              },
+              "exitIf": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              },
+              "render": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              },
+              "jsonData": {
+                "$ref": "#/definitions/ValueWithoutTransformReference"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["verify"]
+          },
+          "then": {
+            "required": ["transform"],
+            "properties": {
+              "transform": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            },
+            "allOf": [
+              {
+                "not": {
+                  "properties": {
+                    "noUpstream": {
+                      "const": true
+                    }
+                  },
+                  "required": ["noUpstream"]
+                }
+              },
+              {
+                "not": {
+                  "properties": {
+                    "stdioPassthrough": {
+                      "const": true
+                    }
+                  },
+                  "required": ["stdioPassthrough"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["skipUpstreamWhen"]
+                }
+              },
+              {
+                "not": {
+                  "properties": {
+                    "transformOptional": {
+                      "const": true
+                    }
+                  },
+                  "required": ["transformOptional"]
+                }
+              },
+              {
+                "not": {
+                  "properties": {
+                    "transformFailureNonFatal": {
+                      "const": true
+                    }
+                  },
+                  "required": ["transformFailureNonFatal"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["handler"]
+                }
+              }
+            ]
+          }
+        }
+      ]
     },
     "ManifestCommandSet": {
       "type": "object",
@@ -952,6 +1220,10 @@
           "additionalProperties": {},
           "description": "Structured result returned by an in-process handler mock."
         },
+        "simulator": {
+          "type": "string",
+          "description": "Path to a transform-style simulator that performs deterministic mock-only behavior. The simulator receives the command scope as `args` and its data becomes the mock handler result unless `data` explicitly projects it."
+        },
         "writes": {
           "type": "array",
           "items": {
@@ -1012,6 +1284,32 @@
       },
       "description": "A command group mounted under a non-primary namespace (e.g. `feedback`). Every key is a command definition, except two reserved meta keys: - `_description` — string help text for the namespace command. - `_gatedBy` — a boolean feature-flag name; when its gate is closed the host hides the ENTIRE namespace this extension contributes (the container is never created and no child is registered). Fail-closed, mirroring the per-command and per-option gates."
     },
+    "McpInputDefinition": {
+      "type": "object",
+      "properties": {},
+      "additionalProperties": {},
+      "description": "An opaque MCP input whose outer shape must be a JSON object."
+    },
+    "McpServerDefinition": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Transport hint (e.g. \"http\", \"sse\", \"stdio\"). Display-only; never branched on."
+        }
+      },
+      "additionalProperties": {},
+      "description": "A single MCP server definition. `type` (e.g. \"http\", \"sse\", \"stdio\") is read for display only; every other property is opaque pass-through to `.mcp.json`."
+    },
+    "PreHandlerConfig": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "type": "string",
+          "description": "Skip this guard when the resolved expression is false."
+        }
+      }
+    },
     "PreTransformConfig": {
       "type": "object",
       "properties": {
@@ -1047,9 +1345,9 @@
           "type": "array",
           "items": {
             "type": "string",
-            "const": "logger"
+            "enum": ["logger", "telemetry"]
           },
-          "description": "Host capabilities handed to the factory. Only `logger` in v1; defaults to []."
+          "description": "Host capabilities handed to the factory; defaults to []."
         }
       },
       "required": ["module", "factory"],
@@ -1118,6 +1416,10 @@
         "timeoutSeconds": {
           "type": "number"
         },
+        "timeoutEnvVar": {
+          "type": "string",
+          "description": "Environment variable that may override timeoutSeconds, expressed in seconds."
+        },
         "installHint": {
           "type": "string"
         },
@@ -1135,6 +1437,112 @@
         }
       },
       "required": ["name"]
+    },
+    "ValueWithoutTransformReference": {
+      "anyOf": [
+        {
+          "type": "string",
+          "not": {
+            "pattern": "(?:\\$\\{(?!\\{)\\s*transform(?![A-Za-z0-9_$-])|\\$\\{(?!\\{)(?:(?:\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*')|[^}\"'])*?[^A-Za-z0-9_$.\"'-]transform(?![A-Za-z0-9_$-])|\\$\\{(?!\\{)(?:(?:\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*')|[^}\"'])*?(?<![A-Za-z0-9_$])(?:-\\s*)+transform(?![A-Za-z0-9_$-]))"
+          }
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueWithoutTransformReference"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/ValueWithoutTransformReference"
+          }
+        },
+        {
+          "type": ["number", "boolean", "null"]
+        }
+      ],
+      "description": "A JSON value that contains no manifest interpolation rooted at `${transform...}`."
+    },
+    "VerifyCall": {
+      "type": "object",
+      "properties": {
+        "as": {
+          "type": "string",
+          "pattern": "^(?!__proto__$|constructor$|prototype$)\\S(?:.*\\S)?$"
+        },
+        "args": {
+          "type": "array",
+          "minItems": 1,
+          "items": {},
+          "contains": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object"
+              }
+            ]
+          }
+        }
+      },
+      "required": ["as", "args"],
+      "description": "A read-back call. Deliberately NOT `UpstreamCall`: that shape carries `propagateFailure`, which is a pre-transform concept the read-back cannot honour — a failed read-back is recorded and handed to the transform precisely so \"I could not check\" stays distinguishable from \"I checked and it did not happen\". Reusing the wider type would let a manifest declare a schema-valid option whose promised behavior silently never happens.",
+      "additionalProperties": false
+    },
+    "VerifyConfig": {
+      "type": "object",
+      "properties": {
+        "onTransformError": {
+          "type": "string",
+          "description": "The transform-emitted `ERROR_CODE` that requests the read-back. Any other failure code is a genuine failure and is reported unchanged.",
+          "pattern": "^\\S(?:.*\\S)?$"
+        },
+        "bestEffortOnTransformErrors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^\\S(?:.*\\S)?$"
+          },
+          "description": "Additional transform error codes that request enrichment-only read-backs. If one times out, the same transform runs once with the evidence gathered so far instead of replacing an already-settled primary success with exit 5.",
+          "uniqueItems": true
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "description": "Additional read-back rounds after the first. Each round repeats only the read-only calls and result transform, never the primary mutation."
+        },
+        "delayMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30000,
+          "description": "Cancellable delay between read-back rounds."
+        },
+        "retryOnTransformErrors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^\\S(?:.*\\S)?$"
+          },
+          "description": "Transform error codes that may request another read-back while retries remain. Defaults to `onTransformError`.",
+          "uniqueItems": true
+        },
+        "upstreamCalls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/VerifyCall"
+          },
+          "description": "Read-only calls whose `{stdout, stderr, exitCode}` are exposed as `verify.<as>`. Required and non-empty: a read-back with no calls re-runs the transform against an empty evidence bundle, which confirms nothing."
+        }
+      },
+      "required": ["onTransformError", "upstreamCalls"],
+      "description": "Declarative post-upstream read-back (manifest-schema.md §5.6). The transform owns the ambiguity decision — it already parses the upstream body — and asks for confirmation by failing with `onTransformError`. The host then runs the declared read-back calls, hands their raw results back to the SAME transform under `verify`, and re-runs it. Optional bounded retries can repeat only that read-only call/transform round. This keeps the \"is this ambiguous?\" logic in exactly one place instead of duplicating a parser into a manifest expression, and lets separately-declared best-effort codes enrich a primary response without allowing a timeout to overturn its already-settled verdict.",
+      "additionalProperties": false
     },
     "WriteFileConfig": {
       "type": "object",

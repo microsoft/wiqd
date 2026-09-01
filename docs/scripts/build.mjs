@@ -27,7 +27,12 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import process from 'node:process';
-import { withGateFiltering } from './internal-partition-gate.mjs';
+import {
+  assertPublicOutputIsIsolated,
+  clearAstroBuildCaches,
+  withGateFiltering,
+} from './internal-partition-gate.mjs';
+import { generateDocsSearchIndex } from './generate-search-index.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DOCS_ROOT = resolve(__dirname, '..');
@@ -84,6 +89,10 @@ async function main() {
   // the one true way to retarget the deployment base for this build.
   if (args.base) process.env.WIQD_DOCS_BASE = args.base;
 
+  // A later public build must not retain hidden internal collection data from
+  // either of Astro's generated-state locations.
+  await clearAstroBuildCaches(DOCS_ROOT);
+
   console.log(
     `[docs-build] mode=${internal ? 'internal' : 'public'} outDir=${outDir} base=${process.env.WIQD_DOCS_BASE || '/'}`,
   );
@@ -93,7 +102,18 @@ async function main() {
       const verb = internal ? 'included' : 'hidden';
       console.log(`[docs-build] ${verb} ${internalPages} page(s) under internal/ partition`);
     }
-    return await runAstroBuild(outDir, args.extra);
+
+    // Regenerate inside every build so an internal build can never leave its
+    // full search index behind for a later public artifact to copy.
+    const indexExitCode = await generateDocsSearchIndex(internal);
+    if (indexExitCode !== 0) return indexExitCode;
+
+    const buildExitCode = await runAstroBuild(outDir, args.extra);
+    if (buildExitCode !== 0) return buildExitCode;
+
+    if (!internal) await assertPublicOutputIsIsolated(DOCS_ROOT, outDir);
+
+    return 0;
   });
 
   process.exit(exitCode);

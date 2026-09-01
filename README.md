@@ -112,7 +112,7 @@ Follow the [Quickstart](https://aka.ms/wiqd/docs?id=getting-started/quickstart/)
 ```powershell
 wiqd agent create --name my-agent
 cd my-agent
-wiqd agent add action --openapi-spec ./api/openapi.yaml
+wiqd agent add action --openapi-spec ./api/openapi.yaml --operations "GET /weather"
 ```
 
 To add a knowledge-source capability (web search, SharePoint, Graph connector), ask Copilot in natural language and let the `agent-edit` workflow update your manifest:
