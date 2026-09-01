@@ -37,9 +37,8 @@ files that `provision` writes.
 `devPreview`. That version choice has a real behavioral consequence for connectors: at **1.29**,
 `agentConnectors[]` entries are **URL-only** and `mcpToolDescription` becomes optional; at **1.28**,
 `mcpToolDescription` is required, and if its referenced file isn't included in the upload ZIP the
-upload fails with an HTTP 400. Authoring against wiqd's pinned 1.29 schema sidesteps that *schema*
-failure — but not the platform one: Cowork requires `mcpToolDescription` regardless of what 1.29
-permits, so a URL-only connector still fails to verify in the product. Supply one.
+upload fails with an HTTP 400. Authoring against wiqd's pinned 1.29 schema sidesteps that failure
+mode entirely — there's no tool-description file to forget.
 
 ## SKILL.md frontmatter rules
 
@@ -105,21 +104,9 @@ An agent connector that fronts a remote MCP server must satisfy:
 - Support for both the `tools/list` and `tools/call` methods.
 - Each tool call completing in **under 30 seconds**.
 
-**wiqd's divergence:** `wiqd plugin add connector` writes a **URL-only** entry unless you pass
-`--tool-description`, because the 1.29 schema marks `mcpToolDescription` optional.
-
-> **Copilot Cowork treats `mcpToolDescription` as required anyway.** Its published connector
-> validation rules list a missing one as an **Error**, and a URL-only connector will pass
-> `validate`, pass `validate --mode deep`, provision cleanly, and *then* show
-> **"Could not verify connection"** in the Cowork UI with nothing in the authoring loop
-> having warned you. If you are targeting Cowork, capture the server's `tools/list` output
-> to a file under `appPackage/` and pass `--tool-description <file>`. `add connector` warns
-> when you leave it out.
-
-The path is relative to `appPackage/`. A leading `./` — the form Microsoft Learn's own
-examples use — is accepted and canonicalized away, because `validateAppPackage` compares the
-raw manifest string against ZIP entry names (which carry no prefix) and would otherwise
-reject it with *"not found in the app package."*
+**wiqd's divergence:** `wiqd plugin add connector` writes a **URL-only** entry under
+manifest 1.29 — the server is expected to advertise its own tools at runtime, so wiqd does not
+scaffold a separate `mcpToolDescription` file the way a 1.28-schema manifest requires.
 
 `add connector` also enforces caps before writing, so an out-of-bounds entry never reaches the
 manifest in the first place:
@@ -141,35 +128,14 @@ A connector or API plugin can declare one of these authentication types:
 - **`ApiKeyPluginVault`** — API-key authentication, with the key managed by the plugin vault. Note
   that API-key auth is **not yet available in Cowork** — use OAuth or Dynamic Client Registration
   (DCR) there instead.
-- **`DynamicClientRegistration`** — the connector registers its own OAuth client at runtime
-  instead of using a pre-configured client ID. **This enum value is not how you enable DCR**, and
-  against Entra it does not work at all. Cowork's own guidance is to *omit* the `authorization`
-  node (while still supplying `mcpToolDescription`), which is what `--auth-type dcr` emits. And
-  Entra publishes no RFC 7591 `registration_endpoint`, so DCR is unusable against **any**
-  Entra-protected MCP server — including every first-party Microsoft one. If your server's
-  authorization server is `login.microsoftonline.com`, skip DCR and register a client by hand.
 
-There is deliberately **no `microsoftEntra` type here.** `composeExtensions` has one; `agentConnectors`
-does not, so there is no SSO path for a connector. Every OAuth-protected MCP server therefore needs a
-client ID you own — including first-party Microsoft APIs. And because Entra publishes no RFC 7591
-`registration_endpoint`, DCR is not a workaround for that: an Entra-protected server always costs a
-hand-registered app.
+Dynamic Client Registration (DCR) is not itself a manifest auth *type* — it's a mechanism where the
+connector registers its own OAuth client at runtime instead of using a pre-configured client ID. A
+DCR-backed connector still resolves to the `OAuthPluginVault` type in the manifest.
 
-`wiqd plugin add connector` wires the manifest side of this for you:
-
-```bash
-wiqd plugin add connector --name "GitHub MCP" --description "Authenticated GitHub access" \
-  --url https://api.githubcopilot.com/mcp/ \
-  --auth-type oauth --auth-reference-id <reference-id>
-```
-
-`--auth-type` accepts `none` (default), `oauth`, `api-key`, and `dcr`. `oauth` and `api-key`
-require `--auth-reference-id`; `none` and `dcr` write no authorization node and reject one.
-
-**Register the credential first.** The reference id comes from the Teams Developer Portal
-(**Tools → OAuth client registration**) or from an `oauth/register` step in `m365agents.yml`.
-`add connector` writes only that **pointer** — a client ID, client secret, or token must never appear
-in the manifest. wiqd does not create the app registration or discover OAuth endpoints for you.
+`wiqd plugin add connector` is **URL-only** today and does not scaffold connector authentication —
+if your MCP server or API plugin needs auth, configure it directly per the M365 Copilot
+extensibility documentation; wiqd doesn't yet automate that step.
 
 ## Validation codes
 
@@ -222,9 +188,8 @@ platform rules rather than numbered `ASKILL-*` codes:
 - `mcpServerUrl` must be a well-formed HTTPS URL.
 - On manifest **1.28**, a `remoteMcpServer` connector must also carry `mcpToolDescription`, and the
   file it names must be present in the uploaded ZIP. wiqd's `add connector` targets the pinned
-  **1.29** schema and writes URL-only entries by default, so wiqd-authored connectors do not carry
-  this field unless you pass `--tool-description` — see [Package anatomy](#package-anatomy). When
-  you do declare one, `zipAppPackage` collects the referenced file into the app package.
+  **1.29** schema and writes URL-only entries, so wiqd-authored connectors never carry this field
+  and never hit this rejection — see [Package anatomy](#package-anatomy) for why.
 - `authorization.referenceId` is required whenever the auth type isn't `None`, and conversely must
   be absent when the type is `None`.
 
@@ -283,7 +248,7 @@ equivalent:
 | Skill best practices                  | **Covered** — [Skill-authoring best practices](#skill-authoring-best-practices)                          |
 | Validation rules                      | **Covered** — [Validation codes](#validation-codes)                                                     |
 | Cross-platform (Claude, Cursor, etc.) | **Covered** — [Cross-platform SKILL.md portability](#cross-platform-skillmd-portability), [`wiqd plugin export`](/getting-started/build-a-plugin/#import--export-interop) |
-| MCP annotations                       | **Out of scope for wiqd** — `wiqd plugin add connector` does not scaffold tool-level MCP annotations; the remote server owns them, or you declare them in a `--tool-description` file |
+| MCP annotations                       | **Out of scope for wiqd** — `wiqd plugin add connector` is URL-only and does not scaffold tool-level MCP annotations; the remote server owns them |
 | Common questions                      | **Covered** — spread across this page and [Build a Plugin](/getting-started/build-a-plugin/); ask the conversational path (see [Path 1](/getting-started/build-a-plugin/#path-1--build-it-conversationally)) for anything not covered |
 
 ## Go deeper

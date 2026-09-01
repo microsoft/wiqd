@@ -1013,7 +1013,7 @@
         },
         "handler": {
           "$ref": "#/definitions/HandlerConfig",
-          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, devuiProxy, preTransform, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "nativeDryRunHandler": {
           "type": "string",
@@ -1021,11 +1021,6 @@
         },
         "stdioPassthrough": {
           "type": "boolean"
-        },
-        "stdioMode": {
-          "type": "string",
-          "enum": ["buffered", "protocol"],
-          "description": "Refines `stdioPassthrough`. `buffered` (the default) forwards captured stdout only after a successful exit. `protocol` relays stdout while the child is alive so bidirectional stdio protocols can exchange messages."
         },
         "writeFile": {
           "$ref": "#/definitions/WriteFileConfig"
