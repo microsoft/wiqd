@@ -16,7 +16,7 @@ Run `wiqd ext list` at any time to see what's loaded in your environment.
 | [Agents Toolkit (ATK)](/extensions/provided/atk/) | The full agent lifecycle: scaffold, edit, validate, package, provision, publish, share, delete | `wiqd agent` |
 | [Eval](/extensions/provided/eval/) | Quality evaluations of deployed agents (LLM-as-judge scoring) | `wiqd agent eval` |
 | [Validate](/extensions/provided/validate/) | Offline MVL static validation and the VS Code LSP server | `wiqd agent validate`, `wiqd agent lsp` |
-| [Work IQ](/extensions/provided/workiq/) | Monitor, ask, and list deployed agents in your tenant | `wiqd agent monitor`, `ask`, `list`, `show --name/--id` |
+| [Work IQ](/extensions/provided/workiq/) | Monitor, ask, and list deployed agents in your tenant | `wiqd agent monitor`, `ask`, `list` |
 | [Work IQ DevUI](/extensions/provided/devui/) | Launch the local Work IQ DevUI web experience for interactively testing/debugging agents | `wiqd devui` |
 
 ## How each extension is documented

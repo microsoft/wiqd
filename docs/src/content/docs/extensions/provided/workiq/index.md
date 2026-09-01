@@ -9,7 +9,7 @@ description: Monitor, ask, and list deployed declarative agents
 
 ## What it does
 
-The Work IQ extension is your window into agents that are **already deployed in the tenant**. It lets you list every declarative agent in the tenant, send messages to any of them by ID or name, look up an agent's deployed details, and query the **Insights Agent** about a specific agent's performance, usage, and health.
+The Work IQ extension is your window into agents that are **already deployed in the tenant**. It lets you list every declarative agent in the tenant, send messages to any of them by ID or name, and query the **Insights Agent** about a specific agent's performance, usage, and health.
 
 These commands need authentication to the Work IQ service (covered by `wiqd auth login`). Because the surface is still evolving, every command in this extension requires `experimental=true` in your wiqd config:
 
@@ -35,10 +35,7 @@ wiqd agent ask --agent-id "T_b6bd...declarativeAgent" -q "Hello, summarize the l
 # 4. Or send it by display name
 wiqd agent ask --agent-name "Sales Copilot Assistant" -q "..."
 
-# 5. Look up a deployed agent's card (description, version, A2A endpoint)
-wiqd agent show --id "T_b6bd...declarativeAgent"
-
-# 6. Ask the Insights Agent how a specific agent is doing
+# 5. Ask the Insights Agent how a specific agent is doing
 wiqd agent monitor --path ./my-agent --env staging --query "How often was this agent askd last week?"
 ```
 
@@ -47,7 +44,7 @@ wiqd agent monitor --path ./my-agent --env staging --query "How often was this a
 ## Where to look in the codebase
 
 - `packages/wiqd-ext-workiq/wiqd-extension.json` — manifest.
-- `packages/wiqd-cli/src/manifest/manifest-executor.ts` — host runtime.
+- `packages/wiqd/src/manifest/manifest-executor.ts` — host runtime.
 
 > **Authentication note:** these commands require an authenticated Work IQ session. Run `wiqd auth login` (or `wiqd auth status` to check state) before first use; if you hit auth errors during `wiqd doctor`, re-run `wiqd auth login`.
 

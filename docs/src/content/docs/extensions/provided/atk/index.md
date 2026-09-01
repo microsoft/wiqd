@@ -26,7 +26,7 @@ cd my-agent
 wiqd agent show
 
 # 3. Add an action backed by an OpenAPI spec
-wiqd agent add action --openapi-spec ./specs/weather.yaml
+wiqd agent add action --openapi-spec ./specs/weather.yaml --operations "GET /weather"
 
 # 4. Validate before deploying
 wiqd agent validate --mode deep
@@ -50,7 +50,7 @@ Behind every command, Work IQ Dev Tools are shelling out to `atk` with the right
 
 - `packages/wiqd-ext-atk/wiqd-extension.json` — manifest declaring every command.
 - `packages/wiqd-ext-atk/transforms/*.mjs` — per-command transform scripts.
-- `packages/wiqd-cli/src/manifest/manifest-executor.ts` — the host runtime that drives each command through this manifest.
+- `packages/wiqd/src/manifest/manifest-executor.ts` — the host runtime that drives each command through this manifest.
 
 ## Go deeper
 

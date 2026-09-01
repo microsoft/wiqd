@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "npm run generate:index && astro dev",
     "start": "npm run generate:index && astro dev",
-    "prebuild": "node scripts/generate-docs-index.cjs --output ./public/docs-index.json",
     "build": "node scripts/build.mjs",
     "preview": "astro preview",
     "astro": "astro",

@@ -62,6 +62,12 @@ PUBLIC_NPM_REGISTRY="https://registry.npmjs.org/"
 # initialized empty array in the generated public installer where no setter
 # ever runs — an unset read under `set -u` would otherwise be fatal.
 NPM_REGISTRY_ARGS=()
+LAST_NPM_ERROR_CODE=""
+LAST_NPM_REGISTRY=""
+LAST_NPM_MISSING_SPEC=""
+NPM_INSTALL_REGISTRY=""
+NPM_INSTALL_REGISTRY_SCOPE=""
+NPM_SUPPRESS_FAILURE_DIAGNOSTICS=false
 VSCODE_EXTENSION_ID="Microsoft.wiqd"
 # Some install paths activate additional extensions as part of the same run,
 # so the plugin-compose step below must force a rebuild even when `wiqd`
@@ -83,7 +89,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.12.2"
+WIQD_INSTALLER_VERSION="0.13.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -221,6 +227,27 @@ sanitize_terminal_output() {
         | LC_ALL=C sed "s|${esc}\[[0-9;?]*[ -/]*[@-~]||g" \
         | LC_ALL=C tr -d '\000-\010\013\014\016-\037\177' \
         | tail -c 8192
+}
+
+safe_registry_label() {
+    local sanitized origin
+    sanitized=$(sanitize_terminal_output "${1:-}")
+    origin=$(printf '%s' "$sanitized" \
+        | LC_ALL=C sed -nE 's#^(https?://)([^/@]+@)?([A-Za-z0-9.-]+(:[0-9]+)?)(/.*)?$#\1\3#p')
+    if [[ -n "$origin" ]]; then
+        printf '%s' "$origin"
+    else
+        printf '%s' "configured npm registry"
+    fi
+}
+
+sanitize_npm_output() {
+    local redacted
+    redacted=$(printf '%s' "$1" \
+        | LC_ALL=C sed -E \
+            -e 's#(https?://)[^/@[:space:]]+@#\1#g' \
+            -e 's#([?&](access_token|token|auth|password|passwd|apikey|api_key)=)[^&[:space:]]+#\1[REDACTED]#g')
+    sanitize_terminal_output "$redacted"
 }
 
 
@@ -592,13 +619,37 @@ install_npm_global_packages() {
     # 2>&1 (not 2>/dev/null) so npm warnings don't crash the script via set -e,
     # AND so the success-line grep below can see real npm output.
     # --loglevel=error suppresses npm's own deprecation warnings.
-    # NPM_REGISTRY_ARGS is empty on the plain path (the machine's own registry
-    # config wins) and pins public npm on the 1P path, where the artifact's
-    # signing is the whole point of the source preference. The
-    # ${arr[@]+"${arr[@]}"} form expands to nothing when the array is empty
-    # instead of tripping `set -u` on macOS's default bash 3.2.
+    # NPM_REGISTRY_ARGS pins every 1P npm call to public npm. The guarded
+    # expansion stays compatible with macOS's default bash 3.2.
+    local npm_args=(install -g "${packages[@]}" ${NPM_REGISTRY_ARGS[@]+"${NPM_REGISTRY_ARGS[@]}"} --loglevel=error)
+    if [[ -n "$NPM_INSTALL_REGISTRY" ]]; then
+        npm_args+=(--registry "$NPM_INSTALL_REGISTRY")
+        # A scoped package resolves through its `@scope:registry` config, which
+        # takes precedence over the generic --registry flag; pin the scope too so
+        # the attempt can't silently resolve against the user's scoped registry.
+        if [[ -n "$NPM_INSTALL_REGISTRY_SCOPE" ]]; then
+            npm_args+=("--${NPM_INSTALL_REGISTRY_SCOPE}:registry=$NPM_INSTALL_REGISTRY")
+        fi
+    fi
+
+    LAST_NPM_ERROR_CODE=""
+    LAST_NPM_REGISTRY="$NPM_INSTALL_REGISTRY"
+    LAST_NPM_MISSING_SPEC=""
     local npm_output
-    if ! npm_output=$(npm install -g "${packages[@]}" ${NPM_REGISTRY_ARGS[@]+"${NPM_REGISTRY_ARGS[@]}"} --loglevel=error 2>&1); then
+    if ! npm_output=$(npm "${npm_args[@]}" 2>&1); then
+        # Capture the npm error code (e.g. E404) before any classification so the
+        # auto-mode caller can offer an actionable registry-retry / recovery hint.
+        LAST_NPM_ERROR_CODE=$(printf '%s\n' "$npm_output" \
+            | grep -Eio 'npm (error|ERR!) code E[A-Z0-9]+' \
+            | awk '{print toupper($NF)}' \
+            | head -1 || true)
+        # npm has used both legacy and current wording for the unresolved spec.
+        # Capture either form so dependency failures are not blamed on the root.
+        LAST_NPM_MISSING_SPEC=$(printf '%s\n' "$npm_output" \
+            | LC_ALL=C sed -nE \
+                -e "s/.*404[[:space:]]+'([^']+)'[[:space:]]+is not in this registry.*/\1/p" \
+                -e "s/.*The requested resource[[:space:]]+'([^']+)'[[:space:]]+could not be found.*/\1/p" \
+            | head -1 || true)
         # Classify an EEXIST file conflict distinctly from a network/registry
         # failure (R35). npm aborts the whole global install with EEXIST when a
         # launcher target already exists but isn't owned by the installing
@@ -624,7 +675,8 @@ install_npm_global_packages() {
         # alternative, and stop. Change nothing. npm itself discourages
         # `sudo npm install -g`, so re-running with sudo is the fallback, not
         # the headline.
-        if printf '%s' "$npm_output" | grep -qE 'EACCES|EPERM'; then
+        if printf '%s\n' "$npm_output" | grep -Eq 'npm (error|ERR!) code (EACCES|EPERM)' \
+            && printf '%s\n' "$npm_output" | grep -Eq 'npm (error|ERR!) path .+'; then
             NPM_INSTALL_PERMISSION=1
             local npm_prefix
             npm_prefix=$(npm config get prefix --loglevel=error 2>/dev/null | head -1 | tr -d '\r' || true)
@@ -636,6 +688,10 @@ install_npm_global_packages() {
             write_hint "  npm config set prefix <dir>   (then re-run this installer)"
             return 1
         fi
+        if $NPM_SUPPRESS_FAILURE_DIAGNOSTICS; then
+            return 1
+        fi
+
         write_warn "npm install failed for $display_name"
         # Surface the captured npm output so the first failing run is
         # self-diagnosing; otherwise the real cause (e.g. an EACCES on the
@@ -643,8 +699,13 @@ install_npm_global_packages() {
         # sanitize_terminal_output first: npm relays untrusted transitive
         # lifecycle-script output, so strip terminal control sequences and cap
         # the volume before writing to stderr.
-        [[ -n "$npm_output" ]] && sanitize_terminal_output "$npm_output" >&2
-        write_hint "Re-run 'npm install -g ${packages[*]}' to see the full npm error output."
+        [[ -n "$npm_output" ]] && sanitize_npm_output "$npm_output" >&2
+        local registry_hint=""
+        if [[ -n "$NPM_INSTALL_REGISTRY" \
+            && "${NPM_INSTALL_REGISTRY%/}" == "${PUBLIC_NPM_REGISTRY%/}" ]]; then
+            registry_hint=" --registry $PUBLIC_NPM_REGISTRY"
+        fi
+        write_hint "Re-run 'npm install -g ${packages[*]}${registry_hint}' to see the full npm error output."
         return 1
     fi
 
@@ -887,7 +948,73 @@ install_from_npm_registry() {
         package_spec="${package}@${resolved_version#v}"
     fi
 
-    install_npm_global_packages "$package_spec from npm registry" "$package_spec"
+    local package_scope=""
+    if [[ "$package_spec" == @*/* ]]; then package_scope="${package_spec%%/*}"; fi
+    local configured_registry
+    configured_registry=$(npm config get registry --loglevel=error 2>/dev/null || true)
+    configured_registry="${configured_registry//$'\r'/}"
+    configured_registry="${configured_registry//$'\n'/}"
+    if [[ "$configured_registry" == "undefined" || "$configured_registry" == "null" ]]; then configured_registry=""; fi
+    # A scoped package resolves through its `@scope:registry` mapping when set,
+    # which overrides the generic registry — so the EFFECTIVE registry (used for
+    # both the fallback decision and the retry) must consult the scope first.
+    local scoped_registry=""
+    if [[ -n "$package_scope" ]]; then
+        scoped_registry=$(npm config get "${package_scope}:registry" --loglevel=error 2>/dev/null || true)
+        scoped_registry="${scoped_registry//$'\r'/}"
+        scoped_registry="${scoped_registry//$'\n'/}"
+        if [[ "$scoped_registry" == "undefined" || "$scoped_registry" == "null" ]]; then scoped_registry=""; fi
+    fi
+    local effective_registry="$configured_registry"
+    if [[ -n "$scoped_registry" ]]; then effective_registry="$scoped_registry"; fi
+    # Registry configuration is untrusted display text. Show only its parsed,
+    # credential-free origin and never place it in a copyable command.
+    local safe_effective_registry
+    safe_effective_registry=$(safe_registry_label "$effective_registry")
+    local normalized_configured="${effective_registry%/}"
+    local normalized_public="${PUBLIC_NPM_REGISTRY%/}"
+    local has_fallback_registry=false
+    if [[ -n "$normalized_configured" && "$normalized_configured" != "$normalized_public" ]]; then has_fallback_registry=true; fi
+    local previous_registry="$NPM_INSTALL_REGISTRY"
+    local previous_registry_scope="$NPM_INSTALL_REGISTRY_SCOPE"
+    NPM_INSTALL_REGISTRY="$PUBLIC_NPM_REGISTRY"
+    NPM_INSTALL_REGISTRY_SCOPE="$package_scope"
+    NPM_SUPPRESS_FAILURE_DIAGNOSTICS=$has_fallback_registry
+    if install_npm_global_packages "$package_spec from ${NPM_INSTALL_REGISTRY:-npm registry}" "$package_spec"; then
+        NPM_SUPPRESS_FAILURE_DIAGNOSTICS=false
+        NPM_INSTALL_REGISTRY="$previous_registry"
+        NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
+        return 0
+    fi
+    NPM_SUPPRESS_FAILURE_DIAGNOSTICS=false
+    if $has_fallback_registry && [[ "$NPM_INSTALL_CONFLICT" != 1 && "$NPM_INSTALL_PERMISSION" != 1 ]]; then
+        write_warn "$package_spec could not be installed from $PUBLIC_NPM_REGISTRY."
+        write_info "Retrying from configured npm registry $safe_effective_registry..."
+        NPM_INSTALL_REGISTRY="$effective_registry"
+        NPM_INSTALL_REGISTRY_SCOPE="$package_scope"
+        local fallback_status=0
+        install_npm_global_packages "$package_spec from $safe_effective_registry" "$package_spec" || fallback_status=$?
+        NPM_INSTALL_REGISTRY="$previous_registry"
+        NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
+        if [[ "$fallback_status" -ne 0 && "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
+            if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$package_spec" ]]; then
+                write_warn "A dependency ($LAST_NPM_MISSING_SPEC) of $package_spec was not found in $safe_effective_registry."
+            else
+                write_warn "$package_spec was not found in $safe_effective_registry."
+            fi
+        fi
+        return "$fallback_status"
+    fi
+    NPM_INSTALL_REGISTRY="$previous_registry"
+    NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
+    if [[ "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
+        if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$package_spec" ]]; then
+            write_warn "A dependency ($LAST_NPM_MISSING_SPEC) of $package_spec was not found in $PUBLIC_NPM_REGISTRY."
+        else
+            write_warn "$package_spec was not found in $PUBLIC_NPM_REGISTRY."
+        fi
+    fi
+    return 1
 }
 
 get_npm_global_package_version() {
@@ -1267,7 +1394,23 @@ else
         fi
         write_err "wiqd installation failed."
         echo ""
-        write_hint "Make sure npm can reach the public registry, then re-run this installer."
+        if [[ "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
+            safe_last_registry=$(safe_registry_label "$LAST_NPM_REGISTRY")
+            is_public_registry=false
+            if [[ "${LAST_NPM_REGISTRY%/}" == "${PUBLIC_NPM_REGISTRY%/}" ]]; then is_public_registry=true; fi
+            if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$WIQD_PACKAGE@${target_version#v}" ]]; then
+                write_hint "A dependency ($LAST_NPM_MISSING_SPEC) was not found in $safe_last_registry."
+            else
+                write_hint "$WIQD_PACKAGE@${target_version#v} was not found in $safe_last_registry."
+            fi
+            if $is_public_registry; then
+                write_hint "After it is published, run 'npm install -g $WIQD_PACKAGE@${target_version#v} --registry $PUBLIC_NPM_REGISTRY'."
+            else
+                write_hint "After it becomes available, re-run this installer to use your configured registry."
+            fi
+        else
+            write_hint "Make sure npm can reach the public registry, then re-run this installer."
+        fi
         exit 1
     fi
     

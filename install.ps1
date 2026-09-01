@@ -133,7 +133,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.12.2"
+$script:WiqdVersion = "0.13.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -143,6 +143,9 @@ $script:WiqdVersion = "0.12.2"
 $npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
 if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
 $script:NpmExe = if ($npmCmd) { $npmCmd.Source } else { $null }
+$script:LastNpmErrorCode = $null
+$script:LastNpmRegistry = $null
+$script:LastNpmMissingSpec = $null
 
 # ─────────────────────────────────────────────
 # Helpers
@@ -218,6 +221,34 @@ function Invoke-Native {
         }
         $global:LASTEXITCODE = $entryLastExitCode
     }
+}
+
+function Get-SafeRegistryLabel {
+    param([string]$Registry)
+
+    if ([string]::IsNullOrWhiteSpace($Registry)) { return "configured npm registry" }
+    try {
+        $uri = [uri]$Registry
+        if (-not $uri.IsAbsoluteUri -or $uri.Scheme -notin @('http', 'https') -or -not $uri.Host) {
+            return "configured npm registry"
+        }
+        $port = if ($uri.IsDefaultPort) { "" } else { ":$($uri.Port)" }
+        return "$($uri.Scheme)://$($uri.IdnHost)$port"
+    } catch {
+        return "configured npm registry"
+    }
+}
+
+function Protect-NpmDiagnostic {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) { return $Text }
+    $safe = $Text -replace '(?i)(https?://)[^/@\s]+@', '$1'
+    $safe = $safe -replace '(?i)([?&](?:access_token|token|auth|password|passwd|apikey|api_key)=)[^&\s]+', '$1[REDACTED]'
+    $safe = $safe -replace "$([char]27)\[[0-9;?]*[ -/]*[@-~]", ''
+    $safe = $safe -replace '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ''
+    if ($safe.Length -gt 8192) { return $safe.Substring($safe.Length - 8192) }
+    return $safe
 }
 
 # Runs a `wiqd --version` / `wiqd doctor` install-time smoke-test through
@@ -371,7 +402,10 @@ function Install-NpmGlobalPackages {
     # tarball instead of the (not-yet-published) registry.
     param(
         [Parameter(Mandatory)][string[]]$Packages,
-        [string]$DisplayName = "wiqd"
+        [string]$DisplayName = "wiqd",
+        [string]$Registry,
+        [string]$RegistryScope,
+        [switch]$SuppressFailureDiagnostics
     )
 
     Write-Info "Installing $DisplayName..."
@@ -388,14 +422,38 @@ function Install-NpmGlobalPackages {
     # @azure/msal-node-runtime's copyBinaries.js, which stages the MSAL native
     # binding. No --ignore-scripts, no in-dir backfill, no npm rebuild —
     # a single-pass npm install.
-    # $script:NpmRegistryArgs is empty on the plain path (the machine's own
-    # registry config wins) and pins public npm on the 1P path, where the
-    # artifact's signing is the whole point of the source preference.
-    $registryArgs = @($script:NpmRegistryArgs)
-    $r = Invoke-Native { & $script:NpmExe install -g @Packages @registryArgs --loglevel=error }
+    # The shared registry arguments pin every 1P npm call to public npm. An
+    # explicit registry is used by the public installer's retry path.
+    $npmArgs = @("install", "-g") + $Packages + @($script:NpmRegistryArgs) + @("--loglevel=error")
+    if ($Registry) {
+        $npmArgs += @("--registry", $Registry)
+        # A scoped package resolves through its `@scope:registry` config, which
+        # takes precedence over the generic --registry flag. Pin the scope too,
+        # otherwise the attempt silently resolves against the user's scoped
+        # registry while we report (and record) the one we passed to --registry.
+        if ($RegistryScope) {
+            $npmArgs += @("--${RegistryScope}:registry=$Registry")
+        }
+    }
+
+    $script:LastNpmErrorCode = $null
+    $script:LastNpmRegistry = $Registry
+    $script:LastNpmMissingSpec = $null
+    $r = Invoke-Native { & $script:NpmExe @npmArgs }
     $npmOutput = $r.StdOut
 
     if ($r.ExitCode -ne 0) {
+        # Capture the npm error code (e.g. E404) before any classification so the
+        # auto-mode caller can offer an actionable registry-retry / recovery hint.
+        $npmError = $r.StdErr -join "`n"
+        if ($npmError -match '(?i)\bnpm\s+(?:error|ERR!)\s+code\s+(E[A-Z0-9]+)\b') {
+            $script:LastNpmErrorCode = $Matches[1].ToUpperInvariant()
+        }
+        # npm has used both legacy and current wording for the unresolved spec.
+        # Capture either form so dependency failures are not blamed on the root.
+        if ($npmError -match "(?i)(?:404\s+)?(?:The requested resource\s+)?'([^']+)'(?:\s+is\s+not\s+in\s+this\s+registry|\s+could\s+not\s+be\s+found)") {
+            $script:LastNpmMissingSpec = $Matches[1].Trim()
+        }
         # Classify an EEXIST file conflict distinctly from a network/registry
         # failure (R35). npm aborts the whole global install with EEXIST when a
         # launcher target already exists but isn't owned by the installing
@@ -421,7 +479,9 @@ function Install-NpmGlobalPackages {
         # alternative, and stop. Change nothing. npm itself discourages
         # `sudo npm install -g`, so re-running as Administrator is the fallback,
         # not the headline.
-        if ($combined -match 'EACCES' -or $combined -match 'EPERM') {
+        $hasPermissionCode = $combined -match '(?im)^\s*npm\s+(?:error|ERR!)\s+code\s+(?:EACCES|EPERM)\s*$'
+        $hasFilesystemPath = $combined -match '(?im)^\s*npm\s+(?:error|ERR!)\s+path\s+.+$'
+        if ($hasPermissionCode -and $hasFilesystemPath) {
             $script:NpmInstallPermission = $true
             $prefixResult = Invoke-Native { & $script:NpmExe config get prefix --loglevel=error }
             $npmPrefix = if ($prefixResult.StdOut.Count -gt 0) { $prefixResult.StdOut[0].Trim() } else { $null }
@@ -433,6 +493,10 @@ function Install-NpmGlobalPackages {
             Write-Hint "  npm config set prefix <dir>   (then re-run this installer)"
             return $false
         }
+        if ($SuppressFailureDiagnostics) {
+            return $false
+        }
+
         Write-Warn "npm install failed for $DisplayName"
 
         # A hidden DevUI server (this bug's historical root cause) can hold an
@@ -455,9 +519,12 @@ function Install-NpmGlobalPackages {
             Write-Hint "Then re-run this install."
         }
         if ($r.StdErr.Count -gt 0) {
-            Write-Hint ($r.StdErr -join ' ')
+            Write-Hint (Protect-NpmDiagnostic ($r.StdErr -join ' '))
         }
-        Write-Hint "Re-run 'npm install -g $($Packages -join ' ')' to see the full npm error output."
+        # Only the trusted public constant is safe to embed in a copyable command.
+        $isPublicRegistry = $Registry -and $Registry.TrimEnd('/') -eq $script:PublicNpmRegistry.TrimEnd('/')
+        $registryHint = if ($isPublicRegistry) { " --registry $script:PublicNpmRegistry" } else { "" }
+        Write-Hint "Re-run 'npm install -g $($Packages -join ' ')$registryHint' to see the full npm error output."
         return $false
     }
 
@@ -670,7 +737,56 @@ function Install-FromNpmRegistry {
     # build.
     $packageSpec = if ($version) { "$package@$version" } else { $package }
 
-    return (Install-NpmGlobalPackages -Packages @($packageSpec) -DisplayName "$packageSpec from npm registry")
+    $installArgs = @{
+        Packages = @($packageSpec)
+        DisplayName = "$packageSpec from npm registry"
+    }
+    $packageScope = if ($packageSpec -like "@*/*") { ($packageSpec -split "/", 2)[0] } else { $null }
+    $registryResult = if ($script:NpmExe) { Invoke-Native { & $script:NpmExe config get registry --loglevel=error } } else { $null }
+    $configuredRegistry = if ($registryResult -and -not $registryResult.Failed -and $registryResult.StdOut.Count -gt 0) { $registryResult.StdOut[0].ToString().Trim() } else { $null }
+    if ($configuredRegistry -in @("", "undefined", "null")) { $configuredRegistry = $null }
+    # A scoped package resolves through its `@scope:registry` mapping when set,
+    # which overrides the generic registry — so the EFFECTIVE registry (used
+    # for both the fallback decision and the retry) must consult the scope first.
+    $scopedRegistry = $null
+    if ($packageScope -and $script:NpmExe) {
+        $scopedResult = Invoke-Native { & $script:NpmExe config get "${packageScope}:registry" --loglevel=error }
+        if ($scopedResult -and -not $scopedResult.Failed -and $scopedResult.StdOut.Count -gt 0) { $scopedRegistry = $scopedResult.StdOut[0].ToString().Trim() }
+        if ($scopedRegistry -in @("", "undefined", "null")) { $scopedRegistry = $null }
+    }
+    $effectiveRegistry = if ($scopedRegistry) { $scopedRegistry } else { $configuredRegistry }
+    # Registry configuration is untrusted display text. Show only its parsed,
+    # credential-free origin and never place it in a copyable command.
+    $safeEffectiveRegistry = Get-SafeRegistryLabel $effectiveRegistry
+    $hasFallbackRegistry = $effectiveRegistry -and $effectiveRegistry.TrimEnd('/') -ne $script:PublicNpmRegistry.TrimEnd('/')
+    $installArgs.DisplayName = "$packageSpec from $script:PublicNpmRegistry"
+    $installArgs.Registry = $script:PublicNpmRegistry
+    $installArgs.RegistryScope = $packageScope
+    $installArgs.SuppressFailureDiagnostics = $hasFallbackRegistry
+    $installed = Install-NpmGlobalPackages @installArgs
+
+    if (-not $installed -and $hasFallbackRegistry -and -not $script:NpmInstallConflict -and -not $script:NpmInstallPermission) {
+        Write-Warn "$packageSpec could not be installed from $script:PublicNpmRegistry."
+        Write-Info "Retrying from configured npm registry $safeEffectiveRegistry..."
+        $fallbackInstalled = Install-NpmGlobalPackages -Packages @($packageSpec) -DisplayName "$packageSpec from $safeEffectiveRegistry" -Registry $effectiveRegistry -RegistryScope $packageScope
+        if (-not $fallbackInstalled -and $script:LastNpmErrorCode -eq "E404") {
+            if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne $packageSpec) {
+                Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found in $safeEffectiveRegistry."
+            } else {
+                Write-Warn "$packageSpec was not found in $safeEffectiveRegistry."
+            }
+        }
+        return $fallbackInstalled
+    }
+    if (-not $installed -and $script:LastNpmErrorCode -eq "E404") {
+        if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne $packageSpec) {
+            Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found in $script:PublicNpmRegistry."
+        } else {
+            Write-Warn "$packageSpec was not found in $script:PublicNpmRegistry."
+        }
+    }
+
+    return $installed
 }
 
 
@@ -1188,7 +1304,22 @@ if ($skipInstall) {
         }
         Write-Err "wiqd installation failed."
         Write-Host ""
-        Write-Hint "Check your network connection and that npm can reach the registry, then re-run."
+        if ($script:LastNpmErrorCode -eq "E404") {
+            $safeLastRegistry = Get-SafeRegistryLabel $script:LastNpmRegistry
+            $isPublicRegistry = $script:LastNpmRegistry -and $script:LastNpmRegistry.TrimEnd('/') -eq $script:PublicNpmRegistry.TrimEnd('/')
+            if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne "$WiqdPackage@$targetVersion") {
+                Write-Hint "A dependency ($script:LastNpmMissingSpec) was not found in $safeLastRegistry."
+            } else {
+                Write-Hint "$WiqdPackage@$targetVersion was not found in $safeLastRegistry."
+            }
+            if ($isPublicRegistry) {
+                Write-Hint "After it is published, run 'npm install -g $WiqdPackage@$targetVersion --registry $script:PublicNpmRegistry'."
+            } else {
+                Write-Hint "After it becomes available, re-run this installer to use your configured registry."
+            }
+        } else {
+            Write-Hint "Check your network connection and that npm can reach the registry, then re-run."
+        }
         return 1
     }
 

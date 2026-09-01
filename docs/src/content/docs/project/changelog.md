@@ -2,6 +2,37 @@
 title: Changelog
 ---
 
+## 0.13.0 — 2026-08-28
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- The `wiqd plugin` lifecycle — `create`, `provision`, `share`, and `delete` — now runs inside wiqd itself instead of shelling out to a separate toolkit, so it starts faster and surfaces failures directly. These commands now ask for Microsoft 365 sign-in rather than a separate toolkit sign-in; use `wiqd auth login --interactive`.
+- The built-in agent backend now covers the full lifecycle command surface, so `wiqd agent` and `wiqd plugin` behave consistently whether a command runs inside wiqd or through the Microsoft 365 Agents Toolkit. `wiqd doctor` reports the backend's health alongside its other environment checks.
+- Extensions can declare MCP servers in their manifest, and wiqd aggregates them into the composed plugin so they load automatically when your host CLI installs it — no per-server registration and no separate plugin install. `wiqd ext show` lists the servers an extension contributes.
+- `wiqd agent show` now runs through wiqd's built-in agent backend, so it works without the Microsoft 365 Agents Toolkit installed. Choose the environment to inspect with `--env`.
+- Extensions can contribute Copilot skills, which wiqd composes into the plugin so they reach the host CLI without a separate install.
+- Telemetry from the built-in agent backend now flows through wiqd's own consent-aware pipeline, so it honors your telemetry setting and is redacted for personal data and secrets like every other wiqd event.
+- Shipped agent-authoring guidance now covers attaching Graph connectors, embedding agent skills, and adding MCP actions with `wiqd` commands, and documents which MCP authentication modes are supported. `wiqd agent add action` now requires explicit `METHOD /path` operation selectors.
+- Extension manifests can declare `transformFailureNonFatal`, so a failed post-invocation transform degrades the render instead of failing a write command whose upstream work already succeeded; the `--json` envelope carries `transformFailed` so a consumer can tell that apart from having nothing to report. `@microsoft/wiqd-extension-sdk` adds a `./digest` export with `sha256File`, `sha256Fd`, and `readAndDigestFile` for size-capped SHA-256 hashing of a file or an already-open descriptor.
+- `wiqd agent eval` adds `--judge-backend` and `--log-level`. The default `github-copilot` judge runs evaluations with no Azure setup, while `--judge-backend azure` opts into Azure OpenAI for GPT-5.x and o-series models and for custom `.prompty` evaluators. New reference material documents which evaluators work under each backend.
+- default lifecycle to wiqd core
+
+### Fixes
+
+- When `wiqd update` fails, it now reports the real cause — a permission problem, a network failure, or an npm error — instead of generic installer boilerplate, and keeps the actionable recovery steps alongside it. The sanitized root cause appears in both the readable output and the `--json` envelope.
+- `wiqd agent add auth --auth-type` now accepts an explicit set of values — `bearer-token` (the default), `api-key`, `oauth`, and the new `microsoft-entra` — and rejects anything else up front instead of failing partway through. `microsoft-entra` needs only `--scope`; it does not ask for authorization or token URLs.
+- A command whose write already succeeded no longer reports failure when an optional display-only transform fails afterwards, so a formatting error can no longer make completed work look like it needs retrying.
+- Commands are listed alphabetically in `wiqd --help` and in the command list shown after a parse error, so a command is easier to find.
+- `wiqd auth login --interactive` now fails immediately with a clear message when it is not attached to a real terminal, instead of hanging with no visible prompt. It exits 2 with the stable JSON error code `AUTH_INTERACTIVE_REQUIRES_TTY`. The default non-interactive `wiqd auth login` is unchanged and still works headlessly in CI.
+- Mocked runs of the plugin lifecycle now mirror what the real commands do, so offline previews and demos reflect actual behavior.
+- report measured versions during CLI updates
+
+### Performance
+
+- Running `wiqd` with no arguments now lists the same commands as `wiqd --help`, and help renders about four times faster.
+
 ## 0.12.2 — 2026-08-14
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

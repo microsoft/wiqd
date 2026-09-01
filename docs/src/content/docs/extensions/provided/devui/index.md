@@ -46,7 +46,7 @@ wiqd devui stop
 - `packages/wiqd-ext-devui/wiqd-extension.json` — manifest declaring the `start`/`ask`/`stop`/`config` commands and the `devui` feature flag.
 - `packages/wiqd-ext-devui/server/` — the Express bridge that spawns/proxies `workiq` and serves the built client.
 - `packages/wiqd-ext-devui/client/` — the Vite + React + Fluent UI v9 web app.
-- `packages/wiqd-cli/src/manifest/manifest-executor.ts` — the host runtime that drives each command through this manifest.
+- `packages/wiqd/src/manifest/manifest-executor.ts` — the host runtime that drives each command through this manifest.
 
 ## Go deeper
 

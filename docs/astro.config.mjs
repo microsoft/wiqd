@@ -10,14 +10,14 @@ import { remarkScrubInternalChangelog } from './src/plugins/remark-scrub-interna
 import { remarkBaseRelativeLinks } from './src/plugins/remark-base-relative-links.js';
 import { site, base } from './src/site-config.mjs';
 
-// The 1P docs partition (everything under src/content/docs/internal/) is
+// The internal docs partition (everything under src/content/docs/internal/) is
 // excluded from the public build. Its sidebar entries are appended only when
 // WIQD_DOCS_INTERNAL=1 so the public sidebar never references an internal/
 // slug (which would not exist in the public build). See scripts/build.mjs.
 const includeInternalDocs = process.env.WIQD_DOCS_INTERNAL === '1';
 
 // Internal sidebar groups live in a separate module that is dynamic-imported
-// ONLY for the internal build. This keeps every 1P slug string out of
+// ONLY for the internal build. This keeps every internal slug string out of
 // astro.config.mjs itself so the file is safe to ship verbatim in the public
 // mirror, and lets the mirror generator omit src/internal-sidebar.mjs entirely.
 const internalSidebarGroups = includeInternalDocs
@@ -40,6 +40,16 @@ export default defineConfig({
       title: 'Work IQ Dev Tools',
       plugins: [starlightThemeTerminal()],
       customCss: ['./src/styles/custom.css'],
+      // Long CLI invocations otherwise force horizontal scrolling inside the
+      // code block, which hides the end of the command from the reader.
+      expressiveCode: {
+        defaultProps: {
+          preserveIndent: true,
+          overridesByLang: {
+            'powershell,bash,sh,shell,console,zsh': { wrap: true },
+          },
+        },
+      },
       head: [
         {
           tag: 'script',
@@ -80,6 +90,7 @@ export default defineConfig({
             { label: 'Authentication', slug: 'getting-started/authentication' },
           ],
         },
+        { label: 'Cookbooks', slug: 'cookbooks' },
         {
           label: 'Concepts',
           items: [
