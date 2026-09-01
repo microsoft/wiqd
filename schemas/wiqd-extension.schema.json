@@ -33,6 +33,10 @@
       },
       "description": "Advertised capability tags (e.g. \"commands\", \"workflows\", \"skills\"). Informational."
     },
+    "telemetry": {
+      "$ref": "#/definitions/ExtensionTelemetryConfig",
+      "description": "Generic telemetry classification contributed while this extension is registered."
+    },
     "requirements": {
       "$ref": "#/definitions/ExtensionRequirements"
     },
@@ -742,6 +746,18 @@
         }
       },
       "required": ["path"]
+    },
+    "ExtensionTelemetryConfig": {
+      "type": "object",
+      "properties": {
+        "audience": {
+          "type": "string",
+          "enum": ["1p", "3p"],
+          "description": "Audience stamped on telemetry when this extension is registered."
+        }
+      },
+      "required": ["audience"],
+      "additionalProperties": false
     },
     "HandlerConfig": {
       "type": "object",
