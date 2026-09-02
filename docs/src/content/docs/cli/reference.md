@@ -1963,6 +1963,9 @@ wiqd plugin add connector [options]
 | `-n, --name <value>` | Connector display name |
 | `--description <value>` | Connector description |
 | `--url <value>` | Remote MCP server https:// URL |
+| `--tool-description <value>` | Existing tool-description file, relative to appPackage/ |
+| `--auth-type <value>` | Connector authorization type (dcr omits the block, which is how the host enables it) (choices: "none", "oauth", "api-key", "dcr", default: "none") |
+| `--auth-reference-id <value>` | Vault reference id for the credential (required for oauth and api-key; not accepted for none or dcr) |
 | `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
 
 **Examples**

@@ -133,7 +133,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.13.0"
+$script:WiqdVersion = "0.13.1"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
