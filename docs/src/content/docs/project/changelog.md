@@ -2,6 +2,16 @@
 title: Changelog
 ---
 
+## 0.13.1 — 2026-09-01
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Fixes
+
+- harden failure isolation and unavailable-command fallback
+- correct oauth/register binding and let add connector declare auth
+- accept Copilot local marketplace installs
+
 ## 0.13.0 — 2026-08-28
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
