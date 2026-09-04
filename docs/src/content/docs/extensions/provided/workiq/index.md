@@ -5,11 +5,21 @@ description: Monitor, ask, and list deployed declarative agents
 
 # Work IQ
 
-**Extension ID:** `microsoft.workiq` · **Package:** `@microsoft/wiqd-ext-workiq` · **Upstream:** [`@microsoft/workiq`](https://www.npmjs.com/package/@microsoft/workiq) `>=1.0.0`
+**Extension ID:** `microsoft.workiq` · **Package:** `@microsoft/wiqd-ext-workiq` · **Upstream:** [`@microsoft/workiq`](https://www.npmjs.com/package/@microsoft/workiq) `1.0.0`
 
 ## What it does
 
 The Work IQ extension is your window into agents that are **already deployed in the tenant**. It lets you list every declarative agent in the tenant, send messages to any of them by ID or name, and query the **Insights Agent** about a specific agent's performance, usage, and health.
+
+The wiqd installer and `wiqd doctor` pre-warm the extension's exact Work IQ pin into
+managed `~/.wiqd/extensions/microsoft.workiq/` state. If pre-warm was skipped or
+failed, the first Work IQ command retries through the same managed lifecycle. You do
+not need to install Work IQ globally; wiqd ignores unrelated host or `PATH` copies.
+The managed generation survives host updates and reinstalls, and refreshes
+automatically when a new wiqd release ships a different extension pin.
+
+`wiqd ext list` remains read-only. An explicit `WORKIQ_PATH` override is shown there as
+unvalidated and is checked by `wiqd doctor` or immediately before command execution.
 
 These commands need authentication to the Work IQ service (covered by `wiqd auth login`). Because the surface is still evolving, every command in this extension requires `experimental=true` in your wiqd config:
 

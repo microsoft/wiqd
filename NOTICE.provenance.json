@@ -2,4060 +2,4749 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "073edd2c1ab26485b9f8c1198cd67bbd62cc51fed0f938baec20904dd992772b",
-  "componentCount": 676,
+  "inputDigest": "e88cb8c859738678baccab27e1bf1b6300e65c7a9bdd5c10fa5874207b4342a3",
+  "componentCount": 677,
   "components": [
     {
+      "type": "npm",
       "name": "@apidevtools/json-schema-ref-parser",
       "version": "11.7.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@apidevtools/openapi-schemas",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@apidevtools/swagger-methods",
       "version": "3.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@apidevtools/swagger-parser",
       "version": "10.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/abort-controller",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/abort-controller",
       "version": "2.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/arm-appservice",
       "version": "13.0.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/arm-resources",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/arm-storage",
       "version": "17.2.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/arm-subscriptions",
       "version": "5.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-auth",
       "version": "1.10.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-client",
       "version": "1.10.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-http-compat",
       "version": "2.4.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-lro",
       "version": "2.7.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-paging",
       "version": "1.6.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/core-rest-pipeline",
       "version": "1.23.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-tracing",
       "version": "1.3.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-util",
       "version": "1.13.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/core-xml",
       "version": "1.5.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/identity",
       "version": "4.13.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/logger",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/monitor-opentelemetry-exporter",
       "version": "1.0.0-beta.32",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-browser",
       "version": "5.11.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-common",
       "version": "15.17.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-common",
       "version": "16.6.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-common",
       "version": "16.7.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-common",
       "version": "16.12.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-node",
       "version": "5.2.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-node",
       "version": "5.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-node-extensions",
       "version": "1.5.32",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/msal-node-runtime",
       "version": "0.20.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@azure/storage-blob",
       "version": "12.31.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@azure/storage-common",
       "version": "12.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@babel/runtime",
       "version": "7.29.7",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@colors/colors",
       "version": "1.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@emotion/hash",
       "version": "0.9.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@exodus/schemasafe",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@feathersjs/hooks",
       "version": "0.6.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@floating-ui/core",
       "version": "1.7.5",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@floating-ui/dom",
       "version": "1.7.6",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@floating-ui/utils",
       "version": "0.2.11",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/keyboard-keys",
       "version": "9.0.8",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-aria",
       "version": "9.17.12",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-avatar",
       "version": "9.11.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-badge",
       "version": "9.5.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-button",
       "version": "9.9.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-combobox",
       "version": "9.17.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-components",
       "version": "9.74.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-context-selector",
       "version": "9.2.17",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-dialog",
       "version": "9.18.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-field",
       "version": "9.5.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-icons",
       "version": "2.0.330",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-input",
       "version": "9.8.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-jsx-runtime",
       "version": "9.4.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-label",
       "version": "9.4.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-link",
       "version": "9.8.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-menu",
       "version": "9.25.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-message-bar",
       "version": "9.7.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-motion",
       "version": "9.16.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-motion-components-preview",
       "version": "0.15.5",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-popover",
       "version": "9.14.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-portal",
       "version": "9.8.13",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-positioning",
       "version": "9.22.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-progress",
       "version": "9.5.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-provider",
       "version": "9.22.17",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-search",
       "version": "9.4.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-shared-contexts",
       "version": "9.26.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-slider",
       "version": "9.6.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-spinner",
       "version": "9.8.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-switch",
       "version": "9.7.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-tabs",
       "version": "9.12.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-tabster",
       "version": "9.26.15",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-text",
       "version": "9.6.17",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-textarea",
       "version": "9.7.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-toast",
       "version": "9.8.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-tooltip",
       "version": "9.10.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/react-utilities",
       "version": "9.26.4",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@fluentui/tokens",
       "version": "1.0.0-alpha.23",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@griffel/core",
       "version": "1.21.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@griffel/react",
       "version": "1.7.4",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@grpc/grpc-js",
       "version": "1.14.4",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@grpc/proto-loader",
       "version": "0.8.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@hono/node-server",
       "version": "1.19.14",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/ansi",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/checkbox",
       "version": "4.3.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/confirm",
       "version": "5.1.21",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/core",
       "version": "5.1.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/core",
       "version": "10.3.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/editor",
       "version": "4.2.23",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/expand",
       "version": "4.0.23",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/external-editor",
       "version": "1.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/figures",
       "version": "1.0.15",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/input",
       "version": "4.3.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/number",
       "version": "3.0.23",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/password",
       "version": "4.0.23",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/prompts",
       "version": "7.10.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/rawlist",
       "version": "4.1.11",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/search",
       "version": "3.2.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/select",
       "version": "4.4.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/type",
       "version": "1.5.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@inquirer/type",
       "version": "3.0.10",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@isaacs/fs-minipass",
       "version": "4.0.1",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "runtime+managed"
     },
     {
+      "type": "npm",
       "name": "@jridgewell/gen-mapping",
       "version": "0.3.13",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@jridgewell/resolve-uri",
       "version": "3.1.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@jridgewell/source-map",
       "version": "0.3.11",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@jridgewell/sourcemap-codec",
       "version": "1.5.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@jridgewell/trace-mapping",
       "version": "0.3.31",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@js-sdsl/ordered-map",
       "version": "4.4.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@jsdevtools/ono",
       "version": "7.1.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@microsoft/app-manifest",
       "version": "1.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@microsoft/app-manifest",
       "version": "1.1.2-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@microsoft/app-manifest",
       "version": "1.1.2-beta.2026081401.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@microsoft/app-manifest",
       "version": "1.1.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@microsoft/dev-tunnels-contracts",
       "version": "1.1.9",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@microsoft/dev-tunnels-management",
       "version": "1.1.9",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@microsoft/kiota",
       "version": "1.31.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@microsoft/m365-copilot-eval",
       "version": "1.15.0",
       "license": "MICROSOFT SOFTWARE LICENSE TERMS",
-      "origin": "both"
+      "origin": "managed"
     },
     {
+      "type": "npm",
       "name": "@microsoft/m365-spec-parser",
       "version": "0.3.2-beta.2026081401.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@microsoft/m365-spec-parser",
       "version": "0.3.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@microsoft/m365agentstoolkit-cli",
       "version": "1.1.16-beta.2026081803.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@microsoft/teamsfx-api",
       "version": "0.24.2-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@microsoft/teamsfx-api",
       "version": "0.24.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@microsoft/teamsfx-core",
       "version": "3.1.3-alpha.d1d0529262.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@microsoft/teamsfx-core",
       "version": "3.1.3-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@microsoft/workiq",
       "version": "1.0.0",
       "license": "SEE EULA",
-      "origin": "both"
+      "origin": "managed"
     },
     {
+      "type": "npm",
       "name": "@modelcontextprotocol/sdk",
       "version": "1.29.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@monaco-editor/loader",
       "version": "1.7.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@monaco-editor/react",
       "version": "4.7.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@nodable/entities",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/api",
       "version": "1.9.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/api-logs",
       "version": "0.200.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/api-logs",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/configuration",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/context-async-hooks",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/core",
       "version": "2.8.0",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-logs-otlp-grpc",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-logs-otlp-http",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-logs-otlp-proto",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-metrics-otlp-grpc",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-metrics-otlp-http",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-metrics-otlp-proto",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-prometheus",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-trace-otlp-grpc",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-trace-otlp-http",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-trace-otlp-proto",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/exporter-zipkin",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/instrumentation",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/otlp-exporter-base",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/otlp-grpc-exporter-base",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/otlp-transformer",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/propagator-b3",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/propagator-jaeger",
       "version": "2.10.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/resources",
       "version": "2.0.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/resources",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-logs",
       "version": "0.200.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-logs",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-metrics",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-node",
       "version": "0.218.0",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-trace-base",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/sdk-trace-node",
       "version": "2.7.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@opentelemetry/semantic-conventions",
       "version": "1.41.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/aspromise",
       "version": "1.1.2",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/base64",
       "version": "1.1.2",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/codegen",
       "version": "2.0.5",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/eventemitter",
       "version": "1.1.1",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/fetch",
       "version": "1.1.1",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/float",
       "version": "1.0.2",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/path",
       "version": "1.1.2",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/pool",
       "version": "1.1.0",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@protobufjs/utf8",
       "version": "1.1.1",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@types/fs-extra",
       "version": "11.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/json-schema",
       "version": "7.0.15",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/jsonfile",
       "version": "6.1.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/mute-stream",
       "version": "0.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/node",
       "version": "20.19.42",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/node",
       "version": "25.9.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/strip-bom",
       "version": "4.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@types/wrap-ansi",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "@typespec/ts-http-runtime",
       "version": "0.3.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "@ungap/structured-clone",
       "version": "1.3.1",
       "license": "ISC",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "@xmldom/xmldom",
       "version": "0.8.13",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "native",
+      "name": "Go runtime and standard library",
+      "version": "1.26.1",
+      "license": "BSD-3-Clause",
+      "origin": "native",
+      "source": "https://go.dev/dl/go1.26.1.src.tar.gz",
+      "licenseUrl": "https://go.googlesource.com/go/+/refs/tags/go1.26.1/LICENSE",
+      "artifacts": [
+        "packages/wiqd/bin/win-arm64/wiqd-windows-job-runner.exe",
+        "packages/wiqd/bin/win-x64/wiqd-windows-job-runner.exe"
+      ]
+    },
+    {
+      "type": "npm",
       "name": "accepts",
       "version": "1.3.8",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "accepts",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "acorn",
       "version": "8.16.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "acorn-import-attributes",
       "version": "1.9.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "address",
       "version": "1.2.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "adm-zip",
       "version": "0.6.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "agent-base",
       "version": "6.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "agent-base",
       "version": "7.1.4",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "agent-base",
       "version": "9.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "managed"
     },
     {
+      "type": "npm",
       "name": "ajv",
       "version": "8.20.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ajv-draft-04",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ajv-formats",
       "version": "3.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ansi-escapes",
       "version": "4.3.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ansi-regex",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ansi-styles",
       "version": "3.2.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ansi-styles",
       "version": "4.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "applicationinsights",
       "version": "1.8.10",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "argparse",
       "version": "2.0.1",
       "license": "Python-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "array-flatten",
       "version": "1.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "array-timsort",
       "version": "1.0.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "assertion-error",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "async-hook-jl",
       "version": "1.7.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "async-listener",
       "version": "0.6.10",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "async-mutex",
       "version": "0.3.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "asynckit",
       "version": "0.4.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "at-least-node",
       "version": "1.0.0",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "axios",
       "version": "1.18.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "axios-retry",
       "version": "3.9.1",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "bail",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "balanced-match",
       "version": "4.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "base64-js",
       "version": "1.5.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "bl",
       "version": "4.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "body-parser",
       "version": "1.20.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "body-parser",
       "version": "2.2.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "boolbase",
       "version": "1.0.0",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "brace-expansion",
       "version": "5.0.9",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "buffer",
       "version": "5.7.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "buffer-equal-constant-time",
       "version": "1.0.1",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "buffer-from",
       "version": "1.1.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "bundle-name",
       "version": "4.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "bytes",
       "version": "3.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "call-bind-apply-helpers",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "call-bound",
       "version": "1.0.4",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "call-me-maybe",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ccount",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "chai",
       "version": "4.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "chalk",
       "version": "2.4.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "chalk",
       "version": "4.1.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "chardet",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "charenc",
       "version": "0.0.2",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "check-error",
       "version": "1.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "chownr",
       "version": "1.1.4",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "chownr",
       "version": "3.0.0",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "runtime+managed"
     },
     {
+      "type": "npm",
       "name": "cjs-module-lexer",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cli-spinners",
       "version": "2.9.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cli-table3",
       "version": "0.6.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cli-width",
       "version": "4.1.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cliui",
       "version": "8.0.1",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cls-hooked",
       "version": "4.2.2",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "color-convert",
       "version": "1.9.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "color-convert",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "color-name",
       "version": "1.1.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "color-name",
       "version": "1.1.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "combined-stream",
       "version": "1.0.8",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "comma-separated-tokens",
       "version": "2.0.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "commander",
       "version": "2.20.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "commander",
       "version": "9.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "commander",
       "version": "13.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "commander",
       "version": "15.0.0",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "comment-json",
       "version": "4.6.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "content-disposition",
       "version": "0.5.4",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "content-disposition",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "content-type",
       "version": "1.0.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "content-type",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "continuation-local-storage",
       "version": "3.2.1",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cookie",
       "version": "0.7.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "cookie-signature",
       "version": "1.0.7",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "cookie-signature",
       "version": "1.2.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cors",
       "version": "2.8.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cross-spawn",
       "version": "7.0.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "crypt",
       "version": "0.0.2",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "cryptr",
       "version": "6.4.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "css-select",
       "version": "5.2.2",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "css-what",
       "version": "6.2.2",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "cssom",
       "version": "0.5.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "data-uri-to-buffer",
       "version": "4.0.1",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "date-format",
       "version": "4.0.14",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "debug",
       "version": "2.6.9",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "debug",
       "version": "4.4.3",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "decode-named-character-reference",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "decompress-response",
       "version": "6.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "deep-diff",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "deep-eql",
       "version": "4.1.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "deep-extend",
       "version": "0.6.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "default-browser",
       "version": "5.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "default-browser-id",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "define-lazy-prop",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "define-lazy-prop",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "delayed-stream",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "depd",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "destroy",
       "version": "1.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "detect-libc",
       "version": "2.1.2",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "detect-port",
       "version": "1.6.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "devlop",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "diagnostic-channel",
       "version": "0.3.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "diagnostic-channel-publishers",
       "version": "0.4.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "dom-serializer",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "domelementtype",
       "version": "2.3.0",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "domhandler",
       "version": "5.0.3",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "domutils",
       "version": "3.2.2",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "dotenv",
       "version": "8.6.0",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "dotenv",
       "version": "17.4.2",
       "license": "BSD-2-Clause",
-      "origin": "runtime"
+      "origin": "managed"
     },
     {
+      "type": "npm",
       "name": "dunder-proto",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ecdsa-sig-formatter",
       "version": "1.0.11",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ee-first",
       "version": "1.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "emitter-listener",
       "version": "1.1.2",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "emoji-regex",
       "version": "8.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "encodeurl",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "end-of-stream",
       "version": "1.4.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "entities",
       "version": "4.5.0",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "entities",
       "version": "7.0.1",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "es-define-property",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "es-errors",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "es-object-atoms",
       "version": "1.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "es-set-tostringtag",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "es6-promise",
       "version": "3.3.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "escalade",
       "version": "3.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "escape-html",
       "version": "1.0.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "escape-string-regexp",
       "version": "1.0.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "escape-string-regexp",
       "version": "5.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "esprima",
       "version": "4.0.1",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "estree-util-is-identifier-name",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "etag",
       "version": "1.8.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "events",
       "version": "3.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "eventsource",
       "version": "3.0.7",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "eventsource-parser",
       "version": "3.0.8",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "expand-template",
       "version": "2.0.3",
       "license": "(MIT OR WTFPL)",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "express",
       "version": "4.22.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "express",
       "version": "5.2.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "express-rate-limit",
       "version": "8.5.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "extend",
       "version": "3.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "fast-deep-equal",
       "version": "3.1.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fast-safe-stringify",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fast-uri",
-      "version": "3.1.5",
+      "version": "3.1.6",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fast-xml-builder",
       "version": "1.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "fast-xml-parser",
       "version": "5.8.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fetch-blob",
       "version": "3.2.0",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "figures",
       "version": "3.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "finalhandler",
       "version": "1.3.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "finalhandler",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "flatted",
       "version": "3.4.2",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "follow-redirects",
       "version": "1.16.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "form-data",
       "version": "4.0.6",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "formdata-polyfill",
       "version": "4.0.10",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "forwarded",
       "version": "0.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fresh",
       "version": "0.5.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fresh",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "fs-constants",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "fs-extra",
       "version": "7.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fs-extra",
       "version": "8.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "fs-extra",
       "version": "9.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "fs-extra",
       "version": "11.3.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "function-bind",
       "version": "1.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "get-caller-file",
       "version": "2.0.5",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "get-func-name",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "get-intrinsic",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "get-proto",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "github-from-package",
       "version": "0.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "glob",
       "version": "13.0.6",
       "license": "BlueOak-1.0.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "gopd",
       "version": "1.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "graceful-fs",
       "version": "4.2.11",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "handlebars",
       "version": "4.7.9",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "has-flag",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "has-flag",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "has-symbols",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "has-tostringtag",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "hasown",
       "version": "2.0.4",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "hast-util-to-jsx-runtime",
       "version": "2.3.6",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "hast-util-whitespace",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "hono",
       "version": "4.12.25",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "html-escaper",
       "version": "3.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "html-url-attributes",
       "version": "3.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "htmlparser2",
       "version": "10.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "http-errors",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "http-proxy-agent",
       "version": "7.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "http2-client",
       "version": "1.3.5",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "https-proxy-agent",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "https-proxy-agent",
       "version": "7.0.6",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "https-proxy-agent",
       "version": "9.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "managed"
     },
     {
+      "type": "npm",
       "name": "iconv-lite",
       "version": "0.4.24",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "iconv-lite",
       "version": "0.6.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "iconv-lite",
       "version": "0.7.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ieee754",
       "version": "1.2.1",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ignore",
       "version": "5.3.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "import-in-the-middle",
       "version": "3.0.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "inherits",
       "version": "2.0.4",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ini",
       "version": "1.3.8",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "inline-style-parser",
       "version": "0.2.7",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "inquirer",
       "version": "12.11.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ip-address",
       "version": "10.3.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "ipaddr.js",
       "version": "1.9.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "is-buffer",
       "version": "1.1.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-docker",
       "version": "2.2.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-docker",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-fullwidth-code-point",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-inside-container",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-plain-obj",
       "version": "4.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "is-promise",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-retry-allowed",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "is-wsl",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "is-wsl",
       "version": "3.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "isexe",
       "version": "2.0.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "jose",
       "version": "6.2.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "js-base64",
       "version": "3.7.8",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "js-yaml",
       "version": "4.3.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "json-parse-even-better-errors",
       "version": "2.3.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "json-schema-traverse",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "json-schema-typed",
       "version": "8.0.2",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "jsonfile",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "jsonfile",
       "version": "6.2.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "jsonschema",
       "version": "1.5.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "jsonwebtoken",
       "version": "9.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "jwa",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "jws",
       "version": "4.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "keyborg",
       "version": "2.14.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "keytar",
       "version": "7.9.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "klaw",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "linkedom",
       "version": "0.18.12",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "lodash",
       "version": "4.18.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "lodash.camelcase",
       "version": "4.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "lodash.includes",
       "version": "4.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.isboolean",
       "version": "3.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.isinteger",
       "version": "4.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.isnumber",
       "version": "3.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.isplainobject",
       "version": "4.0.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.isstring",
       "version": "4.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lodash.once",
       "version": "4.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "log4js",
       "version": "6.9.1",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "long",
       "version": "5.3.2",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "longest-streak",
       "version": "3.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "loupe",
       "version": "2.3.7",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "lru-cache",
       "version": "11.5.1",
       "license": "BlueOak-1.0.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "markdown-table",
       "version": "3.0.4",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "math-intrinsics",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "md5",
       "version": "2.3.0",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "mdast-util-find-and-replace",
       "version": "3.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-from-markdown",
       "version": "2.0.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm",
       "version": "3.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm-autolink-literal",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm-footnote",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm-strikethrough",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm-table",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-gfm-task-list-item",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-phrasing",
       "version": "4.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-to-hast",
       "version": "13.2.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-to-markdown",
       "version": "2.1.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mdast-util-to-string",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "media-typer",
       "version": "0.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "media-typer",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "merge-descriptors",
       "version": "1.0.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "merge-descriptors",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "methods",
       "version": "1.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "micromark",
       "version": "4.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-core-commonmark",
       "version": "2.0.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm-autolink-literal",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm-footnote",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm-strikethrough",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm-table",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-extension-gfm-task-list-item",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-factory-destination",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-factory-label",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-factory-space",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-factory-title",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-factory-whitespace",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-character",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-chunked",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-classify-character",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-combine-extensions",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-decode-numeric-character-reference",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-decode-string",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-html-tag-name",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-normalize-identifier",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-resolve-all",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-sanitize-uri",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "micromark-util-subtokenize",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "mime",
       "version": "1.6.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "mime",
       "version": "2.6.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "mime-db",
       "version": "1.52.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "mime-db",
       "version": "1.54.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "mime-types",
       "version": "2.1.35",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "mime-types",
       "version": "3.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "mimic-response",
       "version": "3.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "minimatch",
       "version": "10.2.5",
       "license": "BlueOak-1.0.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "minimist",
       "version": "1.2.8",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "minipass",
       "version": "7.1.3",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "runtime+managed"
     },
     {
+      "type": "npm",
       "name": "minizlib",
       "version": "3.1.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "runtime+managed"
     },
     {
+      "type": "npm",
       "name": "mkdirp-classic",
       "version": "0.5.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "module-details-from-path",
       "version": "1.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "monaco-editor",
       "version": "0.55.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "ms",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "ms",
       "version": "2.1.3",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "mustache",
       "version": "4.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "mute-stream",
       "version": "1.0.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "mute-stream",
       "version": "2.0.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "napi-build-utils",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "negotiator",
       "version": "0.6.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "negotiator",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "neo-async",
       "version": "2.6.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "neverthrow",
       "version": "3.2.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "node-abi",
       "version": "3.92.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "node-addon-api",
       "version": "4.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "node-domexception",
       "version": "1.0.0",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "node-fetch",
       "version": "2.7.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "node-fetch",
       "version": "3.3.2",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "node-fetch-h2",
       "version": "2.3.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "node-forge",
       "version": "1.4.0",
       "license": "(BSD-3-Clause OR GPL-2.0)",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "node-machine-id",
       "version": "1.1.12",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "node-readfiles",
       "version": "0.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "npm-normalize-package-bin",
       "version": "1.0.1",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "nth-check",
       "version": "2.1.1",
       "license": "BSD-2-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "oas-kit-common",
       "version": "1.0.8",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "oas-linter",
       "version": "3.2.2",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "oas-resolver",
       "version": "2.5.6",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "oas-schema-walker",
       "version": "1.1.5",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "oas-validator",
       "version": "5.0.8",
       "license": "BSD-3-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "object-assign",
       "version": "4.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "object-inspect",
       "version": "1.13.4",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "office-addin-manifest",
       "version": "2.1.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "office-addin-manifest-converter",
       "version": "0.4.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "office-addin-project",
       "version": "1.0.10",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "office-addin-usage-data",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "on-finished",
       "version": "2.4.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "once",
       "version": "1.4.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "open",
       "version": "8.4.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "open",
       "version": "10.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "openapi-types",
       "version": "7.2.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "original-fs",
       "version": "1.2.0",
       "license": "Unlicense",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "parseurl",
       "version": "1.3.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "path-expression-matcher",
       "version": "1.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "path-key",
       "version": "3.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "path-scurry",
       "version": "2.0.2",
       "license": "BlueOak-1.0.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "path-to-regexp",
       "version": "0.1.13",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "path-to-regexp",
       "version": "8.4.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "pathval",
       "version": "1.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "pkce-challenge",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "prebuild-install",
       "version": "7.1.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "proper-lockfile",
       "version": "4.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "property-information",
       "version": "7.2.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "protobufjs",
       "version": "7.6.5",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "proxy-addr",
       "version": "2.0.7",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "proxy-from-env",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "pump",
       "version": "3.0.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "qs",
       "version": "6.15.2",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "range-parser",
       "version": "1.2.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "raw-body",
       "version": "2.5.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "raw-body",
       "version": "3.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "rc",
       "version": "1.2.8",
       "license": "(BSD-2-Clause OR MIT OR Apache-2.0)",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "react",
       "version": "18.3.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "react-dom",
       "version": "18.3.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "react-markdown",
       "version": "9.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "read-package-json-fast",
       "version": "2.0.3",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "readable-stream",
       "version": "3.6.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "reflect-metadata",
       "version": "0.1.14",
       "license": "Apache-2.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "reftools",
       "version": "1.1.9",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "remark-gfm",
       "version": "4.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "remark-parse",
       "version": "11.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "remark-rehype",
       "version": "11.1.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "require-directory",
       "version": "2.1.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "require-from-string",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "require-in-the-middle",
       "version": "8.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "retry",
       "version": "0.12.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "rfdc",
       "version": "1.4.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "router",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "rtl-css-js",
       "version": "1.16.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "run-applescript",
       "version": "7.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "run-async",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "run-async",
       "version": "4.0.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "rxjs",
       "version": "7.8.2",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "safe-buffer",
       "version": "5.2.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "safer-buffer",
       "version": "2.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "sax",
       "version": "1.6.0",
       "license": "BlueOak-1.0.0",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "scheduler",
       "version": "0.23.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "semver",
       "version": "5.7.2",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "semver",
       "version": "7.8.5",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "send",
       "version": "0.19.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "send",
       "version": "1.2.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "serve-static",
       "version": "1.16.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "serve-static",
       "version": "2.2.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "setprototypeof",
       "version": "1.2.0",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "shebang-command",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "shebang-regex",
       "version": "3.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "shell-quote",
       "version": "1.10.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "shimmer",
       "version": "1.2.1",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should",
       "version": "13.2.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should-equal",
       "version": "2.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should-format",
       "version": "3.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should-type",
       "version": "1.4.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should-type-adaptors",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "should-util",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "side-channel",
       "version": "1.1.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "side-channel-list",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "side-channel-map",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "side-channel-weakmap",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "signal-exit",
       "version": "3.0.7",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "signal-exit",
       "version": "4.1.0",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "simple-concat",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "simple-get",
       "version": "4.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "source-map",
       "version": "0.6.1",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "source-map-support",
       "version": "0.5.21",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "space-separated-tokens",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "stack-chain",
       "version": "1.3.7",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "state-local",
       "version": "1.0.7",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "statuses",
       "version": "2.0.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "streamroller",
       "version": "3.1.5",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "string-width",
       "version": "4.2.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "string_decoder",
       "version": "1.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "strip-ansi",
       "version": "6.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "strip-bom",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "strip-bom",
       "version": "5.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "strip-json-comments",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "strnum",
       "version": "2.3.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "style-to-js",
       "version": "1.1.21",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "style-to-object",
       "version": "1.0.14",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "stylis",
       "version": "4.4.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "supports-color",
       "version": "5.5.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "supports-color",
       "version": "7.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "supports-color",
       "version": "8.1.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "swagger2openapi",
       "version": "7.0.8",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "tabster",
       "version": "8.8.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "tar",
       "version": "7.5.22",
       "license": "BlueOak-1.0.0",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "tar-fs",
       "version": "2.1.4",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "tar-stream",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "tas-client",
       "version": "0.1.73",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "terser",
       "version": "5.48.0",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "tmp",
       "version": "0.2.7",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "toidentifier",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "tr46",
       "version": "0.0.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "tree-kill",
       "version": "1.2.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "trim-lines",
       "version": "3.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "trough",
       "version": "2.2.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "tslib",
       "version": "2.8.1",
       "license": "0BSD",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "tunnel-agent",
       "version": "0.6.0",
       "license": "Apache-2.0",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "type-detect",
       "version": "4.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "type-fest",
       "version": "0.21.3",
       "license": "(MIT OR CC0-1.0)",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "type-is",
       "version": "1.6.18",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "type-is",
       "version": "2.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "typedi",
       "version": "0.10.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "uglify-js",
       "version": "3.19.3",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "uhyphen",
       "version": "0.2.0",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "underscore",
       "version": "1.13.8",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "undici-types",
       "version": "6.21.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "undici-types",
       "version": "7.24.6",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "unified",
       "version": "11.0.5",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "unist-util-is",
       "version": "6.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "unist-util-position",
       "version": "5.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "unist-util-stringify-position",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "unist-util-visit",
       "version": "5.1.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "unist-util-visit-parents",
       "version": "6.0.2",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "universalify",
       "version": "0.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "universalify",
       "version": "2.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "unpipe",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "use-sync-external-store",
       "version": "1.6.0",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "util-deprecate",
       "version": "1.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "utils-merge",
       "version": "1.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "uuid",
       "version": "11.1.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "uuid",
       "version": "13.0.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "uuid",
       "version": "14.0.1",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "validator",
       "version": "13.15.35",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "vary",
       "version": "1.1.2",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "vfile",
       "version": "6.0.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "vfile-message",
       "version": "4.0.3",
       "license": "MIT",
       "origin": "bundled"
     },
     {
+      "type": "npm",
       "name": "vscode-jsonrpc",
       "version": "4.0.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "vscode-jsonrpc",
       "version": "8.2.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "web-streams-polyfill",
       "version": "3.3.3",
       "license": "MIT",
-      "origin": "both"
+      "origin": "both+managed"
     },
     {
+      "type": "npm",
       "name": "webidl-conversions",
       "version": "3.0.1",
       "license": "BSD-2-Clause",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "whatwg-url",
       "version": "5.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "which",
       "version": "2.0.2",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "wordwrap",
       "version": "1.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "wrap-ansi",
       "version": "6.2.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "wrap-ansi",
       "version": "7.0.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "wrappy",
       "version": "1.0.2",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "wsl-utils",
       "version": "0.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "xml-naming",
       "version": "0.1.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "xml2js",
       "version": "0.5.0",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "xmlbuilder",
       "version": "11.0.1",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "y18n",
       "version": "5.0.8",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "yallist",
       "version": "5.0.0",
       "license": "BlueOak-1.0.0",
-      "origin": "runtime"
+      "origin": "runtime+managed"
     },
     {
+      "type": "npm",
       "name": "yaml",
       "version": "1.10.3",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "yaml",
       "version": "2.9.0",
       "license": "ISC",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "yargs",
       "version": "17.7.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "yargs-parser",
       "version": "21.1.1",
       "license": "ISC",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "yoctocolors-cjs",
       "version": "2.1.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
+      "type": "npm",
       "name": "zod",
       "version": "4.4.3",
       "license": "MIT",
       "origin": "both"
     },
     {
+      "type": "npm",
       "name": "zod-to-json-schema",
       "version": "3.25.2",
       "license": "ISC",

@@ -122,13 +122,16 @@ Generation analyzes the manifest first, then allocates scenarios only to applica
 
 ## Judge onboarding
 
-Run `runevals --version` first. wiqd requires Evals CLI **1.15.0 or newer**. If it is missing or older, install the official npm package. Then change to the agent project directory, verify the installed version, and initialize the environment:
+wiqd manages the exact Eval CLI version required by this extension. The first
+`wiqd agent eval` or `wiqd exec runevals` command provisions it under
+`~/.wiqd/extensions/microsoft.eval/`; do not install a separate global copy. To
+inspect the managed CLI directly, use `wiqd exec runevals`, then change to the agent
+project directory and initialize the environment:
 
 ```bash
-npm install -g @microsoft/m365-copilot-eval
 cd /path/to/your-agent-project
-runevals --version
-runevals --init-only
+wiqd exec runevals --version
+wiqd exec runevals --init-only
 ```
 
 Choose a judge based on the suite:
