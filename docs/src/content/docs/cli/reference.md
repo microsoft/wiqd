@@ -34,6 +34,20 @@ standard convention:
 See [Exit codes & output](/concepts/exit-codes-output/) for the full
 contract.
 
+## Plugin install prerequisites
+
+`wiqd component plugin install` prepares the exact managed CLI generation for
+every active extension before it changes the persistent marketplace source or
+deploys the plugin. The deprecated `wiqd install plugin` and bare `wiqd install`
+aliases use the same lifecycle.
+
+Managed preparation may access the configured npm registry. If authentication,
+registry access, installation, or cancellation prevents preparation, the
+command returns the corresponding managed CLI error without changing the
+existing marketplace source or installed plugin. Retry after restoring package
+feed access; lazy first-use resolution remains available when install-time
+preparation was skipped.
+
 <!-- BEGIN: command-reference -->
 
 ## Global options
@@ -59,10 +73,9 @@ per-command tables below.
 | Command | Extension | Description |
 | --- | --- | --- |
 | [`wiqd agent`](#wiqd-agent) | wiqd (core) | Build, validate, provision, publish, and monitor declarative agents |
-| [`wiqd agent add`](#wiqd-agent-add) | Agents Toolkit / wiqd Core | Augment an existing declarative agent with an action, capability, skill, or auth config. |
+| [`wiqd agent add`](#wiqd-agent-add) | Agents Toolkit / wiqd Core | Augment an existing declarative agent with an action, skill, or auth config. |
 | [`wiqd agent add action`](#wiqd-agent-add-action) | Agents Toolkit / wiqd Core | Add an OpenAPI or remote MCP action to a declarative agent. |
 | [`wiqd agent add auth`](#wiqd-agent-add-auth) | Agents Toolkit / wiqd Core | Add an auth configuration to a plugin manifest. |
-| [`wiqd agent add capability`](#wiqd-agent-add-capability) | wiqd Core | Add a knowledge capability to a declarative agent. |
 | [`wiqd agent add skill`](#wiqd-agent-add-skill) | Agents Toolkit / wiqd Core | Add a skill to a declarative agent. |
 | [`wiqd agent ask`](#wiqd-agent-ask) | Work IQ | Send a message directly to a declarative agent. |
 | [`wiqd agent create`](#wiqd-agent-create) | wiqd Core | Scaffold a new declarative agent project. |
@@ -230,7 +243,7 @@ wiqd agent --help
 
 ### wiqd agent add
 
-Augment an existing declarative agent with an action, capability, skill, or auth config.
+Augment an existing declarative agent with an action, skill, or auth config.
 
 **Extension:** Agents Toolkit / wiqd Core
 
@@ -242,7 +255,6 @@ wiqd agent add <command>
 
 ```bash
 wiqd agent add action
-wiqd agent add capability
 wiqd agent add skill
 wiqd agent add auth
 wiqd agent add --help
@@ -311,32 +323,6 @@ wiqd agent add auth [options]
 wiqd agent add auth
 wiqd agent add auth --plugin-manifest <value> --auth-name <value>
 wiqd agent add auth --json
-```
-
-### wiqd agent add capability
-
-Add a knowledge capability to a declarative agent.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent add capability [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--knowledge-source <value>` | Capability source (choices: "graph-connector") |
-| `--connection-id <value>` | Comma-separated existing Copilot connector connection IDs |
-| `-f, --folder <value>` | Project folder |
-
-**Examples**
-
-```bash
-wiqd agent add capability --knowledge-source graph-connector --connection-id <value>
-wiqd agent add capability --knowledge-source graph-connector --connection-id <value> --folder <path>
-wiqd agent add capability --knowledge-source graph-connector --connection-id <value> --json
 ```
 
 ### wiqd agent add skill

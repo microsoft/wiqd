@@ -2,6 +2,18 @@
 title: Changelog
 ---
 
+## 0.14.0 — 2026-09-04
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- manage isolated Work IQ and eval CLIs
+
+### Fixes
+
+- use canonical install recovery commands
+
 ## 0.13.1 — 2026-09-01
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

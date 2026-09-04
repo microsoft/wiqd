@@ -19,11 +19,10 @@
 #
 # Installs the wiqd CLI and all dependencies:
 #   1. Node.js LTS (if not already installed)
-#   2. @microsoft/wiqd (npm global package — includes extension stubs;
-#      ATK, eval, and workiq are transitive npm dependencies, resolved by
-#      `npm install -g @microsoft/wiqd`)
-#   3. Verify installation (smoke-test that `wiqd` and the transitive CLIs are
-#      on PATH; no install work — that all happens in Step 2)
+#   2. @microsoft/wiqd (npm global package — includes extension payloads;
+#      Work IQ and eval install lazily when their related wiqd command first runs)
+#   3. Verify installation (`wiqd doctor` may report those managed CLIs as
+#      not-yet-used; run the related command to install its exact extension pin)
 #   4. Work IQ VS Code extension (optional)
 #   5. wiqd plugin — installed only for the plugin host(s) already on PATH
 #      (Copilot CLI and/or Claude Code). Never installs a host; skipped
@@ -89,7 +88,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.13.1"
+WIQD_INSTALLER_VERSION="0.14.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -790,7 +789,7 @@ show_dependency_status() {
         c_name+=("$nm"); c_status+=("$st"); c_msg+=("$ms"); consumed+=(0)
     done <<< "$checks"
 
-    # Display rows: "candidates::label::required::ok-word::note::extension-id::rerun".
+    # Display rows: "candidates::label::required::ok-word::note::extension-id::rerun::first-use".
     # Candidates are '|'-separated; `required=1` makes a miss fatal. An empty
     # check uses the extension id to print a registration repair; an emitted
     # failure uses doctor's own trimmed message and reinstalls wiqd's pinned deps.
@@ -833,8 +832,8 @@ show_dependency_status() {
     fi
     local rows=(
         "$backend_row"
-        "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1"
-        "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1"
+        "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1::wiqd agent eval"
+        "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1::wiqd agent list"
         "workiq EULA|workiq::workiq EULA::0::Accepted::::microsoft.workiq::0"
     )
 
@@ -850,12 +849,12 @@ show_dependency_status() {
 
     local all_ok=true fatal=false
     local out=""
-    local cands label required okword note extension_id rerun status message padded idx k cc is_ok repair
+    local cands label required okword note extension_id rerun first_use status message padded idx k cc is_ok repair
     local -a cand_arr
     for row in "${rows[@]}"; do
         IFS=$'\x1e' read -ra parts <<< "${row//::/$'\x1e'}"
         cands=${parts[0]}; label=${parts[1]}; required=${parts[2]}
-        okword=${parts[3]}; note=${parts[4]}; extension_id=${parts[5]}; rerun=${parts[6]}
+        okword=${parts[3]}; note=${parts[4]}; extension_id=${parts[5]}; rerun=${parts[6]}; first_use=${parts[7]:-}
 
         # First unconsumed check whose name matches any candidate.
         IFS='|' read -ra cand_arr <<< "$cands"
@@ -910,7 +909,16 @@ show_dependency_status() {
             out+="${YELLOW}   ⚠ ${padded} ${lead}${RESET}\n"
         fi
         if [[ "$rerun" == "1" ]]; then
-            if [[ $idx -lt 0 && -n "$extension_id" ]]; then repair="wiqd ext add ${extension_id}"; else repair="npm install -g @microsoft/wiqd"; fi
+            # Missing managed CLIs are a normal lazy-first-use state. Only a
+            # doctor error means the extension package or its metadata needs
+            # reinstalling rather than invoking the owning command.
+            if [[ $idx -ge 0 && "$status" != "error" && -n "$first_use" ]]; then
+                repair="$first_use"
+            elif [[ $idx -lt 0 && -n "$extension_id" ]]; then
+                repair="wiqd ext add ${extension_id}"
+            else
+                repair="npm install -g @microsoft/wiqd"
+            fi
             out+="${cont_indent}${GRAY}Re-run: ${CYAN}${repair}${RESET}\n"
         fi
     done
@@ -1438,14 +1446,9 @@ fi
 # Step 3: Verify installation
 # ─────────────────────────────────────────────
 #
-# ATK (@microsoft/m365agentstoolkit-cli), eval (@microsoft/m365-copilot-eval),
-# and workiq (@microsoft/workiq@preview) are all declared as regular npm
-# dependencies of @microsoft/wiqd, so Step 2's
-# `npm install -g @microsoft/wiqd` resolves them transitively into
-# <npm-prefix>/lib/node_modules/@microsoft/wiqd/node_modules/.bin/. wiqd's
-# binary-resolver finds them there at command-execution time. No imperative
-# install step is needed — `wiqd doctor` is the authoritative post-install
-# verifier for these tools.
+# ATK remains a host dependency. Eval and Work IQ are managed by their extension
+# payloads and intentionally stay off PATH. Their missing doctor rows are a normal
+# lazy state: run `wiqd agent eval` or a Work IQ command to install the exact pin.
 
 write_step 3 "$TOTAL_STEPS" "Verifying installation..."
 

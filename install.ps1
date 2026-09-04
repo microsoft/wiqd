@@ -19,11 +19,10 @@
 # Installs the wiqd CLI and all dependencies:
 #   1. Verify Node.js >= the minimum version (block + suggest if missing;
 #      the installer never installs Node itself)
-#   2. @microsoft/wiqd (npm global package — includes extension stubs;
-#      ATK, eval, and workiq are transitive npm dependencies, resolved by
-#      `npm install -g @microsoft/wiqd`)
-#   3. Verify installation (smoke-test that `wiqd` and the transitive CLIs are
-#      on PATH; no install work — that all happens in Step 2)
+#   2. @microsoft/wiqd (npm global package — includes extension payloads;
+#      Work IQ and eval install lazily when their related wiqd command first runs)
+#   3. Verify installation (`wiqd doctor` may report those managed CLIs as
+#      not-yet-used; run the related command to install its exact extension pin)
 #   4. Work IQ VS Code extension (optional)
 #   5. wiqd plugin — installed only for the plugin host(s) already on PATH
 #      (Copilot CLI and/or Claude Code). Never installs a host; skipped
@@ -133,7 +132,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.13.1"
+$script:WiqdVersion = "0.14.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -576,8 +575,8 @@ function Show-DependencyStatus {
     # use `ExtensionId` when doctor omits their check; emitted failures use
     # doctor's own trimmed message.
     $optionalRows = @(
-        @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true }
-        @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true }
+        @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true; FirstUseCommand = 'wiqd agent eval' }
+        @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true; FirstUseCommand = 'wiqd agent list' }
         @{ Keys = @('workiq EULA', 'workiq');   Label = 'workiq EULA'; Required = $false; OkWord = 'Accepted';  Note = '';                                            ExtensionId = 'microsoft.workiq'; ReRun = $false }
     )
 
@@ -704,7 +703,16 @@ function Show-DependencyStatus {
         }
         Write-Host "   $icon $label $lead" -ForegroundColor $color
         if ($row.ReRun) {
-            $repair = if (($null -eq $item.Check) -and $row.ExtensionId) { "wiqd ext add $($row.ExtensionId)" } else { 'npm install -g @microsoft/wiqd' }
+            # A managed CLI's normal missing row is expected after install: its
+            # owning command performs the exact lazy install. Reinstall only
+            # when doctor reported a corrupt package/metadata error.
+            $repair = if (($null -ne $item.Check) -and ([string]$item.Check.status -ne 'error') -and $row.FirstUseCommand) {
+                [string]$row.FirstUseCommand
+            } elseif (($null -eq $item.Check) -and $row.ExtensionId) {
+                "wiqd ext add $($row.ExtensionId)"
+            } else {
+                'npm install -g @microsoft/wiqd'
+            }
             Write-Host "${contIndent}Re-run: " -ForegroundColor Gray -NoNewline
             Write-Host $repair -ForegroundColor Cyan
         }
@@ -1354,14 +1362,9 @@ if ($skipInstall) {
 # Step 3: Verify installation
 # ─────────────────────────────────────────────
 #
-# ATK (@microsoft/m365agentstoolkit-cli), eval (@microsoft/m365-copilot-eval),
-# and workiq (@microsoft/workiq@preview) are all declared as regular npm
-# dependencies of @microsoft/wiqd, so Step 2's
-# `npm install -g @microsoft/wiqd` resolves them transitively into
-# <npm-prefix>/lib/node_modules/@microsoft/wiqd/node_modules/.bin/. wiqd's
-# binary-resolver finds them there at command-execution time. No imperative
-# install step is needed — `wiqd doctor` is the authoritative post-install
-# verifier for these tools.
+# ATK remains a host dependency. Eval and Work IQ are managed by their extension
+# payloads and intentionally stay off PATH. Their missing doctor rows are a normal
+# lazy state: run `wiqd agent eval` or a Work IQ command to install the exact pin.
 
 Write-Step 3 $totalSteps "Verifying installation..."
 

@@ -9,7 +9,8 @@
       "description": "JSON Schema pointer for editor validation/completion."
     },
     "id": {
-      "type": "string"
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
     },
     "name": {
       "type": "string"
@@ -54,7 +55,7 @@
     },
     "mcp": {
       "$ref": "#/definitions/ExtensionMcpConfig",
-      "description": "MCP servers this extension contributes to the composed plugin's `.mcp.json`. Aggregated at `wiqd install plugin` time."
+      "description": "MCP servers this extension contributes to the composed plugin's `.mcp.json`. Aggregated at `wiqd component plugin install` time."
     },
     "commands": {
       "anyOf": [
@@ -109,6 +110,46 @@
     }
   },
   "required": ["id", "displayName", "version"],
+  "allOf": [
+    {
+      "if": {
+        "required": ["upstream"],
+        "properties": {
+          "upstream": {
+            "required": ["managedInstall"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "auth": {
+            "not": {
+              "required": ["binary"]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": ["upstream"],
+        "properties": {
+          "upstream": {
+            "required": ["managedBy"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "auth": {
+            "not": {
+              "required": ["binary"]
+            }
+          }
+        }
+      }
+    }
+  ],
   "description": "A wiqd extension manifest (`wiqd-extension.json`). Declares the commands, upstream tool, auth providers, doctor checks, and mock responses an extension contributes to the wiqd host.",
   "definitions": {
     "BinaryDoctorCheck": {
@@ -592,13 +633,19 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+          "maxLength": 256
         },
         "path": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+          "maxLength": 256
         },
         "group": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+          "maxLength": 256
         },
         "description": {
           "type": "string"
@@ -627,7 +674,8 @@
         },
         "namespaceOverride": {
           "type": "string",
-          "description": "When a command is mounted under an `additionalNamespaces` group (e.g. `feedback` rather than the manifest's primary `agent` namespace), this carries the mounted namespace so telemetry and host-level error envelopes report `feedback.submit` instead of the misleading `agent.submit`."
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+          "maxLength": 64
         }
       },
       "required": ["name"]
@@ -820,6 +868,19 @@
       },
       "required": ["name", "handler"]
     },
+    "ManagedInstallConfig": {
+      "type": "object",
+      "properties": {
+        "npmPackage": {
+          "type": "string",
+          "description": "Canonical scoped or unscoped npm package name.",
+          "pattern": "^(?:@[a-z0-9][a-z0-9._-]*\\/)?[a-z0-9][a-z0-9._-]*$"
+        }
+      },
+      "required": ["npmPackage"],
+      "description": "Exact npm package selected by a managed upstream declaration.",
+      "additionalProperties": false
+    },
     "ManifestCommandDef": {
       "type": "object",
       "properties": {
@@ -1006,6 +1067,11 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/ManifestCommandDef"
+          },
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+            "maxLength": 256
           }
         },
         "delegateWhen": {
@@ -1162,18 +1228,30 @@
       "type": "object",
       "properties": {
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+          "maxLength": 64
         },
         "definitions": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/ManifestCommandDef"
+          },
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+            "maxLength": 256
           }
         },
         "additionalNamespaces": {
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/ManifestNamespace"
+          },
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "maxLength": 64
           }
         }
       },
@@ -1276,18 +1354,30 @@
     },
     "ManifestNamespace": {
       "type": "object",
-      "properties": {},
+      "properties": {
+        "_description": {
+          "type": "string"
+        },
+        "_gatedBy": {
+          "type": "string"
+        }
+      },
       "additionalProperties": {
+        "$ref": "#/definitions/ManifestCommandDef"
+      },
+      "description": "A command group mounted under a non-primary namespace (e.g. `feedback`). Every key is a command definition, except two reserved meta keys: - `_description` — string help text for the namespace command. - `_gatedBy` — a boolean feature-flag name; when its gate is closed the host hides the ENTIRE namespace this extension contributes (the container is never created and no child is registered). Fail-closed, mirroring the per-command and per-option gates.",
+      "propertyNames": {
         "anyOf": [
           {
-            "$ref": "#/definitions/ManifestCommandDef"
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+            "maxLength": 256
           },
           {
-            "type": "string"
+            "enum": ["_description", "_gatedBy"]
           }
         ]
-      },
-      "description": "A command group mounted under a non-primary namespace (e.g. `feedback`). Every key is a command definition, except two reserved meta keys: - `_description` — string help text for the namespace command. - `_gatedBy` — a boolean feature-flag name; when its gate is closed the host hides the ENTIRE namespace this extension contributes (the container is never created and no child is registered). Fail-closed, mirroring the per-command and per-option gates."
+      }
     },
     "McpInputDefinition": {
       "type": "object",
@@ -1400,6 +1490,15 @@
         "version": {
           "type": "string"
         },
+        "managedInstall": {
+          "$ref": "#/definitions/ManagedInstallConfig",
+          "description": "Opts the extension into wiqd-owned, exact-pinned upstream installation. The package identity is explicit so the host never infers it from a display name or from unrelated extension dependencies."
+        },
+        "managedBy": {
+          "type": "string",
+          "description": "Identifies the active extension that owns this upstream's managed generation. A consumer has no downstream package pin of its own.",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+        },
         "alwaysArgs": {
           "type": "array",
           "items": {
@@ -1430,7 +1529,7 @@
         },
         "installCommand": {
           "type": "string",
-          "description": "The exact, argv-splittable shell command (no quoted args) that installs this upstream binary — distinct from `installHint`, which is a human sentence that MAY wrap the command in prose. The prerequisite preflight gate's consent-gated install offer runs this command verbatim, so it must be runnable as-is. Bundled tools (ATK, eval, workiq) set this to the wiqd installer command rather than a direct sub-package install: all three are transitive dependencies of the wiqd package, so reinstalling wiqd is what actually restores them at the tested/pinned version. It is also exactly what `wiqd update` runs, and matches the pre-existing `wiqd doctor` remediation convention, so this offer can never disagree with doctor's guidance. Omit when the tool has no single runnable install command at all; the gate then falls back to printing `installHint` without offering to run anything."
+          "description": "The exact, argv-splittable shell command (no quoted args) that installs this upstream binary — distinct from `installHint`, which is a human sentence that MAY wrap the command in prose. The prerequisite preflight gate's consent-gated install offer runs this command verbatim, so it must be runnable as-is. This is only for unmanaged upstreams. Managed upstreams install from their extension-owned exact package pin and cannot declare this field. Omit it when the tool has no single runnable install command; the gate then falls back to printing installHint without offering to run anything."
         },
         "timeoutHint": {
           "type": "string",
@@ -1441,7 +1540,36 @@
           "description": "A generic per-invocation environment-selector flag: the host adds this as a shared Commander option on every command the extension contributes and forwards the parsed value to the upstream process as the named env var. The host has no knowledge of what the flag or env var MEAN — it just wires option → env var — so a new extension can add its own per-invocation selector with zero host change."
         }
       },
-      "required": ["name"]
+      "required": ["name"],
+      "allOf": [
+        {
+          "not": {
+            "required": ["managedInstall", "managedBy"]
+          }
+        },
+        {
+          "if": {
+            "required": ["managedInstall"]
+          },
+          "then": {
+            "required": ["binary", "version"],
+            "not": {
+              "required": ["installCommand"]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["managedBy"]
+          },
+          "then": {
+            "required": ["binary", "version"],
+            "not": {
+              "required": ["installCommand"]
+            }
+          }
+        }
+      ]
     },
     "ValueWithoutTransformReference": {
       "anyOf": [

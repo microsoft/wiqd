@@ -11,6 +11,13 @@ description: Quality evaluations against deployed declarative agents
 
 The Eval extension runs **quality evaluations** against a provisioned declarative agent. You write a JSON prompts file, and the extension drives the agent through each prompt and scores the response. Use it to catch regressions before publishing or to enforce a quality threshold in CI.
 
+The wiqd installer and `wiqd doctor` pre-warm the extension's exact Eval CLI pin into
+managed `~/.wiqd/extensions/microsoft.eval/` state. If pre-warm was skipped or failed,
+the first Eval command retries through the same managed lifecycle. You do not need to
+install the Eval CLI globally; host and `PATH` copies do not satisfy this prerequisite.
+The managed generation survives host updates and reinstalls, and refreshes
+automatically when a new wiqd release changes the extension pin.
+
 ## Workflow walkthrough
 
 ```bash

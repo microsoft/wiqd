@@ -12,10 +12,10 @@ THIRD-PARTY NOTICES FOR @microsoft/wiqd
 =========================================
 
 This file lists third-party open-source software bundled with or required
-as a runtime dependency by the @microsoft/wiqd npm package. Each entry
-shows the package name and version, the license identifier reported by
-the package's manifest, the upstream repository (where available), and
-the verbatim text of the package's LICENSE file (when shipped).
+as a runtime dependency by the @microsoft/wiqd npm package, plus code
+embedded in native binaries the package redistributes. Each entry shows
+the component name and version, its license identifier, authoritative
+upstream source (where available), and verbatim license text.
 
 Microsoft components published under @microsoft/wiqd-* are part of this
 project and are covered by the LICENSE file at the repository root.
@@ -10912,6 +10912,44 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ------------------------------------------------------------------------------
 
+Component:  Go runtime and standard library
+Version:    1.26.1
+License:    BSD-3-Clause
+Repository: https://go.googlesource.com/go
+Publisher:  The Go Authors
+Source:     https://go.dev/dl/go1.26.1.src.tar.gz
+License URL: https://go.googlesource.com/go/+/refs/tags/go1.26.1/LICENSE
+
+Copyright 2009 The Go Authors.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google LLC nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+------------------------------------------------------------------------------
+
 Package:    accepts@1.3.8
 License:    MIT
 Repository: jshttp/accepts
@@ -15170,7 +15208,7 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    fast-uri@3.1.5
+Package:    fast-uri@3.1.6
 License:    BSD-3-Clause
 Repository: https://github.com/fastify/fast-uri
 Publisher:  Vincent Le Goff
