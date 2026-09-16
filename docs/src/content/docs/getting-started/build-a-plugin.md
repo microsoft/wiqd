@@ -182,7 +182,9 @@ a new wiqd plugin project from it. `--privacy-url`/`--terms-url` are only requir
 **first** import — if the source was produced by a prior `wiqd plugin export`, the round-trip
 metadata already carries them. `wiqd plugin export` does the inverse, defaulting to
 `--format open-plugin` (also accepts `claude-plugin` and `cursor-plugin`), writing an uncompressed
-directory under `<path>/export/<format>`.
+directory under `<path>/export/<format>`. The output layout depends on the active backend: ATK
+writes the selected format layout; FxCore always writes `plugin.json` at the export root and uses
+`--format` only for the default output directory and reported format.
 
 **Current limitation:** an imported project flows through the **read-only** lifecycle —
 [validate](/cli/reference/#wiqd-plugin-validate) and

@@ -27,7 +27,26 @@ You get a directory with the `appPackage/` files described in [Declarative agent
 
 ### 2. Edit
 
-Open the project in your editor. Tweak the instructions, add knowledge sources, attach actions, or add conversation starters with the bundled VS Code extension. You can also script edits with `wiqd agent add action` and `wiqd agent add skill`.
+Open the project in your editor. Tweak the instructions, add knowledge sources, attach actions, or add conversation starters with the bundled VS Code extension. You can also script edits with `wiqd agent add action` and `wiqd agent add skill` (the latter is behind the `agent-skills` preview flag — see [Feature flags](/cli/reference/#feature-flags)).
+
+#### Worker Agents
+
+Ask the WIQD Skill to add or connect a Worker. Until friendly-name resolution ships, provide the
+canonical `worker_agents[].id` value directly. Once the resolver is available, the Skill will use it
+automatically; you do not need to invoke the resolver or supply an internal workflow ID. The Skill
+will not guess from a friendly name or truncate a full composite agent ID. Worker authoring requires
+a schema version that supports `worker_agents` (v1.6 or later), and it adds only `{ "id": "..." }`
+entries; local `{ "file": "..." }` Workers are not supported.
+
+You can also ask the Skill to remove or disconnect a Worker. It confirms the exact ID and removes
+only the matching manifest reference; it never deletes the deployed Worker. When the last reference
+is removed, the Skill removes the `worker_agents` property instead of leaving an empty array. This
+keeps v1.6 manifests valid and normalizes the same state for later schema versions. Adding an
+existing ID or removing an absent ID is a no-op. In either flow the Skill preserves unrelated
+manifest content and validates the project before editing and again after a changed edit. An invalid
+project remains unchanged. Validation does not deploy the change: provisioning happens only when
+you explicitly ask to deploy or provision. Test and evaluate requests use the eval workflow and do
+not implicitly provision.
 
 ### 3. Validate
 

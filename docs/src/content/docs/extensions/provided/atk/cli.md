@@ -15,7 +15,7 @@ Every command below lives under `wiqd agent`. They are all backed by the upstrea
 | [`wiqd agent create`](/cli/reference/#wiqd-agent-create) | Scaffold a new declarative agent project. |
 | [`wiqd agent create list`](/cli/reference/#wiqd-agent-create-list) | List available declarative-agent templates. |
 | [`wiqd agent add action`](/cli/reference/#wiqd-agent-add-action) | Add an OpenAPI-spec action. |
-| [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Add a skill to the agent. |
+| [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Add a skill to the agent. Gated behind the `agent-skills` preview flag (`wiqd config flags set agent-skills true`). |
 | [`wiqd agent add auth`](/cli/reference/#wiqd-agent-add-auth) | Add an auth configuration to a plugin manifest. |
 
 ## Lifecycle

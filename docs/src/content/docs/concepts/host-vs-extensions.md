@@ -18,6 +18,19 @@ The **host** is the `wiqd` binary you install. It owns:
 
 The host is intentionally generic. It has no built-in knowledge of ATK, Work IQ, or the eval suite.
 
+For an extension that declares a managed downstream CLI, the host derives the package,
+compatibility range, and owner/consumer relationship from its manifest; the extension's
+`package.json` and lockfile own the exact pin. It keeps immutable generations under
+`~/.wiqd/extensions/`; this state deliberately
+survives uninstalling the host. `wiqd doctor` installs or repairs every active direct
+managed owner before running extension checks. Its JSON output uses the standard
+`checks[]` rows; standalone global copies appear as warnings and are never removed
+automatically. When a managed copy is healthy, the warning includes an explicit
+`npm uninstall -g <package>` command that you should run only after confirming no
+external workflow or explicit override depends on that package. `wiqd ext list` and
+`wiqd ext show` inspect managed state without changing it. `wiqd ext remove` only
+deactivates an extension.
+
 ## Extensions
 
 Every other command — `wiqd agent create`, `wiqd agent provision`, `wiqd agent monitor`, `wiqd agent eval` — is contributed by an **extension**. An extension is a package that ships:
@@ -45,7 +58,7 @@ The same shape applies to every extension command. **Exit code plus filesystem p
 
 ## What this means for you
 
-- If a command is failing, check the relevant upstream tool first (`atk --version`, `workiq --version`). `wiqd doctor` aggregates these.
+- If a command is failing, run `wiqd doctor`. For managed tools such as Work IQ and Eval, use `wiqd exec <cli> --version` rather than a PATH copy; use `atk --version` only when the ATK rollback backend is selected.
 - If you want to know exactly what Work IQ Dev Tools are doing, run with `--verbose` — the raw upstream output goes to stderr.
 - If you need to script around Work IQ Dev Tools, use `--json` — it's stable across extensions and the host wraps everything in the same envelope.
 - If a command you expect isn't there, run `wiqd ext list` to confirm the right extension is loaded.

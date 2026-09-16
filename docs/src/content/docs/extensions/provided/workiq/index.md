@@ -18,6 +18,14 @@ not need to install Work IQ globally; wiqd ignores unrelated host or `PATH` copi
 The managed generation survives host updates and reinstalls, and refreshes
 automatically when a new wiqd release ships a different extension pin.
 
+If npm also contains a direct global `@microsoft/workiq` package, `wiqd doctor`
+reports it as a warning. It prints `npm uninstall -g @microsoft/workiq` only when
+the isolated managed copy is healthy and no explicit override is active; run that
+command only after confirming no external workflow depends on the global package.
+After reconciliation failure, keep the package until doctor succeeds. With a
+`WORKIQ_PATH` override, clear or repoint the override before removing the package.
+Doctor never removes global packages automatically.
+
 `wiqd ext list` remains read-only. An explicit `WORKIQ_PATH` override is shown there as
 unvalidated and is checked by `wiqd doctor` or immediately before command execution.
 

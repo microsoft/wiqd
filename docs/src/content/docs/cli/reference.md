@@ -276,11 +276,17 @@ wiqd agent add action [options]
 | --- | --- |
 | `--openapi-spec <value>` | OpenAPI spec path or URL |
 | `--mcp-server-url <value>` | Remote MCP server HTTPS URL |
-| `--mcp-auth-type <value>` | MCP authentication type (choices: "none", "oauth", "oauth-dynamic", "entra-sso", default: "none") |
+| `--mcp-auth-type <value>` | MCP authentication type (choices: "none", "oauth", "oauth-dynamic", "entra-sso", "bearer-token", default: "none") |
 | `--mcp-client-id <value>` | Static OAuth or Entra SSO client ID |
 | `--mcp-client-secret <value>` | Static OAuth client secret |
 | `--mcp-scopes <value>` | Space-separated static OAuth scopes |
 | `--operations <value>` | OpenAPI operation selectors as METHOD /path (comma-separated; required with --openapi-spec) |
+| `--api-key <value>` | Optional API-key or bearer credential; omitted values are added as environment placeholders |
+| `--openapi-auth-identity-provider <value>` | OpenAPI OAuth identity provider (choices: "oauth", "microsoft-entra") |
+| `--openapi-auth-client-id <value>` | Optional OAuth or Microsoft Entra client ID |
+| `--openapi-auth-client-secret <value>` | Optional confidential OAuth client secret |
+| `--openapi-auth-scopes <value>` | Optional space-separated OAuth scopes |
+| `--openapi-auth-pkce` | Enable PKCE for generic OAuth (default: false) |
 | `-f, --folder <value>` | Project folder |
 
 **Examples**
@@ -312,9 +318,15 @@ wiqd agent add auth [options]
 | `--auth-type <value>` | Authentication type (choices: "bearer-token", "api-key", "oauth", "microsoft-entra", default: "bearer-token") |
 | `--api-key-in <value>` | API-key location (used only with --auth-type api-key) (choices: "header", "query", default: "header") |
 | `--api-key-name <value>` | API-key header or query parameter name (required for api-key auth) |
+| `--api-key <value>` | Optional API-key or bearer credential; omitted values are added as environment placeholders |
+| `--openapi-spec <value>` | OpenAPI spec path used to resolve the selected operations |
 | `--authorization-url <value>` | OAuth authorization URL |
 | `--token-url <value>` | OAuth token URL |
 | `--scope <value>` | OAuth scope |
+| `--refresh-url <value>` | Optional OAuth refresh URL |
+| `--oauth-pkce` | Enable PKCE for generic OAuth (default: false) |
+| `--oauth-client-id <value>` | Optional OAuth or Microsoft Entra client ID |
+| `--oauth-client-secret <value>` | Optional confidential OAuth client secret |
 | `-f, --folder <value>` | Project folder |
 
 **Examples**
@@ -342,7 +354,6 @@ wiqd agent add skill [options]
 | `--name <value>` | Skill name (required unless --from is used) |
 | `--description <value>` | Skill description |
 | `--from <value>` | Register a skill directory under appPackage, or import an external .zip |
-| `--expose-to-copilot` | Expose to mainline M365 Copilot (default: false) |
 | `-f, --folder <value>` | Project folder |
 
 **Examples**
@@ -2059,7 +2070,7 @@ wiqd plugin export [options]
 | --- | --- |
 | `-p, --path <value>` | Plugin project path (defaults to CWD) |
 | `-o, --output <value>` | Output Open Plugin directory (defaults to <path>/export/<format>) |
-| `--format <value>` | Target manifest kind (choices: "open-plugin", "claude-plugin", "cursor-plugin", default: "open-plugin") |
+| `--format <value>` | Export format (choices: "open-plugin", "claude-plugin", "cursor-plugin", default: "open-plugin") |
 
 **Examples**
 
@@ -2290,12 +2301,17 @@ wiqd update --json
 
 ## Feature flags
 
-Feature flags are typed toggles that gate experimental or environment-specific CLI behavior; the host
-registry ships empty and flags are contributed by active extensions (for example `devui` from the DevUI
-extension). They resolve with strict precedence — **env var > persisted > registry default** — where the
+Feature flags are typed toggles that gate experimental or environment-specific CLI behavior. The host
+registry defines cross-extension flags, and active extensions contribute capability flags (for example
+`devui` from the DevUI extension). They resolve with strict precedence — **env var > persisted > registry default** — where the
 env var name is `WIQD_FLAG_<UPPER_SNAKE_CASE_NAME>` (so `workiq-monitor` is overridden by
 `WIQD_FLAG_WORKIQ_MONITOR`). Persisted values live under the `"flags"` key in `~/.wiqd/.wiqd.json` and are
 never sent in telemetry. Manage flags with [`wiqd config flags`](#wiqd-config-flags) `list|show|set|reset`.
+
+[`wiqd agent add skill`](#wiqd-agent-add-skill) is behind the `agent-skills` flag (declared by the core
+FxCore extension, off by default): the declarative-agent skills manifest schema is not yet worldwide (WW),
+so the command stays opt-in until it is. Enable it with
+`wiqd config flags set agent-skills true` or the `WIQD_FLAG_AGENT_SKILLS` env var.
 
 After successfully setting or clearing `plugin-core-engine`, wiqd silently refreshes an already-installed
 plugin so its composed workflow and references match the selected backend. Other flag changes do not
@@ -2305,7 +2321,9 @@ the flag change remains successful and wiqd prints a recovery hint; rerun `wiqd 
 <!-- BEGIN: generated-flag-table -->
 | Flag | Type | Default | Stage | Owner | Since | Description |
 |---|---|---|---|---|---|---|
+| `frontier` | `boolean` | `false` | `alpha` | wiqd-core | 0.14.0 | Enables preview capabilities across wiqd and participating extensions. |
 | `plugin-core-engine` | `string-enum` | `fxcore` | `internal` | wiqd-core | 0.9.0 | Selects the backend that services the agent lifecycle commands: the ATK subprocess (atk) or the in-process fx-core engine (fxcore). |
+| `agent-skills` | `boolean` | `false` | `beta` | microsoft.wiqd.core | 0.12.2 | Enables `wiqd agent add skill` (the declarative-agent skills capability). The DA manifest schema for skills is not yet worldwide (WW); off by default until the schema is generally available. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
 | `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `agent ask` and `agent list` are always available. |
 <!-- END: generated-flag-table -->
@@ -2315,7 +2333,9 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 <!-- BEGIN: generated-env-table -->
 | Flag | Env var |
 |---|---|
+| `frontier` | `WIQD_FLAG_FRONTIER` |
 | `plugin-core-engine` | `WIQD_FLAG_PLUGIN_CORE_ENGINE` |
+| `agent-skills` | `WIQD_FLAG_AGENT_SKILLS` |
 | `devui` | `WIQD_FLAG_DEVUI` |
 | `workiq-monitor` | `WIQD_FLAG_WORKIQ_MONITOR` |
 <!-- END: generated-env-table -->
