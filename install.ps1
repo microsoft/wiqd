@@ -19,10 +19,9 @@
 # Installs the wiqd CLI and all dependencies:
 #   1. Verify Node.js >= the minimum version (block + suggest if missing;
 #      the installer never installs Node itself)
-#   2. @microsoft/wiqd (npm global package — includes extension payloads;
-#      Work IQ and eval install lazily when their related wiqd command first runs)
-#   3. Verify installation (`wiqd doctor` may report those managed CLIs as
-#      not-yet-used; run the related command to install its exact extension pin)
+#   2. @microsoft/wiqd (npm global package — includes extension payloads)
+#   3. Verify installation (`wiqd doctor` reconciles active managed Work IQ
+#      and Eval generations; related commands retry if verification was incomplete)
 #   4. Work IQ VS Code extension (optional)
 #   5. wiqd plugin — installed only for the plugin host(s) already on PATH
 #      (Copilot CLI and/or Claude Code). Never installs a host; skipped
@@ -32,8 +31,9 @@
 # -Force         Full reinstall, end-to-end. Bypasses every "already installed"
 #                short-circuit:
 #                  * Step 2 (wiqd CLI): reinstall even when the version matches.
-#                                       This also re-resolves the transitive
-#                                       ATK / eval / workiq deps.
+#                                       This also re-resolves the transitive ATK
+#                                       rollback backend. Doctor separately
+#                                       reconciles extension-managed Eval/Work IQ.
 #                  * Step 4 (VS Code extension): re-run --install-extension --force
 #                                                even if the extension is already
 #                                                listed by `code --list-extensions`.
@@ -108,8 +108,8 @@ $VSCodeExtensionId = "Microsoft.wiqd"
 # so it evaluates to falsy in the 3P mirror where no setter ever runs.
 $script:PluginForceRecompose = $false
 
-# The canonical public npm registry. Named once so the probe and the install
-# that must be pinned to it can never drift apart.
+# The canonical public npm registry used only by explicit recovery paths and
+# trusted copyable hints. Normal installer flows do not pin registry selection.
 $script:PublicNpmRegistry = 'https://registry.npmjs.org/'
 
 # Extra npm arguments appended to every global install. Empty by default, so a
@@ -421,9 +421,19 @@ function Install-NpmGlobalPackages {
     # @azure/msal-node-runtime's copyBinaries.js, which stages the MSAL native
     # binding. No --ignore-scripts, no in-dir backfill, no npm rebuild —
     # a single-pass npm install.
-    # The shared registry arguments pin every 1P npm call to public npm. An
-    # explicit registry is used by the public installer's retry path.
-    $npmArgs = @("install", "-g") + $Packages + @($script:NpmRegistryArgs) + @("--loglevel=error")
+    # Shared registry arguments are empty for normal installer flows. The
+    # explicit parameters remain available for callers that deliberately need
+    # to target a registry.
+    $resolvedPackages = @(
+        foreach ($packageSpec in $Packages) {
+            if ($packageSpec -match '\.tgz$' -and (Test-Path -LiteralPath $packageSpec)) {
+                (Resolve-Path -LiteralPath $packageSpec).Path
+            } else {
+                $packageSpec
+            }
+        }
+    )
+    $npmArgs = @("install", "-g") + $resolvedPackages + @($script:NpmRegistryArgs) + @("--loglevel=error")
     if ($Registry) {
         $npmArgs += @("--registry", $Registry)
         # A scoped package resolves through its `@scope:registry` config, which
@@ -438,7 +448,17 @@ function Install-NpmGlobalPackages {
     $script:LastNpmErrorCode = $null
     $script:LastNpmRegistry = $Registry
     $script:LastNpmMissingSpec = $null
-    $r = Invoke-Native { & $script:NpmExe @npmArgs }
+    $npmWorkingDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("wiqd-npm-" + [Guid]::NewGuid().ToString("N"))
+    $locationPushed = $false
+    try {
+        New-Item -ItemType Directory -Path $npmWorkingDirectory -Force | Out-Null
+        Push-Location -LiteralPath $npmWorkingDirectory
+        $locationPushed = $true
+        $r = Invoke-Native { & $script:NpmExe @npmArgs }
+    } finally {
+        if ($locationPushed) { Pop-Location }
+        Remove-Item -LiteralPath $npmWorkingDirectory -Recurse -Force -ErrorAction SilentlyContinue
+    }
     $npmOutput = $r.StdOut
 
     if ($r.ExitCode -ne 0) {
@@ -456,7 +476,7 @@ function Install-NpmGlobalPackages {
         # Classify an EEXIST file conflict distinctly from a network/registry
         # failure (R35). npm aborts the whole global install with EEXIST when a
         # launcher target already exists but isn't owned by the installing
-        # package — a purely LOCAL problem the GitHub/EMU fallback can't fix (it
+        # package — a purely LOCAL problem the GitHub fallback can't fix (it
         # would hit the identical conflict). Name the exact conflicting file and
         # the removal command, raise the conflict flag so the auto-mode caller
         # skips the misleading network fallback, and stop. Delete nothing.
@@ -473,7 +493,7 @@ function Install-NpmGlobalPackages {
         # Classify an EACCES/EPERM permission failure distinctly from a
         # network/registry failure (R35). npm aborts the global install when it
         # can't write to the global prefix — a purely LOCAL problem the
-        # GitHub/EMU fallback can't fix. Lead with the npm-recommended remedy
+        # GitHub fallback can't fix. Lead with the npm-recommended remedy
         # (point npm at a user-writable prefix), offer elevation as the
         # alternative, and stop. Change nothing. npm itself discourages
         # `sudo npm install -g`, so re-running as Administrator is the fallback,
@@ -575,8 +595,8 @@ function Show-DependencyStatus {
     # use `ExtensionId` when doctor omits their check; emitted failures use
     # doctor's own trimmed message.
     $optionalRows = @(
-        @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true; FirstUseCommand = 'wiqd agent eval' }
-        @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true; FirstUseCommand = 'wiqd agent list' }
+        @{ Keys = @('runevals');                Label = 'runevals';    Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent eval`)'; ExtensionId = 'microsoft.eval';   ReRun = $true; FirstUseCommand = 'wiqd agent eval'; OverrideEnv = 'M365_COPILOT_EVAL_PATH' }
+        @{ Keys = @('workiq --json', 'workiq'); Label = 'workiq';      Required = $false; OkWord = 'Installed'; Note = '(optional - needed for `wiqd agent` commands)'; ExtensionId = 'microsoft.workiq'; ReRun = $true; FirstUseCommand = 'wiqd agent list'; OverrideEnv = 'WORKIQ_PATH' }
         @{ Keys = @('workiq EULA', 'workiq');   Label = 'workiq EULA'; Required = $false; OkWord = 'Accepted';  Note = '';                                            ExtensionId = 'microsoft.workiq'; ReRun = $false }
     )
 
@@ -703,11 +723,25 @@ function Show-DependencyStatus {
         }
         Write-Host "   $icon $label $lead" -ForegroundColor $color
         if ($row.ReRun) {
-            # A managed CLI's normal missing row is expected after install: its
-            # owning command performs the exact lazy install. Reinstall only
-            # when doctor reported a corrupt package/metadata error.
-            $repair = if (($null -ne $item.Check) -and ([string]$item.Check.status -ne 'error') -and $row.FirstUseCommand) {
-                [string]$row.FirstUseCommand
+            $repair = if (($null -ne $item.Check) -and $row.FirstUseCommand) {
+                if ([string]$item.Check.status -eq 'error') {
+                    switch ([string]$item.Check.remediation) {
+                        'clear-managed-override' {
+                            "clear or correct $($row.OverrideEnv), then run wiqd doctor"
+                        }
+                        'reinstall-host' {
+                            'npm uninstall -g @microsoft/wiqd, then re-run this installer'
+                        }
+                        'managed-install-diagnostics' {
+                            'wiqd doctor --verbose'
+                        }
+                        default {
+                            'wiqd doctor'
+                        }
+                    }
+                } else {
+                    [string]$row.FirstUseCommand
+                }
             } elseif (($null -eq $item.Check) -and $row.ExtensionId) {
                 "wiqd ext add $($row.ExtensionId)"
             } else {
@@ -745,55 +779,16 @@ function Install-FromNpmRegistry {
     # build.
     $packageSpec = if ($version) { "$package@$version" } else { $package }
 
-    $installArgs = @{
-        Packages = @($packageSpec)
-        DisplayName = "$packageSpec from npm registry"
-    }
-    $packageScope = if ($packageSpec -like "@*/*") { ($packageSpec -split "/", 2)[0] } else { $null }
-    $registryResult = if ($script:NpmExe) { Invoke-Native { & $script:NpmExe config get registry --loglevel=error } } else { $null }
-    $configuredRegistry = if ($registryResult -and -not $registryResult.Failed -and $registryResult.StdOut.Count -gt 0) { $registryResult.StdOut[0].ToString().Trim() } else { $null }
-    if ($configuredRegistry -in @("", "undefined", "null")) { $configuredRegistry = $null }
-    # A scoped package resolves through its `@scope:registry` mapping when set,
-    # which overrides the generic registry — so the EFFECTIVE registry (used
-    # for both the fallback decision and the retry) must consult the scope first.
-    $scopedRegistry = $null
-    if ($packageScope -and $script:NpmExe) {
-        $scopedResult = Invoke-Native { & $script:NpmExe config get "${packageScope}:registry" --loglevel=error }
-        if ($scopedResult -and -not $scopedResult.Failed -and $scopedResult.StdOut.Count -gt 0) { $scopedRegistry = $scopedResult.StdOut[0].ToString().Trim() }
-        if ($scopedRegistry -in @("", "undefined", "null")) { $scopedRegistry = $null }
-    }
-    $effectiveRegistry = if ($scopedRegistry) { $scopedRegistry } else { $configuredRegistry }
-    # Registry configuration is untrusted display text. Show only its parsed,
-    # credential-free origin and never place it in a copyable command.
-    $safeEffectiveRegistry = Get-SafeRegistryLabel $effectiveRegistry
-    $hasFallbackRegistry = $effectiveRegistry -and $effectiveRegistry.TrimEnd('/') -ne $script:PublicNpmRegistry.TrimEnd('/')
-    $installArgs.DisplayName = "$packageSpec from $script:PublicNpmRegistry"
-    $installArgs.Registry = $script:PublicNpmRegistry
-    $installArgs.RegistryScope = $packageScope
-    $installArgs.SuppressFailureDiagnostics = $hasFallbackRegistry
-    $installed = Install-NpmGlobalPackages @installArgs
-
-    if (-not $installed -and $hasFallbackRegistry -and -not $script:NpmInstallConflict -and -not $script:NpmInstallPermission) {
-        Write-Warn "$packageSpec could not be installed from $script:PublicNpmRegistry."
-        Write-Info "Retrying from configured npm registry $safeEffectiveRegistry..."
-        $fallbackInstalled = Install-NpmGlobalPackages -Packages @($packageSpec) -DisplayName "$packageSpec from $safeEffectiveRegistry" -Registry $effectiveRegistry -RegistryScope $packageScope
-        if (-not $fallbackInstalled -and $script:LastNpmErrorCode -eq "E404") {
-            if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne $packageSpec) {
-                Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found in $safeEffectiveRegistry."
-            } else {
-                Write-Warn "$packageSpec was not found in $safeEffectiveRegistry."
-            }
-        }
-        return $fallbackInstalled
-    }
+    $installed = Install-NpmGlobalPackages `
+        -Packages @($packageSpec) `
+        -DisplayName "$packageSpec from npm registry"
     if (-not $installed -and $script:LastNpmErrorCode -eq "E404") {
         if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne $packageSpec) {
-            Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found in $script:PublicNpmRegistry."
+            Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found using your npm configuration."
         } else {
-            Write-Warn "$packageSpec was not found in $script:PublicNpmRegistry."
+            Write-Warn "$packageSpec was not found using your npm configuration."
         }
     }
-
     return $installed
 }
 
@@ -834,7 +829,17 @@ function Get-TargetVersion {
     if ($Version -and $Version -ne "latest") {
         if ($Source -in @("npm", "auto")) {
             try {
-                $r = Invoke-Native { & $script:NpmExe view "$Package@$Version" version --loglevel=error }
+                $npmWorkingDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("wiqd-npm-" + [Guid]::NewGuid().ToString("N"))
+                $locationPushed = $false
+                try {
+                    New-Item -ItemType Directory -Path $npmWorkingDirectory -Force | Out-Null
+                    Push-Location -LiteralPath $npmWorkingDirectory
+                    $locationPushed = $true
+                    $r = Invoke-Native { & $script:NpmExe view "$Package@$Version" version --loglevel=error }
+                } finally {
+                    if ($locationPushed) { Pop-Location }
+                    Remove-Item -LiteralPath $npmWorkingDirectory -Recurse -Force
+                }
                 $ver = if ($r.StdOut.Count -gt 0) { $r.StdOut[0] } else { '' }
                 if ($r.ExitCode -eq 0 -and $ver) {
                     return $ver.Trim()
@@ -1060,7 +1065,9 @@ function Show-WiqdBanner {
     $pink    = Fg 240  72 120
     $coral   = Fg 240 120  96
     $orange  = Fg 240 144  72
+    $white   = Fg 243 244 246
     $dim     = Fg 110 116 130
+    $bold    = "$e[1m"
 
     Write-Host ""
 
@@ -1130,7 +1137,8 @@ function Show-WiqdBanner {
     }
 
     Write-Host ""
-    Write-Host " ${dim}       wiqd installer v${script:WiqdVersion}$reset"
+    Write-Host "   ${purple}▸${reset} ${bold}${white}Work IQ Dev Tools${reset}  ${dim}v${script:WiqdVersion}$reset"
+    Write-Host "     ${dim}github.com/microsoft/wiqd${reset}"
     Write-Host ""
 }
 
@@ -1363,8 +1371,8 @@ if ($skipInstall) {
 # ─────────────────────────────────────────────
 #
 # ATK remains a host dependency. Eval and Work IQ are managed by their extension
-# payloads and intentionally stay off PATH. Their missing doctor rows are a normal
-# lazy state: run `wiqd agent eval` or a Work IQ command to install the exact pin.
+# payloads and intentionally stay off PATH. Doctor reconciles active owners here;
+# related commands retry the same lifecycle if this verification was incomplete.
 
 Write-Step 3 $totalSteps "Verifying installation..."
 

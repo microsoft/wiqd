@@ -22,6 +22,7 @@ Loaded on demand when the workflow needs deep context on a specific topic.
 |------|-------|
 | `1p-schema.md` | First-party manifest schema reference. |
 | `adaptive-cards.md` | Authoring Adaptive Cards for plugin responses. |
+| `agent-skills.md` | Agent Skills authoring and the `TEAMSFX_AGENT_SKILLS` flag gate. |
 | `api-plugins.md` | API plugin authoring (OpenAPI-backed actions). |
 | `authentication.md` | Plugin authentication patterns (anonymous, API key, OAuth). |
 | `best-practices.md` | General authoring best practices. |

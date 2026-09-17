@@ -18,6 +18,15 @@ install the Eval CLI globally; host and `PATH` copies do not satisfy this prereq
 The managed generation survives host updates and reinstalls, and refreshes
 automatically when a new wiqd release changes the extension pin.
 
+If npm also contains a direct global `@microsoft/m365-copilot-eval` package,
+`wiqd doctor` reports it as a warning. It prints
+`npm uninstall -g @microsoft/m365-copilot-eval` only when the isolated managed
+copy is healthy and no explicit override is active; run that command only after
+confirming no external workflow depends on the global package. After reconciliation
+failure, keep the package until doctor succeeds. With a
+`M365_COPILOT_EVAL_PATH` override, clear or repoint the override before removing
+the package. Doctor never removes global packages automatically.
+
 ## Workflow walkthrough
 
 ```bash

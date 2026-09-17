@@ -91,13 +91,23 @@ plugin can be skill-only.
 
 ### 2. `wiqd agent add skill` — an agent's own skill
 
-This shells out to `atk add skill` to add a skill directly into an **existing agent project**,
+This uses the active FxCore or ATK backend to add a skill directly into an **existing agent project**,
 in-place. It produces the same kind of artifact (a `SKILL.md` folder referenced from
 `agentSkills[]`), but the command operates on an agent project rather than a standalone plugin, and
-it additionally supports `--from <path>` to import an existing skill directory or `.zip`, and
-`--expose-to-copilot` to expose the skill to mainline M365 Copilot. Use this when you're extending
-an agent you already have; use `wiqd plugin add skill` when you're composing a new, independent
-plugin from scratch.
+it additionally supports `--from <path>` to import an existing skill directory or `.zip`. Use this
+when you're extending an agent you already have; use `wiqd plugin add skill` when you're composing
+a new, independent plugin from scratch.
+
+`wiqd agent add skill` sits behind the `agent-skills` [feature flag](/cli/reference/#feature-flags)
+(off by default, both backends) while the declarative-agent manifest schema for skills is not yet
+worldwide (WW). Enable it with `wiqd config flags set agent-skills true`. Once a skill is added, the
+project's `appPackage/declarativeAgent.json` is bumped to manifest version `v1.9` so downstream
+services keep working ahead of general availability; `wiqd agent create`'s own scaffold version is
+untouched by this.
+
+With the FxCore backend, the evaluated flag also enables SDK skill support during packaging,
+provisioning, and publishing. Its temporary SDK environment override is restored when SDK work
+settles; disabling the flag leaves your original environment unchanged. The ATK backend is unchanged.
 
 ### 3. Extension-contributed Copilot skills
 

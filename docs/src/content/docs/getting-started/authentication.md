@@ -101,10 +101,12 @@ wiqd auth logout
 
 ## Brokered authentication
 
-Extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. On platforms that support it, credentials are managed by the operating system's authentication broker (for example, WAM on Windows). Providers that support browser authentication open the system browser when the native broker is unavailable; on macOS and Linux this is the normal interactive sign-in path.
+Extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. Core Microsoft 365 authentication uses WAM on Windows and the Microsoft Enterprise SSO plug-in supplied by Company Portal on enrolled macOS devices. These brokers provide device-bound tokens required by Token Protection policies. Linux, and Windows or macOS systems where the native broker reports unavailable, use the system browser instead.
+
+For brokered authentication on macOS, install Company Portal, enroll the device, and ensure your organization has configured the Microsoft Enterprise SSO plug-in. Browser authentication may be rejected when your organization requires Token Protection.
 
 :::note
-If brokered authentication causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`. Providers that honor this setting use the system browser for their next interactive sign-in.
+If brokered authentication causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`. Core Microsoft 365 authentication and other providers that honor this setting use the system browser for their next interactive sign-in.
 :::
 
 ## Automation and non-interactive shells

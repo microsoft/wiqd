@@ -107,6 +107,13 @@
     },
     "mock": {
       "$ref": "#/definitions/ManifestMockConfig"
+    },
+    "mcpBackends": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/McpBackendDef"
+      },
+      "description": "MCP servers this extension connects to *as a client* — wiqd is the MCP client. Registered under `mcpBackends.<id>` and bound to commands via a command's `mcpCall.backend`. This is DISTINCT from `mcp.servers`, which are composed into the plugin `.mcp.json` for Copilot/Claude to consume; a server wiqd calls itself is not necessarily one composed for the LLM host."
     }
   },
   "required": ["id", "displayName", "version"],
@@ -1021,6 +1028,10 @@
           },
           "description": "Optionally route the upstream call through the local Work IQ DevUI proxy when `when` is truthy and DevUI is reachable, so the call is captured + inspectable there. The DevUI response (the upstream's own `--json` shape) replaces the upstream output, so the command's transform/render are unchanged. ANY failure (DevUI unreachable, non-2xx) silently falls back to spawning the binary."
         },
+        "mcpCall": {
+          "$ref": "#/definitions/McpCallDef",
+          "description": "Route this command's execution through an MCP `tools/call` instead of spawning `upstream.binary`. When set, wiqd connects to `mcpBackends[mcpCall.backend]`, invokes `mcpCall.tool` with the interpolated `mcpCall.args`, and feeds the tool result into the command's transform/render pipeline exactly as if it were upstream stdout. Mutually exclusive with the upstream-binary backend."
+        },
         "exitIf": {
           "$ref": "#/definitions/ExitIfConfig",
           "description": "Convert a passing spawn into a failure when `condition` is truthy."
@@ -1079,7 +1090,7 @@
         },
         "handler": {
           "$ref": "#/definitions/HandlerConfig",
-          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, passthroughExitCodes, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "nativeDryRunHandler": {
           "type": "string",
@@ -1093,6 +1104,28 @@
           "enum": ["buffered", "protocol"],
           "description": "Refines `stdioPassthrough`. `buffered` (the default) forwards captured stdout only after a successful exit. `protocol` relays stdout while the child is alive so bidirectional stdio protocols can exchange messages."
         },
+        "passthroughExitCodes": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "number",
+                "const": 1
+              },
+              {
+                "type": "number",
+                "const": 2
+              },
+              {
+                "type": "number",
+                "const": 130
+              }
+            ]
+          },
+          "description": "Canonical buffered passthrough failure codes whose stdout/stderr and exact code remain child-owned. Invalid with `noUpstream` or protocol stdio.",
+          "minItems": 1,
+          "uniqueItems": true
+        },
         "writeFile": {
           "$ref": "#/definitions/WriteFileConfig"
         },
@@ -1102,6 +1135,41 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "required": ["passthroughExitCodes"]
+          },
+          "then": {
+            "properties": {
+              "stdioPassthrough": {
+                "const": true
+              }
+            },
+            "required": ["stdioPassthrough"],
+            "allOf": [
+              {
+                "not": {
+                  "properties": {
+                    "noUpstream": {
+                      "const": true
+                    }
+                  },
+                  "required": ["noUpstream"]
+                }
+              },
+              {
+                "not": {
+                  "properties": {
+                    "stdioMode": {
+                      "const": "protocol"
+                    }
+                  },
+                  "required": ["stdioMode"]
+                }
+              }
+            ]
+          }
+        },
         {
           "if": {
             "properties": {
@@ -1379,6 +1447,119 @@
         ]
       }
     },
+    "McpAuthDef": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["none", "bearer", "oauth", "client_credentials", "private_key_jwt"],
+          "description": "Authentication mode. `none` (default) is an open server; `bearer` sends a static token as `Authorization: Bearer <token>`; `oauth` is the interactive authorization-code + PKCE flow (brokered by `wiqd auth login`, tokens cached on disk); `client_credentials` and `private_key_jwt` are non-interactive machine-to-machine grants for CI/headless use."
+        },
+        "token": {
+          "type": "string",
+          "description": "Static bearer token / API key (`type: bearer`)."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "OAuth scopes to request (`oauth`, `client_credentials`, `private_key_jwt`)."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Pre-registered OAuth client id; when omitted, `oauth` uses dynamic client registration."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "OAuth client secret (`client_credentials`, or a confidential `oauth` client)."
+        },
+        "privateKey": {
+          "type": "string",
+          "description": "PEM- or JWK-encoded private key used to sign `private_key_jwt` client assertions."
+        },
+        "algorithm": {
+          "type": "string",
+          "description": "JWS signing algorithm for `private_key_jwt` (e.g. `RS256`, `ES256`)."
+        }
+      },
+      "required": ["type"],
+      "description": "Authentication for an `http` MCP backend. `stdio` servers are local child processes that receive secrets via interpolated `env`, so `auth` is ignored for them. Every string field is `${...}` interpolated against the command scope before use, so secrets can come from `config`/env rather than the manifest text."
+    },
+    "McpBackendDef": {
+      "type": "object",
+      "properties": {
+        "transport": {
+          "$ref": "#/definitions/McpTransport",
+          "description": "`stdio` spawns a local server and talks over stdin/stdout; `http` connects to a remote streamable-HTTP MCP endpoint."
+        },
+        "command": {
+          "type": "string",
+          "description": "stdio: the executable to spawn. Resolved via the shared binary resolver."
+        },
+        "pathEnvVar": {
+          "type": "string",
+          "description": "stdio: env var whose value, when set, overrides the resolved `command` path."
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "stdio: arguments passed to `command`. Each value is `${...}` interpolated."
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "stdio: environment for the spawned server. Each value is `${...}` interpolated."
+        },
+        "url": {
+          "type": "string",
+          "description": "http: the MCP server URL."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "http: static request headers. Each value is `${...}` interpolated."
+        },
+        "auth": {
+          "$ref": "#/definitions/McpAuthDef",
+          "description": "http: authentication. Ignored for `stdio` backends."
+        }
+      },
+      "required": ["transport"],
+      "description": "An MCP server wiqd connects to as a *client*. Registered under `mcpBackends.<id>` on the manifest and bound to a command via `mcpCall.backend`."
+    },
+    "McpCallDef": {
+      "type": "object",
+      "properties": {
+        "backend": {
+          "type": "string",
+          "description": "Key into the manifest's top-level `mcpBackends`."
+        },
+        "tool": {
+          "type": "string",
+          "description": "MCP tool name to invoke via `tools/call`."
+        },
+        "args": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Arguments object for the tool. Each value is `${...}` interpolated against the command scope; values resolving to `undefined`/`null`/`\"\"` are omitted."
+        },
+        "timeoutSeconds": {
+          "type": "number",
+          "description": "Per-call timeout in seconds (default 120)."
+        }
+      },
+      "required": ["backend", "tool"],
+      "description": "Binds a command to an MCP `tools/call`. Present on a `ManifestCommandDef` to select the MCP-client backend instead of spawning an upstream binary."
+    },
     "McpInputDefinition": {
       "type": "object",
       "properties": {},
@@ -1395,6 +1576,11 @@
       },
       "additionalProperties": {},
       "description": "A single MCP server definition. `type` (e.g. \"http\", \"sse\", \"stdio\") is read for display only; every other property is opaque pass-through to `.mcp.json`."
+    },
+    "McpTransport": {
+      "type": "string",
+      "enum": ["stdio", "http"],
+      "description": "Transport kind for an MCP backend wiqd connects to as a client."
     },
     "PreHandlerConfig": {
       "type": "object",
@@ -1440,7 +1626,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["logger", "telemetry"]
+            "enum": ["logger", "telemetry", "featureFlags", "terminalReveal"]
           },
           "description": "Host capabilities handed to the factory; defaults to []."
         }
@@ -1516,6 +1702,13 @@
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "featureFlagEnv": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Maps registered boolean feature flags to environment variables on every upstream invocation."
         },
         "timeoutSeconds": {
           "type": "number"

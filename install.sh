@@ -19,10 +19,9 @@
 #
 # Installs the wiqd CLI and all dependencies:
 #   1. Node.js LTS (if not already installed)
-#   2. @microsoft/wiqd (npm global package — includes extension payloads;
-#      Work IQ and eval install lazily when their related wiqd command first runs)
-#   3. Verify installation (`wiqd doctor` may report those managed CLIs as
-#      not-yet-used; run the related command to install its exact extension pin)
+#   2. @microsoft/wiqd (npm global package — includes extension payloads)
+#   3. Verify installation (`wiqd doctor` reconciles active managed Work IQ
+#      and Eval generations; related commands retry if verification was incomplete)
 #   4. Work IQ VS Code extension (optional)
 #   5. wiqd plugin — installed only for the plugin host(s) already on PATH
 #      (Copilot CLI and/or Claude Code). Never installs a host; skipped
@@ -51,8 +50,8 @@ FORCE=false
 MIN_NODE_VERSION="24.15.0"
 WIQD_PACKAGE="@microsoft/wiqd"
 
-# The canonical public npm registry. Named once so the probe and the install
-# that must be pinned to it can never drift apart.
+# The canonical public npm registry used only by explicit recovery paths and
+# trusted copyable hints. Normal installer flows do not pin registry selection.
 PUBLIC_NPM_REGISTRY="https://registry.npmjs.org/"
 
 # Extra npm arguments appended to every global install. Empty by default, so a
@@ -159,7 +158,7 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --source <npm>           Installation source (default: npm)"
             echo "  --version <version>      Specific version to install (default: latest)"
-            echo "  --repo <owner/repo>      GitHub repository (default: microsoft/wiqd)"
+            echo "  --repo <host/owner/repo> GitHub repository (default: microsoft/wiqd)"
             echo "  --skip-vscode            Skip VS Code extension installation"
             echo "  --skip-plugin            Skip Copilot CLI plugin installation"
             echo "  --insiders               Install extension in VS Code Insiders"
@@ -590,6 +589,15 @@ install_npm_global_packages() {
     local display_name="${1:-wiqd}"
     shift || true
     local packages=("$@")
+    local i
+    for ((i = 0; i < ${#packages[@]}; i++)); do
+        if [[ "${packages[$i]}" == *.tgz && -e "${packages[$i]}" ]]; then
+            local package_dir package_name
+            package_dir=$(cd "$(dirname "${packages[$i]}")" && pwd -P) || return 1
+            package_name=$(basename "${packages[$i]}")
+            packages[$i]="$package_dir/$package_name"
+        fi
+    done
 
     # R35: reset the EEXIST file-conflict flag at the start of every install
     # attempt. It is reset here inside the shared primitive (not at top level)
@@ -618,7 +626,7 @@ install_npm_global_packages() {
     # 2>&1 (not 2>/dev/null) so npm warnings don't crash the script via set -e,
     # AND so the success-line grep below can see real npm output.
     # --loglevel=error suppresses npm's own deprecation warnings.
-    # NPM_REGISTRY_ARGS pins every 1P npm call to public npm. The guarded
+    # NPM_REGISTRY_ARGS is empty for normal installer flows. The guarded
     # expansion stays compatible with macOS's default bash 3.2.
     local npm_args=(install -g "${packages[@]}" ${NPM_REGISTRY_ARGS[@]+"${NPM_REGISTRY_ARGS[@]}"} --loglevel=error)
     if [[ -n "$NPM_INSTALL_REGISTRY" ]]; then
@@ -634,8 +642,13 @@ install_npm_global_packages() {
     LAST_NPM_ERROR_CODE=""
     LAST_NPM_REGISTRY="$NPM_INSTALL_REGISTRY"
     LAST_NPM_MISSING_SPEC=""
-    local npm_output
-    if ! npm_output=$(npm "${npm_args[@]}" 2>&1); then
+    local npm_output npm_working_directory
+    npm_working_directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-npm.XXXXXXXX") || {
+        write_err "Could not create an isolated npm working directory."
+        return 1
+    }
+    if ! npm_output=$(cd "$npm_working_directory" && npm "${npm_args[@]}" 2>&1); then
+        rm -rf "$npm_working_directory"
         # Capture the npm error code (e.g. E404) before any classification so the
         # auto-mode caller can offer an actionable registry-retry / recovery hint.
         LAST_NPM_ERROR_CODE=$(printf '%s\n' "$npm_output" \
@@ -652,7 +665,7 @@ install_npm_global_packages() {
         # Classify an EEXIST file conflict distinctly from a network/registry
         # failure (R35). npm aborts the whole global install with EEXIST when a
         # launcher target already exists but isn't owned by the installing
-        # package — a purely LOCAL problem the GitHub/EMU fallback can't fix (it
+        # package — a purely LOCAL problem the GitHub fallback can't fix (it
         # would hit the identical conflict). Name the exact conflicting file and
         # the removal command, raise the conflict flag so the auto-mode caller
         # skips the misleading network fallback, and stop. Delete nothing.
@@ -669,7 +682,7 @@ install_npm_global_packages() {
         # Classify an EACCES/EPERM permission failure distinctly from a
         # network/registry failure (R35). npm aborts the global install when it
         # can't write to the global prefix — a purely LOCAL problem the
-        # GitHub/EMU fallback can't fix. Lead with the npm-recommended remedy
+        # GitHub fallback can't fix. Lead with the npm-recommended remedy
         # (point npm at a user-writable prefix), offer elevation as the
         # alternative, and stop. Change nothing. npm itself discourages
         # `sudo npm install -g`, so re-running with sudo is the fallback, not
@@ -707,6 +720,7 @@ install_npm_global_packages() {
         write_hint "Re-run 'npm install -g ${packages[*]}${registry_hint}' to see the full npm error output."
         return 1
     fi
+    rm -rf "$npm_working_directory"
 
     local success_line
     success_line=$(echo "$npm_output" | grep -E "added|changed|up to date" | head -1 || true)
@@ -770,7 +784,7 @@ show_dependency_status() {
         write_hint "Re-run: npm install -g @microsoft/wiqd"
         return 1
     fi
-    checks=$(printf '%s' "$json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=((JSON.parse(s).data)||{}).checks||[];for(const x of c)process.stdout.write(`${x.name||""}\t${x.status||""}\t${x.message||""}\n`);}catch(e){}});' 2>/dev/null || true)
+    checks=$(printf '%s' "$json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=((JSON.parse(s).data)||{}).checks||[];for(const x of c)process.stdout.write(`${x.name||""}\t${x.status||""}\t${x.message||""}\t${x.remediation||""}\n`);}catch(e){}});' 2>/dev/null || true)
     if [[ -z "$checks" ]]; then
         write_err "Could not verify required downstream components."
         write_hint "Re-run: npm install -g @microsoft/wiqd"
@@ -782,17 +796,17 @@ show_dependency_status() {
     # the "workiq --json" and "workiq EULA" checks to the bare name "workiq", so
     # matching by name alone would assign one entry to both rows. Consuming in
     # declaration order (probe before EULA) assigns each to the right row.
-    local -a c_name=() c_status=() c_msg=() consumed=()
-    local nm st ms
-    while IFS=$'\t' read -r nm st ms; do
+    local -a c_name=() c_status=() c_msg=() c_remediation=() consumed=()
+    local nm st ms remediation
+    while IFS=$'\t' read -r nm st ms remediation; do
         [[ -z "$nm" ]] && continue
-        c_name+=("$nm"); c_status+=("$st"); c_msg+=("$ms"); consumed+=(0)
+        c_name+=("$nm"); c_status+=("$st"); c_msg+=("$ms"); c_remediation+=("$remediation"); consumed+=(0)
     done <<< "$checks"
 
-    # Display rows: "candidates::label::required::ok-word::note::extension-id::rerun::first-use".
+    # Display rows: "candidates::label::required::ok-word::note::extension-id::rerun::first-use::override-env".
     # Candidates are '|'-separated; `required=1` makes a miss fatal. An empty
     # check uses the extension id to print a registration repair; an emitted
-    # failure uses doctor's own trimmed message and reinstalls wiqd's pinned deps.
+    # managed failure uses doctor's own trimmed message and diagnostic command.
     local active_backend_count=0 active_backend_id="" k
     for ((k = 0; k < ${#c_name[@]}; k++)); do
         [[ "${c_name[$k]}" == "Extensions" ]] || continue
@@ -832,8 +846,8 @@ show_dependency_status() {
     fi
     local rows=(
         "$backend_row"
-        "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1::wiqd agent eval"
-        "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1::wiqd agent list"
+        "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1::wiqd agent eval::M365_COPILOT_EVAL_PATH"
+        "workiq --json|workiq::workiq::0::Installed::(optional - needed for \`wiqd agent\` commands)::microsoft.workiq::1::wiqd agent list::WORKIQ_PATH"
         "workiq EULA|workiq::workiq EULA::0::Accepted::::microsoft.workiq::0"
     )
 
@@ -849,12 +863,12 @@ show_dependency_status() {
 
     local all_ok=true fatal=false
     local out=""
-    local cands label required okword note extension_id rerun first_use status message padded idx k cc is_ok repair
+    local cands label required okword note extension_id rerun first_use override_env status message remediation_kind padded idx k cc is_ok repair
     local -a cand_arr
     for row in "${rows[@]}"; do
         IFS=$'\x1e' read -ra parts <<< "${row//::/$'\x1e'}"
         cands=${parts[0]}; label=${parts[1]}; required=${parts[2]}
-        okword=${parts[3]}; note=${parts[4]}; extension_id=${parts[5]}; rerun=${parts[6]}; first_use=${parts[7]:-}
+        okword=${parts[3]}; note=${parts[4]}; extension_id=${parts[5]}; rerun=${parts[6]}; first_use=${parts[7]:-}; override_env=${parts[8]:-}
 
         # First unconsumed check whose name matches any candidate.
         IFS='|' read -ra cand_arr <<< "$cands"
@@ -867,9 +881,9 @@ show_dependency_status() {
             [[ $idx -ge 0 ]] && break
         done
         if [[ $idx -ge 0 ]]; then
-            consumed[$idx]=1; status=${c_status[$idx]}; message=${c_msg[$idx]}
+            consumed[$idx]=1; status=${c_status[$idx]}; message=${c_msg[$idx]}; remediation_kind=${c_remediation[$idx]}
         else
-            status=""; message=""
+            status=""; message=""; remediation_kind=""
         fi
         is_ok=false
         if [[ "$label" == "fx-core" ]]; then
@@ -909,11 +923,25 @@ show_dependency_status() {
             out+="${YELLOW}   ⚠ ${padded} ${lead}${RESET}\n"
         fi
         if [[ "$rerun" == "1" ]]; then
-            # Missing managed CLIs are a normal lazy-first-use state. Only a
-            # doctor error means the extension package or its metadata needs
-            # reinstalling rather than invoking the owning command.
-            if [[ $idx -ge 0 && "$status" != "error" && -n "$first_use" ]]; then
-                repair="$first_use"
+            if [[ $idx -ge 0 && -n "$first_use" ]]; then
+                if [[ "$status" == "error" ]]; then
+                    case "$remediation_kind" in
+                        clear-managed-override)
+                            repair="clear or correct ${override_env}, then run wiqd doctor"
+                            ;;
+                        reinstall-host)
+                            repair="npm uninstall -g @microsoft/wiqd, then re-run this installer"
+                            ;;
+                        managed-install-diagnostics)
+                            repair="wiqd doctor --verbose"
+                            ;;
+                        *)
+                            repair="wiqd doctor"
+                            ;;
+                    esac
+                else
+                    repair="$first_use"
+                fi
             elif [[ $idx -lt 0 && -n "$extension_id" ]]; then
                 repair="wiqd ext add ${extension_id}"
             else
@@ -956,73 +984,17 @@ install_from_npm_registry() {
         package_spec="${package}@${resolved_version#v}"
     fi
 
-    local package_scope=""
-    if [[ "$package_spec" == @*/* ]]; then package_scope="${package_spec%%/*}"; fi
-    local configured_registry
-    configured_registry=$(npm config get registry --loglevel=error 2>/dev/null || true)
-    configured_registry="${configured_registry//$'\r'/}"
-    configured_registry="${configured_registry//$'\n'/}"
-    if [[ "$configured_registry" == "undefined" || "$configured_registry" == "null" ]]; then configured_registry=""; fi
-    # A scoped package resolves through its `@scope:registry` mapping when set,
-    # which overrides the generic registry — so the EFFECTIVE registry (used for
-    # both the fallback decision and the retry) must consult the scope first.
-    local scoped_registry=""
-    if [[ -n "$package_scope" ]]; then
-        scoped_registry=$(npm config get "${package_scope}:registry" --loglevel=error 2>/dev/null || true)
-        scoped_registry="${scoped_registry//$'\r'/}"
-        scoped_registry="${scoped_registry//$'\n'/}"
-        if [[ "$scoped_registry" == "undefined" || "$scoped_registry" == "null" ]]; then scoped_registry=""; fi
-    fi
-    local effective_registry="$configured_registry"
-    if [[ -n "$scoped_registry" ]]; then effective_registry="$scoped_registry"; fi
-    # Registry configuration is untrusted display text. Show only its parsed,
-    # credential-free origin and never place it in a copyable command.
-    local safe_effective_registry
-    safe_effective_registry=$(safe_registry_label "$effective_registry")
-    local normalized_configured="${effective_registry%/}"
-    local normalized_public="${PUBLIC_NPM_REGISTRY%/}"
-    local has_fallback_registry=false
-    if [[ -n "$normalized_configured" && "$normalized_configured" != "$normalized_public" ]]; then has_fallback_registry=true; fi
-    local previous_registry="$NPM_INSTALL_REGISTRY"
-    local previous_registry_scope="$NPM_INSTALL_REGISTRY_SCOPE"
-    NPM_INSTALL_REGISTRY="$PUBLIC_NPM_REGISTRY"
-    NPM_INSTALL_REGISTRY_SCOPE="$package_scope"
-    NPM_SUPPRESS_FAILURE_DIAGNOSTICS=$has_fallback_registry
-    if install_npm_global_packages "$package_spec from ${NPM_INSTALL_REGISTRY:-npm registry}" "$package_spec"; then
-        NPM_SUPPRESS_FAILURE_DIAGNOSTICS=false
-        NPM_INSTALL_REGISTRY="$previous_registry"
-        NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
-        return 0
-    fi
-    NPM_SUPPRESS_FAILURE_DIAGNOSTICS=false
-    if $has_fallback_registry && [[ "$NPM_INSTALL_CONFLICT" != 1 && "$NPM_INSTALL_PERMISSION" != 1 ]]; then
-        write_warn "$package_spec could not be installed from $PUBLIC_NPM_REGISTRY."
-        write_info "Retrying from configured npm registry $safe_effective_registry..."
-        NPM_INSTALL_REGISTRY="$effective_registry"
-        NPM_INSTALL_REGISTRY_SCOPE="$package_scope"
-        local fallback_status=0
-        install_npm_global_packages "$package_spec from $safe_effective_registry" "$package_spec" || fallback_status=$?
-        NPM_INSTALL_REGISTRY="$previous_registry"
-        NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
-        if [[ "$fallback_status" -ne 0 && "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
-            if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$package_spec" ]]; then
-                write_warn "A dependency ($LAST_NPM_MISSING_SPEC) of $package_spec was not found in $safe_effective_registry."
-            else
-                write_warn "$package_spec was not found in $safe_effective_registry."
-            fi
-        fi
-        return "$fallback_status"
-    fi
-    NPM_INSTALL_REGISTRY="$previous_registry"
-    NPM_INSTALL_REGISTRY_SCOPE="$previous_registry_scope"
-    if [[ "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
+    local install_status
+    install_status=0
+    install_npm_global_packages "$package_spec from npm registry" "$package_spec" || install_status=$?
+    if [[ "$install_status" -ne 0 && "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
         if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$package_spec" ]]; then
-            write_warn "A dependency ($LAST_NPM_MISSING_SPEC) of $package_spec was not found in $PUBLIC_NPM_REGISTRY."
+            write_warn "A dependency ($LAST_NPM_MISSING_SPEC) of $package_spec was not found using your npm configuration."
         else
-            write_warn "$package_spec was not found in $PUBLIC_NPM_REGISTRY."
+            write_warn "$package_spec was not found using your npm configuration."
         fi
     fi
-    return 1
+    return "$install_status"
 }
 
 get_npm_global_package_version() {
@@ -1087,8 +1059,13 @@ get_target_version() {
     # the literal (leading 'v' stripped) if the registry can't be reached.
     if [[ -n "$version" && "$version" != "latest" ]]; then
         if [[ "$source" == "npm" || "$source" == "auto" ]]; then
-            local resolved
-            resolved=$(npm view "${package}@${version}" version 2>/dev/null || true)
+            local resolved npm_working_directory
+            npm_working_directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-npm.XXXXXXXX") || {
+                echo "${version#v}"
+                return
+            }
+            resolved=$(cd "$npm_working_directory" && npm view "${package}@${version}" version 2>/dev/null || true)
+            rm -rf "$npm_working_directory"
             if [[ -n "$resolved" ]]; then
                 echo "$resolved"
                 return
@@ -1152,7 +1129,9 @@ show_wiqd_banner() {
     local pink; pink=$(fg 240 72 120)
     local coral; coral=$(fg 240 120 96)
     local orange; orange=$(fg 240 144 72)
+    local white; white=$(fg 243 244 246)
     local dim; dim=$(fg 110 116 130)
+    local bold="${e}[1m"
 
     echo ""
 
@@ -1228,7 +1207,8 @@ show_wiqd_banner() {
     fi
 
     echo ""
-    printf " %s       wiqd installer v%s%s\n" "$dim" "$WIQD_INSTALLER_VERSION" "$reset"
+    printf "   %s▸%s %s%sWork IQ Dev Tools%s  %sv%s%s\n" "$purple" "$reset" "$bold" "$white" "$reset" "$dim" "$WIQD_INSTALLER_VERSION" "$reset"
+    printf "     %sgithub.com/microsoft/wiqd%s\n" "$dim" "$reset"
     echo ""
 }
 
@@ -1447,8 +1427,8 @@ fi
 # ─────────────────────────────────────────────
 #
 # ATK remains a host dependency. Eval and Work IQ are managed by their extension
-# payloads and intentionally stay off PATH. Their missing doctor rows are a normal
-# lazy state: run `wiqd agent eval` or a Work IQ command to install the exact pin.
+# payloads and intentionally stay off PATH. Doctor reconciles active owners here;
+# related commands retry the same lifecycle if this verification was incomplete.
 
 write_step 3 "$TOTAL_STEPS" "Verifying installation..."
 

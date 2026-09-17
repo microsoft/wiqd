@@ -110,6 +110,10 @@ export default defineConfig({
           items: [{ label: 'Command reference', slug: 'cli/reference' }],
         },
         {
+          label: 'Extension Authoring',
+          items: [{ label: 'MCP-backed commands', slug: 'extensions/mcp-backed-commands' }],
+        },
+        {
           label: 'Provided Extensions',
           items: [
             { label: 'Overview', slug: 'extensions/provided' },

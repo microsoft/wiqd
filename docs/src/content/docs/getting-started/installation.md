@@ -57,7 +57,8 @@ The installer will:
    - **macOS/Linux:** installs via nvm, Homebrew, or apt.
    - Existing supported Node.js installations are preserved.
 2. **Install `wiqd`** — downloads and installs the wiqd CLI (includes ATK as a dependency)
-3. **Verify** — confirms `wiqd --version` works and dependencies are present
+3. **Verify** — confirms `wiqd --version` works, then `wiqd doctor` reconciles managed
+   extension owners and reports targeted remediation when needed
 4. **VS Code extension** — installs the Work IQ extension for real-time validation
 5. **Copilot CLI plugin** — deploys the wiqd plugin for GitHub Copilot CLI (skip with `-SkipPlugin` / `--skip-plugin`)
 
@@ -137,7 +138,10 @@ wiqd --version
 wiqd doctor
 ```
 
-The `doctor` command verifies all CLI tools (wiqd, ATK, workiq, eval) are present and functional.
+The `doctor` command verifies wiqd and the selected lifecycle backend (fx-core by default, or ATK
+when explicitly selected), reconciles active managed owners such as Work IQ and Eval into isolated
+`~/.wiqd/extensions/` generations, and reports any remaining extension health or EULA warnings
+without treating those optional warnings as installer failures.
 
 ## Update
 
@@ -242,6 +246,21 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --node-manager system
 ```
 
 `wiqd doctor` also reports the Node manager state on every run and warns when fnm is installed-but-inactive while wiqd's npm globals appear to live under fnm.
+
+## Managed extension CLI state
+
+Work IQ and Eval use extension-owned, exact npm pins rather than standalone global
+packages. `wiqd doctor` eagerly reconciles each active owner into
+`~/.wiqd/extensions/`. Its `--json` output keeps the standard `checks[]` shape.
+Managed state intentionally survives `npm uninstall -g @microsoft/wiqd`; reinstalling
+wiqd revalidates and reuses it.
+
+Run `wiqd doctor` to repair an active managed generation. Doctor warns about a
+separately rooted global copy but never removes it automatically. When the isolated
+managed copy is healthy, the warning prints `npm uninstall -g <package>` as an
+explicit optional cleanup command. Run it only after confirming no external workflow
+or explicit override depends on that global package. `wiqd ext list` and `wiqd ext
+show` inspect managed state; `wiqd ext remove` only deactivates an extension.
 
 ### Windows: an older `npm install -g @microsoft/wiqd` crashes on `copyBinaries.js`
 

@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "e88cb8c859738678baccab27e1bf1b6300e65c7a9bdd5c10fa5874207b4342a3",
+  "inputDigest": "5dd1d476d3e19e2d53a358c952afe9d180e43a010d61e5316fdaf4c76e1bdb5d",
   "componentCount": 677,
   "components": [
     {
@@ -778,23 +778,23 @@
     {
       "type": "npm",
       "name": "@microsoft/app-manifest",
-      "version": "1.1.2-alpha.d1d0529262.0",
-      "license": "MIT",
-      "origin": "bundled"
-    },
-    {
-      "type": "npm",
-      "name": "@microsoft/app-manifest",
-      "version": "1.1.2-beta.2026081401.0",
-      "license": "MIT",
-      "origin": "bundled"
-    },
-    {
-      "type": "npm",
-      "name": "@microsoft/app-manifest",
       "version": "1.1.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/app-manifest",
+      "version": "1.1.3-alpha.1df35c7d32.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/app-manifest",
+      "version": "1.1.3-beta.2026090805.0",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -827,16 +827,16 @@
     {
       "type": "npm",
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.3.2-beta.2026081401.0",
+      "version": "0.3.2-beta.2026081803.0",
       "license": "MIT",
-      "origin": "bundled"
+      "origin": "runtime"
     },
     {
       "type": "npm",
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.3.2-beta.2026081803.0",
+      "version": "0.3.3-beta.2026090805.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -848,21 +848,14 @@
     {
       "type": "npm",
       "name": "@microsoft/teamsfx-api",
-      "version": "0.24.2-alpha.d1d0529262.0",
-      "license": "MIT",
-      "origin": "bundled"
-    },
-    {
-      "type": "npm",
-      "name": "@microsoft/teamsfx-api",
       "version": "0.24.2-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
     },
     {
       "type": "npm",
-      "name": "@microsoft/teamsfx-core",
-      "version": "3.1.3-alpha.d1d0529262.0",
+      "name": "@microsoft/teamsfx-api",
+      "version": "0.24.3-alpha.1df35c7d32.0",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -872,6 +865,13 @@
       "version": "3.1.3-beta.2026081803.0",
       "license": "MIT",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/teamsfx-core",
+      "version": "3.1.4-alpha.1df35c7d32.0",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -1268,7 +1268,7 @@
     {
       "type": "npm",
       "name": "@xmldom/xmldom",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "license": "MIT",
       "origin": "both"
     },
@@ -1843,7 +1843,7 @@
       "name": "cross-spawn",
       "version": "7.0.6",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
@@ -2767,14 +2767,14 @@
       "name": "isexe",
       "version": "2.0.0",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
       "name": "jose",
       "version": "6.2.3",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
@@ -2786,7 +2786,7 @@
     {
       "type": "npm",
       "name": "js-yaml",
-      "version": "4.3.1",
+      "version": "4.3.2",
       "license": "MIT",
       "origin": "both"
     },
@@ -3670,7 +3670,7 @@
       "name": "path-key",
       "version": "3.1.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
@@ -4020,14 +4020,14 @@
       "name": "shebang-command",
       "version": "2.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
       "name": "shebang-regex",
       "version": "3.0.0",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
@@ -4629,7 +4629,7 @@
       "name": "which",
       "version": "2.0.2",
       "license": "ISC",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
