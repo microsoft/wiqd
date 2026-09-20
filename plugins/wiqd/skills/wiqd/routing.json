@@ -1,0 +1,1146 @@
+{
+  "contractVersion": 1,
+  "generator": "@wiqd/plugin-build",
+  "target": "3p",
+  "workflows": [
+    {
+      "id": "wiqd-core",
+      "file": "workflows/wiqd-core.md",
+      "routingLabel": "Agent lifecycle tasks",
+      "routingIntent": "Creating, editing, setting response behavior, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents",
+      "order": 1,
+      "triggers": [
+        "create agent",
+        "new agent",
+        "scaffold agent",
+        "edit my agent",
+        "update my agent",
+        "modify my agent",
+        "add a capability",
+        "add a capability to this agent",
+        "add a named capability",
+        "configure an agent capability",
+        "change capability scope",
+        "add a plugin capability to my agent",
+        "add an API plugin to my agent",
+        "add an agent skill",
+        "add a skill to my agent",
+        "import an agent skill",
+        "expose a skill to Copilot",
+        "add authentication",
+        "configure authentication",
+        "provision my agent",
+        "deploy my agent",
+        "package my agent",
+        "share my agent",
+        "delete my agent",
+        "remove my agent",
+        "open my agent",
+        "show my agent",
+        "show my environments",
+        "manage environments",
+        "add environment",
+        "migrate my agent",
+        "localize my agent",
+        "validate my agent",
+        "fix my agent manifest",
+        "update instructions",
+        "add web search",
+        "update manifest",
+        "set default response mode",
+        "change default response mode",
+        "set quick response mode",
+        "set think deeper mode",
+        "review instructions",
+        "add a worker agent",
+        "connect a worker agent",
+        "remove a worker agent",
+        "disconnect a worker agent"
+      ],
+      "requires": [
+        "agent create",
+        "agent add",
+        "agent validate",
+        "agent provision",
+        "agent package",
+        "agent share",
+        "agent env",
+        "agent show",
+        "agent delete",
+        "agent publish"
+      ],
+      "journeyPhases": [
+        "Build",
+        "Improve",
+        "Preview",
+        "Publish"
+      ]
+    },
+    {
+      "id": "plugin",
+      "file": "workflows/plugin.md",
+      "routingLabel": "Plugin authoring (alpha)",
+      "routingIntent": "Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, package, export)",
+      "order": 2,
+      "triggers": [
+        "create a plugin",
+        "create a standalone plugin",
+        "new plugin",
+        "new plugin project",
+        "build a plugin",
+        "build a standalone plugin",
+        "author a plugin",
+        "make a reusable plugin",
+        "reusable plugin",
+        "standalone plugin",
+        "plugin project",
+        "plugin with a skill",
+        "plugin with a connector",
+        "add a skill to my plugin",
+        "add a connector to my plugin",
+        "add an agent to my plugin",
+        "validate my plugin",
+        "package my plugin",
+        "share my plugin",
+        "show my plugin",
+        "list my plugins",
+        "import an open plugin",
+        "import a claude plugin",
+        "import a cursor plugin",
+        "convert an open plugin to a wiqd plugin",
+        "open a claude plugin in wiqd",
+        "turn a cursor plugin into an M365 plugin",
+        "bring in an existing open plugin",
+        "export my plugin",
+        "export my plugin to open plugin",
+        "export my plugin for claude",
+        "export my plugin for cursor",
+        "convert my plugin to open plugin format",
+        "make my plugin work in claude",
+        "make my plugin work in cursor",
+        "share my plugin with other tools",
+        "delete my plugin",
+        "uninstall my plugin",
+        "tear down my plugin",
+        "remove my plugin from the tenant",
+        "clean up my provisioned plugin",
+        "delete the plugin app registration",
+        "undo plugin provision"
+      ],
+      "requires": [
+        "plugin create",
+        "plugin import",
+        "plugin add skill",
+        "plugin add connector",
+        "plugin add agent",
+        "plugin validate",
+        "plugin show",
+        "plugin list",
+        "plugin provision",
+        "plugin package",
+        "plugin share",
+        "plugin export",
+        "plugin delete"
+      ],
+      "journeyPhases": []
+    },
+    {
+      "id": "eval",
+      "file": "workflows/eval.md",
+      "routingLabel": "Eval tasks",
+      "routingIntent": "Running, generating, analyzing evals",
+      "order": 3,
+      "triggers": [
+        "evaluate my agent",
+        "test my agent",
+        "run my evals",
+        "run my tests",
+        "check my agent",
+        "is my agent correct",
+        "my agent isn't working",
+        "generate evals",
+        "propose eval updates",
+        "analyze eval results",
+        "modify evals",
+        "edit evals",
+        "weaken evals",
+        "delete evals"
+      ],
+      "requires": [
+        "agent eval",
+        "agent eval init"
+      ],
+      "journeyPhases": [
+        "Improve"
+      ]
+    },
+    {
+      "id": "workiq",
+      "file": "workflows/workiq.md",
+      "routingLabel": "WorkIQ tasks",
+      "routingIntent": "Monitoring, asking, listing deployed agents",
+      "order": 4,
+      "triggers": [
+        "monitor my agent",
+        "observe my agent",
+        "how is my agent doing",
+        "check agent health",
+        "invoke my agent",
+        "talk to my agent",
+        "send a message",
+        "ask my agent",
+        "list my agents",
+        "show deployed agents",
+        "find agent by name",
+        "ask work iq",
+        "organization context",
+        "people information",
+        "who is",
+        "find a person",
+        "team information",
+        "contact information",
+        "group mailbox",
+        "org data"
+      ],
+      "requires": [
+        "agent monitor",
+        "agent ask",
+        "agent list"
+      ],
+      "journeyPhases": [
+        "Publish"
+      ]
+    },
+    {
+      "id": "feedback",
+      "file": "workflows/feedback.md",
+      "routingLabel": "Feedback",
+      "routingIntent": "Submitting or listing wiqd product feedback (bugs, feature requests, improvements)",
+      "order": 6,
+      "triggers": [
+        "submit feedback",
+        "send feedback",
+        "report a bug",
+        "file a bug",
+        "this is broken",
+        "request a feature",
+        "feature request",
+        "suggest an improvement",
+        "I wish wiqd could",
+        "give feedback about wiqd",
+        "list my feedback",
+        "show my feedback",
+        "what feedback have I filed"
+      ],
+      "requires": [
+        "feedback submit",
+        "feedback list"
+      ],
+      "journeyPhases": []
+    },
+    {
+      "id": "partner-center",
+      "file": "workflows/partner-center.md",
+      "routingLabel": "Partner Center publishing (3P)",
+      "routingIntent": "Publishing a declarative agent to the Microsoft commercial marketplace via Partner Center",
+      "order": 8,
+      "triggers": [
+        "how do I publish my agent",
+        "publish to Partner Center",
+        "submit to Partner Center",
+        "submit my agent for review",
+        "publish to AppSource",
+        "submit to AppSource",
+        "submit my agent to the store",
+        "list my agent in the store",
+        "get my agent into the Microsoft 365 store",
+        "get my agent into the Teams store",
+        "get my agent into the Copilot store",
+        "ship my agent to the marketplace",
+        "certify my agent",
+        "certification failed",
+        "why did my agent get rejected",
+        "store listing",
+        "how do partners publish",
+        "ISV publishing"
+      ],
+      "requires": [
+        "agent validate",
+        "agent package"
+      ],
+      "journeyPhases": [
+        "Publish"
+      ]
+    },
+    {
+      "id": "devui",
+      "file": "workflows/devui.md",
+      "routingLabel": "DevUI",
+      "routingIntent": "Launch the local DevUI web app, and ask an agent while watching the turn run live with full developer detail",
+      "order": 9,
+      "triggers": [
+        "open devui",
+        "launch devui",
+        "start devui",
+        "open the agent debugger",
+        "debug my agent",
+        "test my agent visually",
+        "watch my agent run live",
+        "see it run in the browser",
+        "ask in devui",
+        "run this in the web ui",
+        "debug ui",
+        "inspect plugins and citations",
+        "watch the agent respond",
+        "open the debugger"
+      ],
+      "requires": [
+        "devui start",
+        "devui ask"
+      ],
+      "journeyPhases": []
+    }
+  ],
+  "intents": [
+    {
+      "phrase": "create agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "new agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "scaffold agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "edit my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "update my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "modify my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a capability",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a capability to this agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a named capability",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "configure an agent capability",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "change capability scope",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a plugin capability to my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add an api plugin to my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add an agent skill",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a skill to my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "import an agent skill",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "expose a skill to copilot",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add authentication",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "configure authentication",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "provision my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "deploy my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "package my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "share my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "delete my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "remove my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "open my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "show my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "show my environments",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "manage environments",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add environment",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "migrate my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "localize my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "validate my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "fix my agent manifest",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "update instructions",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add web search",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "update manifest",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "set default response mode",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "change default response mode",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "set quick response mode",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "set think deeper mode",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "review instructions",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "add a worker agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "connect a worker agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "remove a worker agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "disconnect a worker agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "create a plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a standalone plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "new plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "new plugin project",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "build a plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "build a standalone plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "author a plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "make a reusable plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "reusable plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "standalone plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "plugin project",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "plugin with a skill",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "plugin with a connector",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "add a skill to my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "add a connector to my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "add an agent to my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "validate my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "package my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "share my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "show my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "list my plugins",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "import an open plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "import a claude plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "import a cursor plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "convert an open plugin to a wiqd plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "open a claude plugin in wiqd",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "turn a cursor plugin into an m365 plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "bring in an existing open plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "export my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "export my plugin to open plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "export my plugin for claude",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "export my plugin for cursor",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "convert my plugin to open plugin format",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "make my plugin work in claude",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "make my plugin work in cursor",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "share my plugin with other tools",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "delete my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "uninstall my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "tear down my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "remove my plugin from the tenant",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "clean up my provisioned plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "delete the plugin app registration",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "undo plugin provision",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "evaluate my agent",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "test my agent",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "run my evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "run my tests",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "check my agent",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "is my agent correct",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "my agent isn't working",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "generate evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "propose eval updates",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "analyze eval results",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "modify evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "edit evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "weaken evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "delete evals",
+      "workflowId": "eval",
+      "workflowFile": "workflows/eval.md"
+    },
+    {
+      "phrase": "monitor my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "observe my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "how is my agent doing",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "check agent health",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "invoke my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "talk to my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "send a message",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "ask my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "list my agents",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "show deployed agents",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "find agent by name",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "ask work iq",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "organization context",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "people information",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "who is",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "find a person",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "team information",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "contact information",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "group mailbox",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "org data",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "submit feedback",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "send feedback",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "report a bug",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "file a bug",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "this is broken",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "request a feature",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "feature request",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "suggest an improvement",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "i wish wiqd could",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "give feedback about wiqd",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "list my feedback",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "show my feedback",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "what feedback have i filed",
+      "workflowId": "feedback",
+      "workflowFile": "workflows/feedback.md"
+    },
+    {
+      "phrase": "how do i publish my agent",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "publish to partner center",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "submit to partner center",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "submit my agent for review",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "publish to appsource",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "submit to appsource",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "submit my agent to the store",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "list my agent in the store",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "get my agent into the microsoft 365 store",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "get my agent into the teams store",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "get my agent into the copilot store",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "ship my agent to the marketplace",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "certify my agent",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "certification failed",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "why did my agent get rejected",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "store listing",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "how do partners publish",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "isv publishing",
+      "workflowId": "partner-center",
+      "workflowFile": "workflows/partner-center.md"
+    },
+    {
+      "phrase": "open devui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "launch devui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "start devui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "open the agent debugger",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "debug my agent",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "test my agent visually",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "watch my agent run live",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "see it run in the browser",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "ask in devui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "run this in the web ui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "debug ui",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "inspect plugins and citations",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "watch the agent respond",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "open the debugger",
+      "workflowId": "devui",
+      "workflowFile": "workflows/devui.md"
+    }
+  ]
+}

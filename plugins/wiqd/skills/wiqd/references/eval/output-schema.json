@@ -1,0 +1,888 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/microsoft/m365-copilot-eval/refs/heads/main/schema/v1/eval-document.schema.json",
+  "title": "M365 Copilot Eval Document",
+  "description": "Schema for evaluation documents used by M365 Copilot Agent Evals CLI. Supports single-turn and multi-turn evaluations.",
+  "type": "object",
+  "required": ["schemaVersion", "items"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "JSON Schema URI for editor validation support"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^1\\.\\d+\\.\\d+$",
+      "description": "SemVer string identifying the schema version this document conforms to (e.g., '1.4.0')",
+      "examples": ["1.0.0", "1.1.0", "1.2.0", "1.3.0", "1.4.0"]
+    },
+    "metadata": {
+      "$ref": "#/$defs/DocumentMetadata"
+    },
+    "default_evaluators": {
+      "$ref": "#/$defs/EvaluatorMap",
+      "description": "File-level default evaluators (overrides system defaults)"
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Array of evaluation items: single-turn evaluations or multi-turn threads",
+      "items": {
+        "oneOf": [{ "$ref": "#/$defs/SingleTurnEvaluation" }, { "$ref": "#/$defs/MultiTurnThread" }]
+      }
+    }
+  },
+  "$defs": {
+    "DocumentMetadata": {
+      "type": "object",
+      "description": "Optional metadata about the evaluation document",
+      "additionalProperties": true,
+      "properties": {
+        "name": { "type": "string", "description": "Human-readable name for the evaluation set" },
+        "description": {
+          "type": "string",
+          "description": "Description of what this evaluation set tests"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the document was created"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "Author or system that created the document"
+        },
+        "evaluatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when evaluation was performed"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Tags for categorization and filtering"
+        },
+        "agentId": { "type": "string", "description": "M365 Agent ID this evaluation targets" },
+        "agentName": {
+          "type": "string",
+          "description": "Name of the M365 agent this evaluation targets"
+        },
+        "cliVersion": {
+          "type": "string",
+          "description": "Version of the M365 Copilot Agent Evals CLI that produced this document"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Extension point for custom metadata. Use reverse-domain notation for field names."
+        }
+      }
+    },
+    "SingleTurnEvaluation": {
+      "type": "object",
+      "description": "A standalone single-turn prompt-response evaluation",
+      "required": ["prompt"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The input prompt to evaluate"
+        },
+        "expected_response": {
+          "type": "string",
+          "description": "Expected or ideal response for comparison during evaluation"
+        },
+        "response": { "type": "string", "description": "Actual response from the agent" },
+        "context": {
+          "type": "string",
+          "description": "Additional context for grounding evaluation"
+        },
+        "evaluators": {
+          "$ref": "#/$defs/EvaluatorMap",
+          "description": "Per-prompt evaluator overrides"
+        },
+        "evaluators_mode": {
+          "type": "string",
+          "enum": ["extend", "replace"],
+          "default": "extend",
+          "description": "How per-prompt evaluators combine with defaults"
+        },
+        "citations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Citation" },
+          "description": "Citations included in the response"
+        },
+        "scores": { "$ref": "#/$defs/ScoreCollection" },
+        "diagnostics": { "$ref": "#/$defs/Diagnostics" },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail", "partial", "error"],
+          "description": "Overall status of this item."
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorObject",
+          "description": "Error details for this item, if any."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional tags for grouping/filtering this eval. Echoed verbatim to the results item."
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Extension point for custom item-level fields"
+        }
+      },
+      "not": { "required": ["turns"] }
+    },
+    "MultiTurnThread": {
+      "type": "object",
+      "description": "A multi-turn conversation thread with ordered turns sharing conversation context",
+      "required": ["turns"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "Human-readable name for the thread" },
+        "description": { "type": "string", "description": "Description of what this thread tests" },
+        "turns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/Turn" },
+          "description": "Ordered array of conversation turns"
+        },
+        "conversation_id": {
+          "type": "string",
+          "description": "Unique identifier for this conversation thread"
+        },
+        "summary": {
+          "$ref": "#/$defs/ThreadSummary",
+          "description": "Aggregate statistics for the thread"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional tags for grouping/filtering this thread. Echoed verbatim to the results thread."
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Extension point for custom thread-level fields"
+        }
+      },
+      "not": { "required": ["prompt"] }
+    },
+    "Turn": {
+      "type": "object",
+      "description": "A single turn within a multi-turn thread",
+      "required": ["prompt"],
+      "additionalProperties": false,
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The user message for this turn"
+        },
+        "expected_response": {
+          "type": "string",
+          "description": "Expected agent response for this turn"
+        },
+        "response": { "type": "string", "description": "Actual agent response" },
+        "context": {
+          "type": "string",
+          "description": "Additional context for grounding evaluation"
+        },
+        "evaluators": {
+          "$ref": "#/$defs/EvaluatorMap",
+          "description": "Per-turn evaluator overrides"
+        },
+        "evaluators_mode": {
+          "type": "string",
+          "enum": ["extend", "replace"],
+          "default": "extend",
+          "description": "How per-turn evaluators combine with defaults"
+        },
+        "citations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Citation" },
+          "description": "Citations included in the response"
+        },
+        "scores": { "$ref": "#/$defs/ScoreCollection" },
+        "diagnostics": { "$ref": "#/$defs/Diagnostics" },
+        "status": {
+          "type": "string",
+          "enum": ["pass", "fail", "partial", "error"],
+          "description": "Overall status of this turn."
+        },
+        "error": {
+          "$ref": "#/$defs/ErrorObject",
+          "description": "Error details for this turn, if any."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional tags for grouping/filtering this turn. Echoed verbatim to the results turn."
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Extension point for custom turn-level fields"
+        }
+      }
+    },
+    "ThreadSummary": {
+      "type": "object",
+      "description": "Aggregate statistics for a thread.",
+      "required": [
+        "turns_total",
+        "turns_passed",
+        "turns_failed",
+        "turns_partial",
+        "turns_errored",
+        "overall_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "turns_total": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Total number of turns executed"
+        },
+        "turns_passed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of turns with status='pass'"
+        },
+        "turns_failed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of turns with status='fail'"
+        },
+        "turns_partial": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of turns with status='partial'"
+        },
+        "turns_errored": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Count of turns with status='error'"
+        },
+        "overall_status": {
+          "type": "string",
+          "enum": ["pass", "fail", "partial", "error"],
+          "description": "Overall status of the thread."
+        }
+      }
+    },
+    "Diagnostics": {
+      "type": "object",
+      "description": "Extensible container for output diagnostics, keyed by diagnostic category and positioned alongside scores.",
+      "additionalProperties": true,
+      "properties": {
+        "retrieval_executions": {
+          "type": "array",
+          "description": "Sanitized retrieval activity - what the retrieval system actually returned.",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "capability": {
+                "type": ["string", "null"],
+                "description": "Retrieval capability execution name (e.g., OneDriveAndSharePoint)"
+              },
+              "status": {
+                "type": ["string", "null"],
+                "description": "Execution status (e.g., success)"
+              },
+              "totalResultCount": {
+                "type": ["integer", "null"],
+                "description": "Total results reported by the capability execution"
+              },
+              "queries": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "queryString": {
+                      "type": ["string", "null"],
+                      "description": "Query the agent issued"
+                    },
+                    "filterExpression": {
+                      "type": ["string", "null"],
+                      "description": "Filter expression applied"
+                    }
+                  }
+                }
+              },
+              "retrievalHits": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "rank": { "type": ["integer", "null"], "description": "Rank of the hit" },
+                    "webUrl": {
+                      "type": ["string", "null"],
+                      "description": "Source URL of the hit"
+                    },
+                    "extracts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "text": { "type": "string", "description": "Extract text snippet" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ScoreCollection": {
+      "type": "object",
+      "description": "Collection of evaluation scores for an item. Each entry is either a valid result (ValidScore variants) or an errored record (ErroredScore) under the discriminated oneOf.",
+      "additionalProperties": true,
+      "properties": {
+        "relevance": {
+          "$ref": "#/$defs/EvalScore",
+          "description": "Relevance score (1-5) or errored entry"
+        },
+        "coherence": {
+          "$ref": "#/$defs/EvalScore",
+          "description": "Coherence score (1-5) or errored entry"
+        },
+        "groundedness": {
+          "$ref": "#/$defs/EvalScore",
+          "description": "Groundedness score (1-5) or errored entry"
+        },
+        "similarity": {
+          "$ref": "#/$defs/EvalScore",
+          "description": "Similarity score (1-5) or errored entry"
+        },
+        "citations": {
+          "$ref": "#/$defs/CitationScore",
+          "description": "Citation evaluation result or errored entry"
+        },
+        "exactMatch": {
+          "$ref": "#/$defs/ExactMatchScore",
+          "description": "Exact match evaluation result or errored entry"
+        },
+        "partialMatch": {
+          "$ref": "#/$defs/PartialMatchScore",
+          "description": "Partial match evaluation result or errored entry"
+        },
+        "retrievalQuery": {
+          "$ref": "#/$defs/RetrievalQueryScore",
+          "description": "RetrievalQuery evaluation result or errored entry"
+        },
+        "retrievalResult": {
+          "$ref": "#/$defs/RetrievalResultScore",
+          "description": "RetrievalResult evaluation result or errored entry"
+        }
+      }
+    },
+    "EvalScore": {
+      "description": "Standard evaluation score (1-5 scale) — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/EvalScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "EvalScoreValid": {
+      "type": "object",
+      "description": "Valid 1-5 score result. Required when result is pass or fail.",
+      "required": ["score", "result", "threshold"],
+      "additionalProperties": true,
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Numeric score from 1.0 (worst) to 5.0 (best)"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Pass/fail result based on threshold comparison"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Threshold used for pass/fail determination"
+        },
+        "reason": { "type": "string", "description": "Explanation of why this score was assigned" }
+      }
+    },
+    "CitationScore": {
+      "description": "Citation-specific evaluation result — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/CitationScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "CitationScoreValid": {
+      "type": "object",
+      "description": "Valid citation-count result. Required when result is pass or fail.",
+      "required": ["count", "result", "threshold"],
+      "additionalProperties": true,
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of citations found in the response"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Pass/fail result based on citation count vs threshold"
+        },
+        "threshold": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum required number of citations for pass"
+        },
+        "format": {
+          "type": "string",
+          "description": "Citation format detected. Known values: 'oai_unicode', 'bracket', 'markdown', 'mixed'.",
+          "examples": ["oai_unicode", "bracket", "markdown", "mixed"]
+        },
+        "citations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Citation" },
+          "description": "Parsed citation objects"
+        }
+      }
+    },
+    "ExactMatchScore": {
+      "description": "Exact match evaluation result — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/ExactMatchScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "ExactMatchScoreValid": {
+      "type": "object",
+      "description": "Valid exact-match result. Required when result is pass or fail.",
+      "required": ["match", "result"],
+      "additionalProperties": true,
+      "properties": {
+        "match": {
+          "type": "boolean",
+          "description": "Whether response exactly matches expected_response (trimmed; case-insensitive by default)"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Pass when match is true, fail otherwise"
+        },
+        "reason": { "type": "string", "description": "Explanation of the match result" }
+      }
+    },
+    "PartialMatchScore": {
+      "description": "Partial match evaluation result — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/PartialMatchScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "PartialMatchScoreValid": {
+      "type": "object",
+      "description": "Valid partial-match result (0.0-1.0 score). Required when result is pass or fail.",
+      "required": ["score", "result", "threshold"],
+      "additionalProperties": true,
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Match score from 0.0 (no match) to 1.0 (full match)"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["pass", "fail"],
+          "description": "Pass/fail based on score vs threshold"
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum score required for pass (default: 0.5)"
+        },
+        "reason": { "type": "string", "description": "Explanation of the match result" }
+      }
+    },
+    "RetrievalQueryScore": {
+      "description": "RetrievalQuery evaluator result — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/RetrievalQueryScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "RetrievalQueryScoreValid": {
+      "type": "object",
+      "description": "Valid RetrievalQuery result. Score is 1.0 on pass, 0.0 on fail.",
+      "required": ["score", "result", "threshold", "diagnostic_code"],
+      "additionalProperties": true,
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "1.0 (pass) or 0.0 (fail)"
+        },
+        "result": { "type": "string", "enum": ["pass", "fail"], "description": "Pass/fail result" },
+        "threshold": { "type": "number", "description": "Always 1.0 for this evaluator" },
+        "diagnostic_code": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "no_matching_query",
+            "required_terms_missing",
+            "excluded_terms_found",
+            "mixed_term_failure",
+            "retrieval_failure"
+          ],
+          "description": "Distinct failure mode or 'pass' (see contracts/retrieval-query-evaluator.md)"
+        },
+        "reason": { "type": "string", "description": "Human-readable explanation" },
+        "matched_queries": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "queryString values that matched the configured selector"
+        },
+        "includes_missing": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Required terms (from `includes`) that were not present in any matched queryString"
+        },
+        "excludes_found": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Forbidden terms (from `excludes`) that were present in a matched queryString"
+        }
+      }
+    },
+    "RetrievalResultScore": {
+      "description": "RetrievalResult evaluator result — valid result OR errored-evaluator record.",
+      "oneOf": [{ "$ref": "#/$defs/RetrievalResultScoreValid" }, { "$ref": "#/$defs/ErroredScore" }]
+    },
+    "RetrievalResultScoreValid": {
+      "type": "object",
+      "description": "Valid RetrievalResult result. Score is the proportion of expected_items matched (0.0–1.0).",
+      "required": ["score", "result", "threshold", "diagnostic_code"],
+      "additionalProperties": true,
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Proportion of expected_items matched (1.0 on full pass)"
+        },
+        "result": { "type": "string", "enum": ["pass", "fail"], "description": "Pass/fail result" },
+        "threshold": {
+          "type": "number",
+          "description": "Always 1.0 for this evaluator (all configured checks must pass)"
+        },
+        "diagnostic_code": {
+          "type": "string",
+          "enum": ["pass", "not_retrieved", "count_below_minimum", "error"],
+          "description": "Distinct failure mode or 'pass' (see contracts/retrieval-result-evaluator.md)"
+        },
+        "reason": { "type": "string", "description": "Human-readable explanation" },
+        "results_evaluated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of candidate retrieval hits within max_rank that were evaluated"
+        },
+        "matched_items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RetrievalMatchedItem" },
+          "description": "Expected items whose retrievalExtract_contains text was found in a candidate hit"
+        },
+        "missing_items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RetrievalMissingItem" },
+          "description": "Expected items whose text was not found (canonical 'did not pass' list)"
+        },
+        "extract_failures": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RetrievalMissingItem" },
+          "description": "Subset of missing_items where the capability returned hits but none contained the expected text"
+        }
+      }
+    },
+    "RetrievalMatchedItem": {
+      "type": "object",
+      "description": "One matched item from a RetrievalResult run.",
+      "required": ["extractMatch"],
+      "additionalProperties": false,
+      "properties": {
+        "extractMatch": {
+          "type": "string",
+          "description": "The configured retrievalExtract_contains text that the LLM judge found supported by the retrieved evidence"
+        },
+        "matchedHitUrl": {
+          "type": "string",
+          "description": "webUrl of the retrieval hit that satisfied the assertion."
+        },
+        "matchedHitRank": {
+          "type": "integer",
+          "description": "Rank of the first (best-ranked) hit whose evidence supported the claim. Lower is more relevant; always within the configured max_rank."
+        },
+        "reason": {
+          "type": "string",
+          "description": "The LLM judge's one-sentence rationale for the supported verdict"
+        }
+      }
+    },
+    "RetrievalMissingItem": {
+      "type": "object",
+      "description": "One missing item from a RetrievalResult run.",
+      "required": ["extractMatch"],
+      "additionalProperties": false,
+      "properties": {
+        "extractMatch": {
+          "type": "string",
+          "description": "The configured retrievalExtract_contains text that the LLM judge found not supported by the retrieved evidence"
+        },
+        "reason": {
+          "type": "string",
+          "description": "The LLM judge's one-sentence rationale for the not-supported verdict"
+        }
+      }
+    },
+    "ErroredScore": {
+      "type": "object",
+      "description": "Per-evaluator entry for an evaluator that did not produce a result.",
+      "required": ["result", "error"],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "type": "string",
+          "const": "error",
+          "description": "Always 'error' for this variant."
+        },
+        "code": {
+          "type": "string",
+          "enum": [
+            "emptyAgentResponse",
+            "judgeOutputUnparseable",
+            "judgeAuthenticationError",
+            "judgeRateLimited",
+            "judgeTimeout",
+            "evaluatorConfigurationError",
+            "evaluatorLoadError",
+            "invalidEvaluatorResult",
+            "evaluatorError"
+          ],
+          "description": "Optional machine-readable failure category. One of: 'emptyAgentResponse' (agent returned empty/None/whitespace), 'judgeOutputUnparseable' (LLM judge returned empty/non-JSON output), 'judgeAuthenticationError' (authentication to the Azure AI/OpenAI judge backend failed), 'judgeRateLimited' (the LLM judge backend was throttled / rate-limited), 'judgeTimeout' (the LLM judge call or Foundry evaluation timed out), 'evaluatorConfigurationError' (the evaluator was misconfigured for the run, e.g. a custom LLM evaluator with the Copilot SDK judge backend and no Azure OpenAI credentials), 'evaluatorLoadError' (a custom evaluator failed to import/resolve), 'invalidEvaluatorResult' (a custom evaluator returned a malformed result: not a dict, missing/non-numeric/out-of-range score), 'evaluatorError' (any other uncaught evaluator failure)."
+        },
+        "error": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Error message describing why the evaluator did not produce a result."
+        }
+      }
+    },
+    "ErrorObject": {
+      "type": "object",
+      "description": "Structured turn/item-level error with a machine-readable code and a human-readable message.",
+      "required": ["code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "agentRequestFailed",
+            "agentAuthenticationError",
+            "agentRateLimited",
+            "agentTimeout",
+            "agentResponseUnparseable",
+            "turnSkipped",
+            "evaluatorsFailed"
+          ],
+          "description": "Machine-readable error category. Agent-request failures: 'agentRequestFailed' (generic), 'agentAuthenticationError' (auth/HTTP 401 to the agent), 'agentRateLimited' (agent throttled / HTTP 429), 'agentTimeout' (agent request timed out), 'agentResponseUnparseable' (agent returned a malformed / non-JSON / protocol-invalid response). Other: 'turnSkipped' (a preceding turn failed), 'evaluatorsFailed' (at least one evaluator errored)."
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable message paired with the code."
+        }
+      }
+    },
+    "EvaluatorMap": {
+      "type": "object",
+      "description": "Map of evaluator names to their configuration options. Built-in evaluator keys (e.g. 'Relevance') have typed option schemas; any other valid identifier is treated as a user-authored custom evaluator (resolved at runtime from <project_root>/custom-evaluators/<name>/) and validated against CustomEvaluatorOptions. A custom evaluator is an LLM-judge when its folder contains <name>.prompty, or a code-only (non-LLM) check when it contains only <name>.py.",
+      "propertyNames": {
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$"
+      },
+      "additionalProperties": { "$ref": "#/$defs/CustomEvaluatorOptions" },
+      "properties": {
+        "Relevance": { "$ref": "#/$defs/LlmEvaluatorOptions" },
+        "Coherence": { "$ref": "#/$defs/LlmEvaluatorOptions" },
+        "Groundedness": { "$ref": "#/$defs/LlmEvaluatorOptions" },
+        "Similarity": { "$ref": "#/$defs/LlmEvaluatorOptions" },
+        "Citations": { "$ref": "#/$defs/CitationsOptions" },
+        "ExactMatch": { "$ref": "#/$defs/ExactMatchOptions" },
+        "PartialMatch": { "$ref": "#/$defs/PartialMatchOptions" },
+        "RetrievalQuery": { "$ref": "#/$defs/RetrievalQueryOptions" },
+        "RetrievalResult": { "$ref": "#/$defs/RetrievalResultOptions" }
+      }
+    },
+    "CustomEvaluatorOptions": {
+      "type": "object",
+      "description": "Options for user-authored custom evaluators (both LLM-judge and code-only / non-LLM kinds). The `options` dict is forwarded to the wrapper's __init__ for evaluator-specific configuration.",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "description": "Pass/fail threshold. A result passes when score >= threshold. Set it to match whatever scale your evaluator's score uses. For LLM-judge evaluators keep it on the 1-5 scale by convention (default: 3). For code-only evaluators it defaults to 1, which suits a 0/1 (fail/pass) score encoding; for a fractional score (e.g. a partial-match ratio in [0, 1]) use a fractional threshold such as 0.7."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Evaluator-specific configuration forwarded to the wrapper's __init__ (open schema)."
+        }
+      }
+    },
+    "LlmEvaluatorOptions": {
+      "type": "object",
+      "description": "Options for LLM-based evaluators (Relevance, Coherence, Groundedness, Similarity). Use empty object {} for defaults.",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Pass/fail threshold on the 1-5 LLM scale (default: 3)."
+        }
+      }
+    },
+    "CitationsOptions": {
+      "type": "object",
+      "description": "Options for the Citations evaluator.",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum required number of citations (default: 1)."
+        },
+        "citation_format": {
+          "type": "string",
+          "examples": ["oai_unicode", "bracket", "markdown", "mixed"],
+          "description": "Citation format for detection. Default: oai_unicode."
+        }
+      }
+    },
+    "ExactMatchOptions": {
+      "type": "object",
+      "description": "Options for the ExactMatch evaluator.",
+      "additionalProperties": false,
+      "properties": {
+        "case_sensitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Case-sensitive matching (default: false)."
+        }
+      }
+    },
+    "PartialMatchOptions": {
+      "type": "object",
+      "description": "Options for the PartialMatch evaluator.",
+      "additionalProperties": false,
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Minimum partial-match score required for pass (default: 0.5)."
+        },
+        "case_sensitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Case-sensitive matching (default: false)."
+        }
+      }
+    },
+    "RetrievalQueryOptions": {
+      "type": "object",
+      "description": "Options for the RetrievalQuery evaluator. `threshold` is pinned by contract and not configurable.",
+      "additionalProperties": false,
+      "required": ["capability", "selector"],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Scopes evaluation to retrieval executions with this CapabilityExecution.name (e.g., 'OneDriveAndSharePoint', 'Email', 'TeamsMessages', 'Meetings', 'People', 'GraphConnectors')."
+        },
+        "selector": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Case-insensitive substring matched against queryString. filterExpression is excluded from selector matching in V1."
+        },
+        "includes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Substrings that MUST all appear in the matched queryString."
+        },
+        "excludes": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Substrings that MUST NOT appear in the matched queryString."
+        }
+      }
+    },
+    "RetrievalResultOptions": {
+      "type": "object",
+      "description": "Options for the RetrievalResult evaluator. `capability` is required, and at least one of `expected_items` or `min_expected_count` must be set. `threshold` is pinned by contract and not configurable.",
+      "additionalProperties": false,
+      "required": ["capability"],
+      "anyOf": [{ "required": ["expected_items"] }, { "required": ["min_expected_count"] }],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Scopes evaluation to retrieval executions with this CapabilityExecution.name."
+        },
+        "max_rank": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 10,
+          "description": "Only evaluate hits within this rank (default 10)."
+        },
+        "min_expected_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Minimum number of results required within max_rank for the scoped capability. Must be >= 1; omit the field entirely if no count assertion is desired."
+        },
+        "expected_items": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/RetrievalExpectedItem" },
+          "description": "Extract-content assertions. URL-based matching is not supported in V1."
+        }
+      }
+    },
+    "RetrievalExpectedItem": {
+      "type": "object",
+      "description": "A single expected item for RetrievalResult. V1 strict: webUrl is rejected — use a distinctive phrase from the expected resource's content as retrievalExtract_contains instead.",
+      "required": ["retrievalExtract_contains"],
+      "additionalProperties": false,
+      "properties": {
+        "retrievalExtract_contains": {
+          "type": "string",
+          "minLength": 1,
+          "description": "A claim that an LLM judge must find supported by the retrieved evidence (the content extracts within the scoped capability and max_rank)."
+        }
+      }
+    },
+    "Citation": {
+      "type": "object",
+      "description": "A single citation reference",
+      "required": ["index"],
+      "additionalProperties": true,
+      "properties": {
+        "index": { "type": "integer", "minimum": 1, "description": "Citation index (1-based)" },
+        "text": { "type": "string", "description": "The cited text" },
+        "source": { "type": "string", "description": "Source reference (URL, document name, etc.)" }
+      }
+    }
+  }
+}
