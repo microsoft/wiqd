@@ -1,0 +1,221 @@
+# Scaffolding Workflow
+
+Step-by-step instructions for scaffolding a new M365 Copilot agent project.
+
+## ⛔ STOP — READ THIS FIRST
+
+### wiqd CLI Setup
+
+Check if wiqd CLI is available by running `wiqd --version`. If the command is not found, **STOP and tell the user** that the wiqd CLI is required but not installed. Do NOT attempt to install it yourself — the user must install wiqd separately before you can proceed.
+
+### The Only Valid Command
+
+Copy this command EXACTLY. Replace `<project-name>` with the user's project name:
+
+```bash
+wiqd agent create --name <project-name>
+```
+
+### Forbidden Commands — These Do Not Exist
+
+| ❌ Invalid Command            | Why It Fails                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `wiqd agent init`            | DOES NOT EXIST — there is no init command                            |
+| `wiqd agent init --template` | DOES NOT EXIST — there is no `init` command; use `wiqd agent create` |
+| `wiqd create`                | DOES NOT EXIST — the verb is `wiqd agent create`                     |
+| `wiqd agent scaffold`        | DOES NOT EXIST — there is no scaffold command                        |
+| `wiqd agent new`             | DOES NOT EXIST — the verb is `wiqd agent create`                     |
+
+---
+
+## Workflow
+
+### Step 1: Understand the Request
+
+**Action:** Verify the user wants to create a NEW M365 Copilot agent project.
+
+**Check for:**
+
+- Keywords: "new project", "create agent", "scaffold", "start from scratch", "M365 Copilot", "M365 agent", "declarative agent"
+- Confirmation this is NOT an existing project
+
+**If existing project:** Stop and use the editing workflow instead.
+
+### Step 2: Verify Empty Directory and Collect Project Name
+
+**Action:** Check if the current directory is empty, then ask for the project name.
+
+**Directory check (CRITICAL):**
+
+- Use `ls -A` to check if the current directory is empty
+- **Ignore hidden folders** (starting with `.`) — these are meta-configuration folders (`.claude`, `.copilot`, `.github`) and should not block scaffolding
+- If ONLY hidden folders exist, treat the directory as empty and proceed
+- If directory has non-hidden files/folders, **ERROR OUT immediately**:
+
+  ```
+  ❌ Error: Current directory is not empty!
+
+  This skill requires an empty directory to scaffold a new M365 Copilot agent project.
+  Please navigate to an empty directory or create a new one first.
+  ```
+
+- Do NOT ask for a project name until the directory check passes
+
+**Project naming rules:**
+
+- Use **kebab-case** (lowercase with hyphens): `customer-support-agent`, `expense-tracker`
+- Keep it concise: 2–4 words maximum
+- No spaces, underscores, or special characters
+- ✅ Good: `sales-dashboard`, `document-finder`, `hr-faq-agent`
+- ❌ Bad: `agent1`, `test`, `ExpenseTrackerAgent`, `my project`
+
+### Step 3: Run wiqd CLI Command and Move Files
+
+**Action:** Execute the scaffolding command.
+
+wiqd runs the scaffolding non-interactively by default — there is no interactive prompt to suppress, and `wiqd agent create` has no `--interactive` flag — so no extra flags are needed.
+
+> **Note:** `wiqd agent create` creates a **subfolder** named after the project. All subsequent `wiqd agent` commands must run from inside that subfolder.
+
+**Commands to execute sequentially:**
+
+1. **Create the project:**
+
+```bash
+wiqd agent create --name <project-name>
+```
+
+2. **Enter the project directory (REQUIRED before any further commands):**
+
+```bash
+cd <project-name>
+```
+
+3. **Verify success:**
+
+- Check that key files exist in the project directory (`m365agents.yml`, `appPackage/declarativeAgent.json`)
+- If the command fails, report the error and stop — do NOT retry automatically
+
+> **Alternative approach — move files to current directory:**
+> If the user wants the project in the current directory instead of a subfolder, move all files up after creation:
+> ```bash
+> mv <project-name>/* <project-name>/.* . 2>/dev/null || true
+> rmdir <project-name>
+> ```
+
+### Step 4: Add Agent Context Files
+
+**Action:** Ensure the project has context files that tell coding agents which skills are available and how to invoke them. This is critical for future sessions — without these files, agents won't know to use the `declarative-agent-developer` skill.
+
+**Detection logic — check for existing files in this order:**
+
+1. `.github/copilot-instructions.md` — if it exists, **edit it** to append the skill context block below
+2. `AGENTS.md` — if it exists, **edit it** to add the skill context block below
+3. `CLAUDE.md` (that is NOT a symlink) — if it exists, **edit it** to add the skill context block below
+4. **If NONE of the above exist** — create both:
+   - `AGENTS.md` — with the full content below
+   - `CLAUDE.md` — as a **symlink** to `AGENTS.md` (`ln -sf AGENTS.md CLAUDE.md`)
+
+**Content to add** (when editing an existing file, append this section; when creating `AGENTS.md`, use this as the full content):
+
+```markdown
+# M365 Declarative Agent Project
+
+This is an M365 Copilot declarative agent project managed by the wiqd CLI.
+
+## Available Skills
+
+When working on this project, you MUST use the appropriate skill for the task. **Do NOT work directly on files without invoking a skill first.**
+
+| Skill                           | When to Use                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **declarative-agent-developer** | Any task involving this agent (see scenarios below). **This is the primary skill for this project.**                   |
+| **ui-widget-developer**         | Only when adding an MCP server that renders rich interactive widgets (HTML) in Copilot Chat using the OpenAI Apps SDK. |
+| **install-wiqd**                | Only when the wiqd CLI is not installed or needs updating.                                                             |
+
+## ⛔ MANDATORY: Invoke `declarative-agent-developer` Skill First
+
+**This is a declarative agent project. For ANY task in this workspace — regardless of what it is — you MUST invoke the `declarative-agent-developer` skill BEFORE doing any work.** This is not optional. Do not attempt to handle any task yourself. Always delegate to the skill.
+
+### Scenarios handled by this skill
+
+- Creating a new agent project from scratch
+- Editing manifests (declarativeAgent.json, manifest.json, m365agents.yml)
+- Adding or removing capabilities (web search, Graph connectors, etc.)
+- Adding API plugins from OpenAPI specs
+- Adding MCP server plugins
+- Adding OAuth authentication to plugins
+- Localizing an agent into multiple languages
+- Adding a new language to an already-localized agent
+- Writing or updating agent instructions
+- Deploying and provisioning with `wiqd agent provision`
+- Validating the project with `wiqd agent validate`
+- Fixing manifest errors or validation failures
+
+**Do NOT:**
+
+- Edit `declarativeAgent.json` or other manifest files directly without the skill
+- Run `wiqd agent` commands without the skill
+- "Help" by manually making changes — always delegate to the skill
+```
+
+**Rules:**
+
+- When editing an existing file, preserve all existing content — append the skill context block at the end
+- When creating new files, use the content above as-is
+- Always create the `CLAUDE.md` symlink when creating a new `AGENTS.md` — both GitHub Copilot CLI and Claude Code read these files automatically
+- This step is NOT optional — every scaffolded project must have agent context files
+
+### Step 5: Post-Create Enrichment — Grounding Preference
+
+**Action:** Before handing off to the editing workflow, ask the user about grounding behavior:
+
+> Should this agent only answer from its configured data sources (SharePoint, web search, connectors, etc.), or is it OK to use general knowledge when the data sources don't have an answer?
+
+- **If grounded-only:** Set `behavior_overrides.special_instructions.discourage_model_knowledge: true` in `declarativeAgent.json` during the editing workflow. Note this for the editing workflow handoff.
+- **If general knowledge is OK:** No `behavior_overrides` needed (default behavior).
+
+This question is especially important for agents in compliance, legal, HR, or knowledge-base domains where fabricated answers carry real risk.
+
+### Step 6: Confirm and Continue
+
+**Action:** Provide a brief confirmation and immediately continue to the editing workflow.
+
+```
+✅ Project scaffolded in current directory: <absolute-current-directory-path>
+
+Your M365 Copilot agent project structure is ready (JSON-based).
+Agent context files have been added for future skill invocation.
+
+🚀 Continuing to help you design and implement your agent...
+```
+
+Then invoke the editing workflow — do NOT wait for user input.
+
+---
+
+## Scope Boundaries
+
+This workflow **only** handles project creation and agent context setup. After scaffolding:
+
+- ✅ Confirm creation and hand off to the editing workflow automatically
+- ❌ Do NOT discuss architecture, capability selection, or API plugin design
+- ❌ Do NOT write JSON manifests, instructions, or configuration
+- ❌ Do NOT create TODO files, open VS Code workspaces, or run extra commands
+- ❌ Do NOT provide implementation guidance — that's for the editing workflow
+
+Capability-specific work — API plugins, MCP server plugins, and Agent Skills (packaged
+instruction playbooks; see [agent-skills.md](agent-skills.md)) — belongs to the editing workflow,
+not here.
+
+---
+
+## Error Handling
+
+| Error                             | Action                                                 |
+| --------------------------------- | ------------------------------------------------------ |
+| wiqd CLI not installed            | Stop. Tell the user to install wiqd first.             |
+| Directory not empty               | Stop. Show error message. Do not proceed.              |
+| Invalid project name              | Warn and suggest a corrected name.                     |
+| `wiqd agent create` command fails | Report the error with full output. Do not retry.       |
+| File move fails                   | Report the error. Files may still be in the subfolder. |
