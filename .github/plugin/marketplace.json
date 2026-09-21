@@ -1,0 +1,14 @@
+{
+  "name": "wiqd",
+  "owner": {
+    "name": "Microsoft"
+  },
+  "plugins": [
+    {
+      "name": "wiqd",
+      "source": "./plugins/wiqd",
+      "description": "Developer toolkit for building, validating, provisioning, and publishing Microsoft 365 Copilot declarative agents.",
+      "version": "0.15.0"
+    }
+  ]
+}

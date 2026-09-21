@@ -1,0 +1,8 @@
+{
+  "name": "wiqd",
+  "description": "Developer toolkit for building, validating, provisioning, and publishing M365 Copilot declarative agents using the wiqd CLI.",
+  "version": "0.15.0",
+  "author": {
+    "name": "Microsoft"
+  }
+}
