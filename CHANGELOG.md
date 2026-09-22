@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.15.0] — 2026-09-16
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- MCP-client backend for extension commands (Route A)
+- interactive OAuth login for MCP client backends
+- execute extension MCP client commands securely
+- complete managed downstream CLI lifecycle
+- add interim manual knowledge-source setup guidance
+- add Worker Agent authoring workflow
+- add frontier mode for extension environments
+- support OpenAPI and MCP auth with TeamsFx SDK update
+
+### Fixes
+
+- preserve empty standalone plugins
+- remove obsolete telemetry preflight
+- use native broker on macOS
+- enforce manifest subcommand option scoping
+- enhance help handling for exec command and add related tests
+
+### Changes
+
+- add flag-aware agent skills reference and remove dead --expose-to-copilot
+
 ## [0.14.0] — 2026-09-04
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

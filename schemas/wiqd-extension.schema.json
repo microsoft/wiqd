@@ -1626,7 +1626,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "enum": ["logger", "telemetry", "featureFlags", "terminalReveal"]
+            "enum": ["logger", "telemetry", "featureFlags"]
           },
           "description": "Host capabilities handed to the factory; defaults to []."
         }
