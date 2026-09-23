@@ -121,7 +121,7 @@ Determine which flow to follow based on user intent:
 | Provision, deploy | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/provision.md` |
 | Package, build zip | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/package.md` |
 | Store ops audit, pre-submission check, marketplace / Teams Store / AppSource validation, "will my agent pass review?", publish readiness | Read `references/validate/store-ops-validation.md` (skill lives in the `microsoft.validate` extension) |
-| Evaluate, test agent, run evals | Read `workflows/eval/eval.md` — requires `eval init` + Azure OpenAI env vars first |
+| Evaluate, test agent, run evals | Read `workflows/eval.md`; it selects the dataset and judge backend before checking only the prerequisites required for that path |
 | Share (with users, a security group, or the tenant), collaborator | Read `references/wiqd-core/share.md` |
 | Delete, remove agent | Read `references/wiqd-core/lifecycle.md` → Delete section |
 | Open, test URL | Read `references/wiqd-core/lifecycle.md` → Open section |
@@ -217,9 +217,9 @@ at `<project>/.github/lsp.json` with **exactly** the following content:
 
 After `wiqd agent create` succeeds, you MUST drop a project-scoped Copilot
 CLI extension into the new project. This extension routes future edits of
-agent files (`appPackage/`, `m365agents.yml`, `m365agents.local.yml`,
-`teamsapp.yml`, `teamsapp.local.yml`) through the Edit workflow so manifests are
-mutated correctly.
+agent files (`appPackage/`, `wiqd.plugin.json`, `m365agents.yml`,
+`m365agents.local.yml`, `teamsapp.yml`, `teamsapp.local.yml`) through the Edit
+workflow so manifests are mutated correctly.
 
 Create the file `<project>/.github/extensions/wiqd-agent-enforcer/extension.mjs`
 with **exactly** the following content:
@@ -239,55 +239,101 @@ with **exactly** the following content:
  *   agent files (declarativeAgent.json, manifest.json, m365agents.yml,
  *   plugin manifests, etc.). This extension closes that gap by denying
  *   raw mutations to agent-owned paths until `skill(wiqd)` is
- *   invoked at least once in the session.
+ *   invoked in the current turn.
  *
  * To disable for a single session: delete or rename this file before
  * launching `copilot`.
  */
 import { joinSession } from "@github/copilot-sdk/extension";
 
-let agentBuildInvoked = false;
+let agentBuildInvokedThisTurn = false;
 
-const MUTATION_TOOLS = new Set(["edit", "create", "write"]);
+const MUTATION_TOOLS = new Set([
+    "apply_patch",
+    "create",
+    "create_file",
+    "edit",
+    "replace",
+    "write",
+]);
 
 const MARKER_FILES = new Set([
     "m365agents.yml",
     "m365agents.local.yml",
     "teamsapp.yml",
     "teamsapp.local.yml",
+    "wiqd.plugin.json",
 ]);
 
 function isAgentOwnedPath(rawPath) {
     if (!rawPath) return false;
-    const p = String(rawPath).replace(/\\/g, "/");
-    if (p.includes("/appPackage/")) return true;
+    const p = String(rawPath).replace(/\\/g, "/").toLowerCase();
+    if (/(^|\/)apppackage\//.test(p)) return true;
     const fileName = p.toLowerCase().split("/").pop();
     return MARKER_FILES.has(fileName);
 }
 
+function getMutationPaths(toolName, toolArgs) {
+    const args =
+        typeof toolArgs === "object" && toolArgs !== null ? toolArgs : {};
+    const paths = [args.path, args.file_path, args.filePath].filter(Boolean);
+
+    if (toolName !== "apply_patch") return paths;
+
+    const patch =
+        typeof toolArgs === "string"
+            ? toolArgs
+            : (args.patch ?? args.input ?? args.content);
+    if (typeof patch !== "string") return paths;
+
+    for (const match of patch.matchAll(
+        /^\*\*\* (?:Add|Delete|Update) File: (.+)$|^\*\*\* Move to: (.+)$/gm,
+    )) {
+        paths.push(match[1] ?? match[2]);
+    }
+    return [...new Set(paths)];
+}
+
+function extractTool(input) {
+    const toolName = input?.toolName ?? input?.name ?? input?.tool ?? "";
+    const toolArgs =
+        input?.toolArgs ?? input?.arguments ?? input?.args ?? input?.input ?? {};
+    return { toolName, toolArgs };
+}
+
 await joinSession({
     hooks: {
-        onPreToolUse: async (input) => {
-            if (input.toolName === "skill") {
-                const name = input.toolArgs?.name || input.toolArgs?.skillName;
+        onUserPromptSubmitted: async () => {
+            agentBuildInvokedThisTurn = false;
+        },
+        onPreToolUse: async (rawInput) => {
+            const { toolName, toolArgs } = extractTool(rawInput);
+            if (toolName === "skill") {
+                const name = toolArgs?.name || toolArgs?.skillName || toolArgs?.skill;
                 if (name === "wiqd") {
-                    agentBuildInvoked = true;
+                    agentBuildInvokedThisTurn = true;
                 }
                 return;
             }
 
-            if (!MUTATION_TOOLS.has(input.toolName)) return;
-            if (agentBuildInvoked) return;
+            if (!MUTATION_TOOLS.has(toolName)) return;
+            if (agentBuildInvokedThisTurn) return;
 
-            const filePath = input.toolArgs?.path;
-            if (!isAgentOwnedPath(filePath)) return;
+            const filePaths = getMutationPaths(toolName, toolArgs);
+            const pathUnavailable =
+                toolName === "apply_patch" && filePaths.length === 0;
+            if (
+                !pathUnavailable &&
+                !filePaths.some((filePath) => isAgentOwnedPath(filePath))
+            )
+                return;
 
             return {
                 permissionDecision: "deny",
                 permissionDecisionReason:
                     "This file is part of an M365 declarative agent project. " +
                     "You MUST invoke skill(wiqd) before editing files under " +
-                    "appPackage/, m365agents.yml, or teamsapp.yml. " +
+                    "appPackage/, wiqd.plugin.json, m365agents.yml, or teamsapp.yml. " +
                     "Call skill(wiqd) first to load the wiqd workflow, " +
                     "then retry this edit.",
             };
@@ -855,7 +901,7 @@ auto-provision. Simply report success:
 Default-response-mode edits are the exception: after successful validation, provision by default
 unless the user explicitly opts out of provision or deployment. For every other edit type, only
 provision if the user explicitly asks to deploy or provision. Route test or evaluate requests
-through `workflows/eval/eval.md`; test intent alone does not authorize provisioning.
+through `workflows/eval.md`; test intent alone does not authorize provisioning.
 
 ### 2. Never Invent Content
 

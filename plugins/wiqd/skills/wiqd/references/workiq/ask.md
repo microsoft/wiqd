@@ -13,8 +13,8 @@ Uses workiq's A2A (Agent-to-Agent) protocol under the hood. The agent ID format 
 - User says "ask my agent", "test my agent", "send a question to my agent"
 - User wants to **talk to a specific agent by name** (e.g., "ask the Prompt Coach about X")
 - User wants to **ask Work IQ anything** — general questions, org data, or specific M365/Graph data points — to unblock or push their workflow further → see [Ask Work IQ Anything](#ask-work-iq-anything) below
-- **NOT** for insights/analytics → use `references/agent-monitor.md`
-- **NOT** for formal scored testing → route to `Skill(eval)`
+- **NOT** for insights/analytics → use `references/workiq/monitor.md`
+- **NOT** for formal scored testing → read `workflows/eval.md`
 
 ## Commands
 
@@ -75,13 +75,13 @@ Remember agent and environment across calls within the same session. First call 
 
 ## Error Recovery
 
-| Error                                               | Action                                                 |
-| --------------------------------------------------- | ------------------------------------------------------ |
-| Not in a project and no `--agent-id`/`--agent-name` | Tell user to specify an agent or navigate to a project |
-| Agent not provisioned (no env files)                | Route to `Skill(atk)` for provisioning                 |
-| No `M365_TITLE_ID` in env file                      | Route to `Skill(atk)` for provisioning                 |
-| Auth error from workiq                              | Tell user: _"log me in"_                               |
-| Agent not found / 404                               | Suggest verifying agent ID/name                        |
+| Error                                               | Action                                                  |
+| --------------------------------------------------- | ------------------------------------------------------- |
+| Not in a project and no `--agent-id`/`--agent-name` | Tell user to specify an agent or navigate to a project  |
+| Agent not provisioned (no env files)                | Route to the active core workflow's provision reference |
+| No `M365_TITLE_ID` in env file                      | Route to the active core workflow's provision reference |
+| Auth error from workiq                              | Tell user: _"log me in"_                                |
+| Agent not found / 404                               | Suggest verifying agent ID/name                         |
 
 ## Critical Rules
 

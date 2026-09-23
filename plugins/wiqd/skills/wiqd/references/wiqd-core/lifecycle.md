@@ -28,6 +28,7 @@ wiqd agent uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
 ```bash
 # Find the Title ID, then uninstall by it — works from anywhere
 wiqd agent list --id T_ --skill wiqd
+# After the user confirms this exact Title ID:
 wiqd agent uninstall --title-id T_xxxxxxxx --yes --skill wiqd
 ```
 
