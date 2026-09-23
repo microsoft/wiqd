@@ -40,5 +40,5 @@ wiqd update --skip-plugin --skip-extension --skill wiqd
 wiqd --version
 ```
 
-
-**Next steps after install:** create agent → `Skill(agent-build)`, validate existing → `Skill(agent-validate)`.
+**Next steps after install:** read the active core workflow (`atk` or `wiqd-core`)
+to create an agent or validate an existing project.

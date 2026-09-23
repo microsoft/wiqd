@@ -54,7 +54,7 @@ This workflow is about feedback on **wiqd itself** — not about the user's own 
 6. Submit:
 
 ```bash
-wiqd feedback submit --type <type> --title "<title>" --description "<desc>" [--sentiment <pos|neg>] --json --skill feedback
+wiqd feedback submit --type <type> --title "<title>" --description "<desc>" [--sentiment <positive|negative>] --json --skill wiqd
 ```
 
    Example — a bug report with a real multi-line description (the title stays a short summary;
@@ -78,7 +78,7 @@ spaces.
 **Actual**
 ATK exits immediately with \"error: unrecognized argument\" and no resources
 are created." \
-  --sentiment negative --json --skill feedback
+  --sentiment negative --json --skill wiqd
 ```
 
 7. Check the response before reporting success: if `data.descriptionEmpty` is `true`, the issue was
@@ -92,7 +92,7 @@ are created." \
 ## List the user's feedback
 
 ```bash
-wiqd feedback list [--top <n>] [--status open|closed|all] --json --skill feedback
+wiqd feedback list [--top <n>] [--status open|closed|all] --json --skill wiqd
 ```
 
 The list output includes a **Triage** column (AI-applied `category:*/severity:*`) and an **Impl** column (linked implementation issue #) once the automated triage + dispatch workflows have processed the submission.

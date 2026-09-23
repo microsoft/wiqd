@@ -6,11 +6,11 @@ Observe, test, and monitor deployed agents — covers all observe scenarios thro
 
 ## Command Routing
 
-| User Intent                                    | Command              | Reference               |
-| ---------------------------------------------- | -------------------- | ----------------------- |
-| "Send a message to my agent" / "test my agent" | `wiqd agent ask`     | `references/ask.md`     |
-| "How is my agent doing?" / "show me analytics" | `wiqd agent monitor` | `references/monitor.md` |
-| "List all deployed agents"                     | `wiqd agent list`    | `references/list.md`    |
+| User Intent                                    | Command              | Reference                      |
+| ---------------------------------------------- | -------------------- | ------------------------------ |
+| "Send a message to my agent" / "test my agent" | `wiqd agent ask`     | `references/workiq/ask.md`     |
+| "How is my agent doing?" / "show me analytics" | `wiqd agent monitor` | `references/workiq/monitor.md` |
+| "List all deployed agents"                     | `wiqd agent list`    | `references/workiq/list.md`    |
 
 ## Agent Ask — Send Test Messages
 

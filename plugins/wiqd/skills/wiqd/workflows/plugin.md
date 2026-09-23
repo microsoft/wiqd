@@ -189,12 +189,12 @@ wiqd plugin delete [--env local]               # 4. tear down what provision cre
 
 ### 5. Teardown
 
-`wiqd plugin delete` (alias `wiqd plugin uninstall`) is the inverse of `provision` — it removes the cloud resources (M365 app, app registration, bot registration) that provisioning created. It is the only plugin command that destroys tenant state, so it always confirms first unless `--yes` is passed.
+`wiqd plugin delete` (alias `wiqd plugin uninstall`) is the inverse of `provision` — it removes the cloud resources (M365 app, app registration, bot registration) that provisioning created. It is the only plugin command that destroys tenant state. Ask the user to confirm the exact target first; because agent command execution has no interactive TTY, add `--yes` only after that affirmative reply.
 
 ```bash
-wiqd plugin delete                             # project mode: reads env/.env.local, deletes, removes the env file
-wiqd plugin delete --env dev --keep-env-file   # delete the cloud side but keep the local env file
-wiqd plugin delete --title-id T_xxx --yes      # title-id mode: no local project needed, no prompt
+wiqd plugin delete --yes --skill wiqd                             # project mode: reads env/.env.local, deletes, removes the env file
+wiqd plugin delete --env dev --keep-env-file --yes --skill wiqd   # delete the cloud side but keep the local env file
+wiqd plugin delete --title-id T_xxx --yes --skill wiqd            # title-id mode: no local project needed
 ```
 
 Two modes, chosen by whether `--title-id` is present:
