@@ -84,7 +84,9 @@ wiqd agent uninstall [--env <name>] [--path <dir>] [--title-id <T_xxx>] [--yes] 
 | `--interactive`   | Run in interactive mode                                                                      | `false` |
 
 - `uninstall` and `delete` are the same command. Prefer `uninstall` when speaking to the user; `delete` keeps working for back-compat.
-- Always warn the user before deleting. Never pass `--yes` unless the user explicitly asked to skip confirmation.
+- Always warn the user and ask for confirmation for the exact target before deleting.
+  Agent command execution is non-interactive, so only after the user confirms,
+  run the same command with `--yes`. Never include `--yes` before confirmation.
 - `--keep-env-file` preserves the env file with app IDs for future re-provisioning (env/project mode only).
 - Deleting one environment does not affect other environments.
 
@@ -92,7 +94,7 @@ wiqd agent uninstall [--env <name>] [--path <dir>] [--title-id <T_xxx>] [--yes] 
 
 ```bash
 wiqd agent list --id T_ --skill wiqd            # find the Title ID
-wiqd agent uninstall --title-id T_xxxxxxxx --yes --skill wiqd
+wiqd agent uninstall --title-id T_xxxxxxxx --skill wiqd
 ```
 
 **🚫 Never bypass wiqd.** To tear down an agent, you MUST use `wiqd agent uninstall --title-id <id>` (or `wiqd agent delete --title-id <id>`). Do NOT shell out to `atk uninstall` or the Teams Admin Center / Azure portal — wiqd owns the confirmation prompt, mode selection, error mapping, and env-file cleanup.

@@ -17,7 +17,9 @@ If either file is missing → **STOP immediately.** Do NOT scaffold. Report clea
 
 ### Phase 1 — Inspect the source
 
-1. If `.zip`: extract to temp directory using `Expand-Archive`
+1. If `.zip`: extract to a temp directory with the platform's archive tool:
+   - Windows PowerShell: `Expand-Archive -LiteralPath <source.zip> -DestinationPath <temp>`
+   - macOS/Linux: `unzip -q <source.zip> -d <temp>`
 2. Verify `manifest.json` and `declarativeAgent.json` exist at root
 3. Capture: agent name, description, developer info, icons, plugin files, localization, instructions (inline vs file reference)
 

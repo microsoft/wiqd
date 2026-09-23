@@ -41,13 +41,13 @@ When called programmatically, the skill returns:
 
 ```json
 {
-  "status": "success" | "error",
-  "workflow": "generated" | "run" | "updated" | "analyzed" | "error",
+  "status": "success",
+  "workflow": "generated",
   "file_path": "evals/evals.json",
   "results_file": "./.evals/scorecard-<timestamp>.html",
   "results_url": "file:///C:/absolute/path/to/.evals/scorecard-<timestamp>.html",
   "debug_log": "./.evals/runevals-<timestamp>.debug.log",
-  "eval_count": 42,
+  "eval_count": 50,
   "by_category": { "Perceive": 20, "Reason": 20, "Act": 10 },
   "errors": []
 }
