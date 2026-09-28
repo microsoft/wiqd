@@ -109,6 +109,8 @@ per-command tables below.
 | [`wiqd auth login`](#wiqd-auth-login) | wiqd (core) | Sign in to wiqd services |
 | [`wiqd auth logout`](#wiqd-auth-logout) | wiqd (core) | Sign out of wiqd services |
 | [`wiqd auth status`](#wiqd-auth-status) | wiqd (core) | Show authentication status |
+| [`wiqd auth token`](#wiqd-auth-token) | wiqd Core | token |
+| [`wiqd auth token get`](#wiqd-auth-token-get) | wiqd Core | Interactively obtain and deliberately reveal a delegated Microsoft 365 refresh token for caller-managed CI lifecycle authentication. Requires a local terminal; no project or prior login needed. |
 
 **wiqd changelog**
 
@@ -979,8 +981,6 @@ wiqd auth <command>
 ```bash
 wiqd auth
 wiqd auth login
-wiqd auth logout
-wiqd auth status
 wiqd auth --help
 ```
 
@@ -1040,6 +1040,49 @@ wiqd auth status
 ```bash
 wiqd auth status
 wiqd auth status --json
+```
+
+### wiqd auth token
+
+token
+
+**Extension:** wiqd Core
+
+```bash
+wiqd auth token <command>
+```
+
+**Examples**
+
+```bash
+wiqd auth token
+wiqd auth token get
+wiqd auth token --help
+```
+
+### wiqd auth token get
+
+Interactively obtain and deliberately reveal a delegated Microsoft 365 refresh token for caller-managed CI lifecycle authentication. Requires a local terminal; no project or prior login needed.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd auth token get [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--tenant <value>` | Microsoft Entra tenant GUID |
+| `--show-token` | Request one terminal disclosure after human confirmation (never JSON or CI) (default: false) |
+
+**Examples**
+
+```bash
+wiqd auth token get
+wiqd auth token get --tenant <value> --show-token
+wiqd auth token get --json
 ```
 
 ## wiqd changelog

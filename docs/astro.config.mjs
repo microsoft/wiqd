@@ -88,6 +88,7 @@ export default defineConfig({
             { label: 'Build a plugin', slug: 'getting-started/build-a-plugin' },
             { label: 'Plugin authoring reference', slug: 'getting-started/plugin-reference' },
             { label: 'Authentication', slug: 'getting-started/authentication' },
+            { label: 'CI/CD Authentication', slug: 'getting-started/ci-cd-authentication' },
           ],
         },
         { label: 'Cookbooks', slug: 'cookbooks' },
