@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "5dd1d476d3e19e2d53a358c952afe9d180e43a010d61e5316fdaf4c76e1bdb5d",
+  "inputDigest": "822a2a3f37c6ca4d6e92505b3a6b7cf9ff598e011359792c8663024c912405f2",
   "componentCount": 677,
   "components": [
     {
@@ -190,7 +190,7 @@
     {
       "type": "npm",
       "name": "@azure/msal-common",
-      "version": "16.12.0",
+      "version": "16.14.1",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -199,14 +199,14 @@
       "name": "@azure/msal-node",
       "version": "5.2.3",
       "license": "MIT",
-      "origin": "both"
+      "origin": "runtime"
     },
     {
       "type": "npm",
       "name": "@azure/msal-node",
-      "version": "5.5.0",
+      "version": "6.0.1",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "both"
     },
     {
       "type": "npm",
@@ -778,7 +778,7 @@
     {
       "type": "npm",
       "name": "@microsoft/app-manifest",
-      "version": "1.1.2-beta.2026081803.0",
+      "version": "1.1.2",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -827,7 +827,7 @@
     {
       "type": "npm",
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.3.2-beta.2026081803.0",
+      "version": "0.3.2",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -841,14 +841,14 @@
     {
       "type": "npm",
       "name": "@microsoft/m365agentstoolkit-cli",
-      "version": "1.1.16-beta.2026081803.0",
+      "version": "1.1.17",
       "license": "MIT",
       "origin": "both"
     },
     {
       "type": "npm",
       "name": "@microsoft/teamsfx-api",
-      "version": "0.24.2-beta.2026081803.0",
+      "version": "0.24.2",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -862,7 +862,7 @@
     {
       "type": "npm",
       "name": "@microsoft/teamsfx-core",
-      "version": "3.1.3-beta.2026081803.0",
+      "version": "3.1.3",
       "license": "MIT",
       "origin": "runtime"
     },
@@ -1323,7 +1323,7 @@
     {
       "type": "npm",
       "name": "adm-zip",
-      "version": "0.6.0",
+      "version": "0.6.1",
       "license": "MIT",
       "origin": "both"
     },
