@@ -18,19 +18,17 @@ When developing an agent, you MUST ALWAYS update the app name and description in
 
 ---
 
-## 🚨 CRITICAL DEPLOYMENT RULE 🚨
+## Deployment Authorization
 
-When making ANY successful, validated edits to an agent — including instructions, conversation starters, capabilities, plugins, or any file in `appPackage/` — you MUST ALWAYS deploy using `wiqd agent provision --env local` before returning to the user unless the author explicitly opts out. Rejected edits and validation failures MUST NOT deploy.
+After successful validation, provision only when the user explicitly asks to
+deploy or provision. Instruction, conversation-starter, metadata, capability,
+and plugin edits do not independently authorize a cloud mutation.
 
-**You must NEVER:**
+Default-response-mode edits are the exception: provision after validation unless
+the user explicitly opts out, as defined by the parent core workflow.
 
-- Skip deploy because "it's just instructions" — deploy after every change
-- Tell the user to "run `wiqd agent provision` yourself" — YOU must run it
-- Deploy when validation found errors — not even "to test" or "to demonstrate"
-- Deploy "to show the user what happens" when there are errors — just report the errors
-- Run `wiqd agent provision` "for educational purposes" to demonstrate failure — errors = STOP, not a teaching moment
-
-**Only exception:** The user explicitly asks you NOT to deploy. Only the user can opt out, never you.
+Never provision after a validation failure, including for testing,
+demonstration, or troubleshooting.
 
 ---
 

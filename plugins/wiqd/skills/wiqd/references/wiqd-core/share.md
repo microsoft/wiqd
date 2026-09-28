@@ -123,7 +123,11 @@ wiqd agent share remove --json --skill wiqd --owners "dev@org.com" --env <env> #
 
 ## Error Recovery
 
-- **404 error during share**: Auto re-provision via `wiqd agent provision` for the target environment, then retry share. Report failure only if share still fails after re-provisioning.
+- **404 error during share**: Do not provision automatically. Explain that recovery
+  requires an additional cloud mutation and ask for confirmation. If confirmed,
+  route through `references/wiqd-core/provision.md` for the same environment and
+  path so validation runs before provisioning. Retry share only after provisioning
+  succeeds.
 
 ## Critical Rules
 

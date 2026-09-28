@@ -34,8 +34,8 @@ request/conversation/task IDs, latency, raw JSON, and the exact command run).
 - User wants to **iterate on prompts visually** and read rendered answers + citations
 - User wants to **watch an agent answer live** with full developer detail
 - User wants to **ask an agent and see it run in the browser** → `wiqd devui ask`
-- **NOT** for a one-shot terminal answer → use `Skill(workiq)` `wiqd agent ask`
-- **NOT** for scored evaluation → route to `Skill(eval)`
+- **NOT** for a one-shot terminal answer → read `references/workiq/ask.md`
+- **NOT** for scored evaluation → read `workflows/eval.md`
 
 ## Routing
 
@@ -51,7 +51,7 @@ request/conversation/task IDs, latency, raw JSON, and the exact command run).
 
 ## Critical Rules
 
-- DevUI is gated behind the `devui` preview flag — if the command is unavailable, tell the user to run `wiqd config flags set devui true`.
+- DevUI is gated behind the `devui` preview flag — if the command is unavailable, tell the user to run `wiqd config flags set devui true --skill wiqd`.
 - DevUI is **read-only** with respect to the project; it observes the agent only through `workiq` calls the developer initiates.
 - Starting DevUI is **fire-and-forget** — it runs in the background and reuses a running instance; do not block waiting on it.
 - Auth errors surface from `workiq` — tell the user to run `wiqd auth login`.

@@ -1,6 +1,6 @@
 # wiqd
 
-Developer toolkit for building, validating, provisioning, and publishing M365 Copilot declarative agents using the `wiqd` CLI.
+Developer toolkit for building, validating, provisioning, and publishing Microsoft 365 Copilot plugins, including extensibility capabilities such as declarative agents, skills, and connectors, using the `wiqd` CLI.
 
 ## Installation
 

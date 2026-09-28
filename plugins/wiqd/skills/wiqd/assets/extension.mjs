@@ -10,7 +10,7 @@
  *   agent files (declarativeAgent.json, manifest.json, m365agents.yml,
  *   plugin manifests, etc.). This extension closes that gap by denying
  *   raw mutations to agent-owned paths until `skill(wiqd)` is
- *   invoked at least once in the session.
+ *   invoked in the current turn.
  *
  * To disable for a single session: delete or rename this file before
  * launching `copilot`.
@@ -30,23 +30,49 @@ function debugLog(msg) {
   } catch {}
 }
 
-let wiqdInvoked = false;
+let wiqdInvokedThisTurn = false;
 
-const MUTATION_TOOLS = new Set(['edit', 'create', 'write']);
+const MUTATION_TOOLS = new Set([
+  'apply_patch',
+  'create',
+  'create_file',
+  'edit',
+  'replace',
+  'write',
+]);
 
 const MARKER_FILES = new Set([
   'm365agents.yml',
   'm365agents.local.yml',
   'teamsapp.yml',
   'teamsapp.local.yml',
+  'wiqd.plugin.json',
 ]);
 
 function isAgentOwnedPath(rawPath) {
   if (!rawPath) return false;
-  const p = String(rawPath).replace(/\\/g, '/');
-  if (p.includes('/appPackage/')) return true;
+  const p = String(rawPath).replace(/\\/g, '/').toLowerCase();
+  if (/(^|\/)apppackage\//.test(p)) return true;
   const fileName = p.toLowerCase().split('/').pop();
   return MARKER_FILES.has(fileName);
+}
+
+function getMutationPaths(toolName, toolArgs) {
+  const args = typeof toolArgs === 'object' && toolArgs !== null ? toolArgs : {};
+  const paths = [args.path, args.file_path, args.filePath].filter(Boolean);
+
+  if (toolName !== 'apply_patch') return paths;
+
+  const patch =
+    typeof toolArgs === 'string' ? toolArgs : (args.patch ?? args.input ?? args.content);
+  if (typeof patch !== 'string') return paths;
+
+  for (const match of patch.matchAll(
+    /^\*\*\* (?:Add|Delete|Update) File: (.+)$|^\*\*\* Move to: (.+)$/gm,
+  )) {
+    paths.push(match[1] ?? match[2]);
+  }
+  return [...new Set(paths)];
 }
 
 // Defensive field-name extraction: SDK historically used `toolName`/`toolArgs`,
@@ -62,35 +88,40 @@ debugLog(`extension loaded pid=${process.pid} cwd=${process.cwd()}`);
 try {
   await joinSession({
     hooks: {
+      onUserPromptSubmitted: async () => {
+        wiqdInvokedThisTurn = false;
+        debugLog(`user prompt submitted - gate reset`);
+      },
       onPreToolUse: async (rawInput) => {
         try {
           const { toolName, toolArgs } = extractTool(rawInput);
+          const filePaths = getMutationPaths(toolName, toolArgs);
           debugLog(
-            `preToolUse tool=${toolName} path=${toolArgs?.path ?? ''} wiqdInvoked=${wiqdInvoked}`,
+            `preToolUse tool=${toolName} paths=${filePaths.join(',')} wiqdInvokedThisTurn=${wiqdInvokedThisTurn}`,
           );
 
           if (toolName === 'skill') {
             const name = toolArgs?.name || toolArgs?.skillName || toolArgs?.skill;
             if (name === 'wiqd') {
-              wiqdInvoked = true;
+              wiqdInvokedThisTurn = true;
               debugLog(`wiqd skill invoked - gate lifted`);
             }
             return;
           }
 
           if (!MUTATION_TOOLS.has(toolName)) return;
-          if (wiqdInvoked) return;
+          if (wiqdInvokedThisTurn) return;
 
-          const filePath = toolArgs?.path;
-          if (!isAgentOwnedPath(filePath)) return;
+          const pathUnavailable = toolName === 'apply_patch' && filePaths.length === 0;
+          if (!pathUnavailable && !filePaths.some((filePath) => isAgentOwnedPath(filePath))) return;
 
-          debugLog(`DENY ${toolName} on ${filePath}`);
+          debugLog(`DENY ${toolName} on ${filePaths.join(',') || '<unavailable>'}`);
           return {
             permissionDecision: 'deny',
             permissionDecisionReason:
               'This file is part of an M365 declarative agent project. ' +
               'You MUST invoke skill(wiqd) before editing files under ' +
-              'appPackage/, m365agents.yml, or teamsapp.yml. ' +
+              'appPackage/, wiqd.plugin.json, m365agents.yml, or teamsapp.yml. ' +
               'Call skill(wiqd) first to load the wiqd skill, ' +
               'then retry this edit.',
           };

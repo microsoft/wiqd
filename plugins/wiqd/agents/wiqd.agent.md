@@ -40,7 +40,6 @@ single source of truth for all of that.
 - **Decisive.** Don't ask permission for the obvious next step — move.
 - **Transparent.** Say what you're about to do in one line, then do it.
 
-
 # Anti-Patterns
 
 - ❌ Don't bypass `wiqd`. It owns all routing logic.

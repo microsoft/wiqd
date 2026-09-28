@@ -8,7 +8,7 @@ Ask an agent and **watch the turn run live** in the local Work IQ DevUI — the 
 
 - User wants to ask an agent and **see it run in the UI**, not just a terminal answer
 - User says "ask in devui", "run this in the web ui", "watch my agent answer"
-- For a one-shot terminal answer instead → use `Skill(workiq)` `wiqd agent ask`
+- For a one-shot terminal answer instead → read `references/workiq/ask.md`
 
 ## Command
 
@@ -33,7 +33,7 @@ wiqd devui ask -q "<message>" --agent "<id|name>" --transport direct
 
 ## Critical Rules
 
-- Gated behind the `devui` preview flag — if unavailable, run `wiqd config flags set devui true`.
+- Gated behind the `devui` preview flag — if unavailable, run `wiqd config flags set devui true --skill wiqd`.
 - Local-only; connects to M365 Copilot only via `workiq`. Auth errors → `wiqd auth login`.
 
 **Exit codes:** 0 = success, 1 = launch error, 2 = infra error.

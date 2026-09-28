@@ -212,13 +212,15 @@ For public store listing, use `wiqd agent package` to build a `.zip`, then submi
 ### 7. Teardown (`wiqd agent uninstall` · alias `wiqd agent delete`)
 
 Tear down an agent's cloud footprint when it is no longer needed. `uninstall` is the preferred name; `delete` is an equivalent, non-breaking alias.
+Ask the user to confirm the exact environment or Title ID first. Agent command
+execution has no interactive TTY, so add `--yes` only after that affirmative reply.
 
 ```bash
 # env / project mode — inverse of provision; cleans up the local env file too
-wiqd agent uninstall --json --env dev --yes
+wiqd agent uninstall --json --env dev --yes --skill wiqd
 
 # title-id mode — delete ANY agent you can administer, with NO local project required
-wiqd agent uninstall --json --title-id T_xxxxxxxx --yes
+wiqd agent uninstall --json --title-id T_xxxxxxxx --yes --skill wiqd
 ```
 
 - **env / project mode** (default) removes the cloud resources for a provisioned environment and deletes `env/.env.<name>` (unless `--keep-env-file`).

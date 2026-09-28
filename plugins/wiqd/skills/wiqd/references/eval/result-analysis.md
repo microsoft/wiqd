@@ -10,7 +10,7 @@ Eval CLI 1.15 writes JSON output as a schema-compliant eval document:
 `schemaVersion`, `metadata`, optional `default_evaluators`, and `items`. Each
 item or turn has an authoritative `status`; each score is an object whose
 `result` is `pass`, `fail`, or `error`. The exact pinned schema is vendored at
-`references/output-schema.json`.
+`references/eval/output-schema.json`.
 
 ### Legacy aggregate shape (migration reference only)
 

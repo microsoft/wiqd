@@ -8,7 +8,7 @@ Provision a declarative agent to an environment (deploy to M365).
 
 Provisioning is **blocked** until the manifest validates clean. Before running the provision command:
 
-1. Run `wiqd agent validate --json --skill wiqd` as a precondition.
+1. Run `wiqd agent validate --json --skill wiqd --env <environment> [--path <path>]` as a precondition, using the same environment and project path that will be provisioned.
 2. **PASS** → proceed. **FAIL** → stop, surface diagnostics, do NOT provision.
 3. Do not re-run validation or interpret diagnostics from this context.
 
@@ -30,8 +30,8 @@ wiqd agent provision --json --skill wiqd --env <environment> [--path <path>]
 
 1. Check if the agent has `AGENT_SCOPE=shared` in the target env file (`env/.env.<env>`).
    If **shared**, run the [Shared Agent Version Bump](#shared-agent-version-bump) flow first.
-2. Run `wiqd agent provision --json --skill wiqd --env local`
-3. Read `M365_TITLE_ID` from `env/.env.local`
+2. Run `wiqd agent provision --json --skill wiqd --env <env> [--path <path>]`
+3. Read `M365_TITLE_ID` from `<path>/env/.env.<env>` (or `env/.env.<env>` when `--path` is omitted)
 4. Present the test link: `https://m365.cloud.microsoft/chat?titleId={M365_TITLE_ID}`
 
 ## Shared Agent Version Bump
@@ -59,7 +59,9 @@ When provisioning a **shared** agent (`AGENT_SCOPE=shared`), bump the manifest v
 - **NEVER** edit project files from this context — routing fixes is agent-validate's responsibility
 - **NEVER** create missing config files (`m365agents.yml`) without explicit consent
 - **ALWAYS** show the test link after successful provisioning
-- **ALWAYS** provision after ANY change to files in `appPackage/`
+- When returning to an explicitly requested or confirmed provisioning flow after
+  files in `appPackage/` changed, revalidate before provisioning. This rule does
+  not authorize provisioning after an ordinary edit.
 - **ALWAYS** run shared agent version bump when `AGENT_SCOPE=shared`
 - **NEVER** set placeholder values for environment variables — leave empty, provisioning fills them
 

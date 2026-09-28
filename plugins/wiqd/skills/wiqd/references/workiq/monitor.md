@@ -118,7 +118,7 @@ context about the specific agent being monitored (name, ID, environment).
 
 | Flag            | Description                                                       | Default                                                                                                                    |
 | --------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `--skill`       | Always set to `agent-monitor` for telemetry                       | `agent-monitor`                                                                                                            |
+| `--skill`       | Set explicitly to `wiqd` for telemetry                            | _none_                                                                                                                     |
 | `-q, --query`   | The question to send (formulated by the skill)                    | _smart default_ — `Show me '<resolved-agent-name>' key usage stats` in a project, `How is my agent performing?` standalone |
 | `--env`         | Target environment (must be provisioned)                          | `local`                                                                                                                    |
 | `--path`        | Agent project directory (for project mode)                        | `./`                                                                                                                       |

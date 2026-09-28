@@ -8,7 +8,7 @@ Build a distributable .zip app package for publishing or sideloading.
 
 Packaging is **blocked** until the manifest validates clean. Before running the package command:
 
-1. Run `wiqd agent validate --json --skill wiqd` as a precondition.
+1. Run `wiqd agent validate --json --skill wiqd --env <environment> [--path <path>]` as a precondition, using the same environment and project path that will be packaged.
 2. **PASS** → proceed to package. **FAIL** → stop, surface diagnostics, do NOT package.
 3. Do not re-run validation or interpret diagnostics from this context.
 
