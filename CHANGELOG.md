@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.16.0] — 2026-09-24
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- support default response mode edits
+- add delegated refresh-token CI authentication
+- add target-specific CLI install guidance
+
+### Fixes
+
+- preserve relocated markdown links
+- Correct agent-authoring guidance for editing, installing, packaging, provisioning, sharing, and publishing plugins
+- use form-post login callback
+
 ## [0.15.0] — 2026-09-16
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
