@@ -54,10 +54,10 @@ Catch problems before deploying.
 
 ```bash
 wiqd agent validate              # fast static checks
-wiqd agent validate --mode deep  # full ATK validation
+wiqd agent validate --mode deep  # full Microsoft 365 project validation
 ```
 
-Static mode runs the Microsoft Validation Layer (MVL) engine offline — no network, no auth, sub-second. Deep mode adds the upstream ATK semantic checks. See [Validation & MVL](/concepts/validation-mvl/).
+Static mode runs the Microsoft Validation Layer (MVL) engine offline — no network, no auth, sub-second. Deep mode adds semantic project checks through the validation/core extension boundary. See [Validation & MVL](/concepts/validation-mvl/).
 
 ### 4. Provision
 
@@ -106,5 +106,5 @@ A few commands sit outside the linear pipeline but you'll use them often:
 
 - [Environments](/concepts/environments/) — `local`, `dev`, `staging`, `prod`
 - [`wiqd agent create`](/cli/reference/#wiqd-agent-create), [`provision`](/cli/reference/#wiqd-agent-provision), [`package`](/cli/reference/#wiqd-agent-package), [`publish`](/cli/reference/#wiqd-agent-publish)
-- [Agents Toolkit extension](/extensions/provided/atk/) — implements most of these phases
+- [wiqd Core extension](/extensions/provided/core/) — implements most of these phases
 - [Eval extension](/extensions/provided/eval/) — quality evaluations on deployed agents

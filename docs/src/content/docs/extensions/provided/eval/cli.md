@@ -63,7 +63,7 @@ The skill does not override concurrency. When the user supplies `--concurrency`,
 
 ## Authentication boundaries
 
-`wiqd agent eval` does not reuse the ATK session created by `wiqd auth login`. The Eval CLI authenticates the deployed-agent connection itself using the selected tenant ID, its encrypted MSAL cache under `~/.m365-copilot-agent-evals/`, and the platform broker when interactive authentication is required. Tenant admin approval for the WORKIQ client app is required. Use `--account` to select the intended cached identity when multiple accounts are available.
+`wiqd agent eval` does not reuse the Microsoft 365 session created by `wiqd auth login`. The Eval CLI authenticates the deployed-agent connection itself using the selected tenant ID, its encrypted MSAL cache under `~/.m365-copilot-agent-evals/`, and the platform broker when interactive authentication is required. Tenant admin approval for the WORKIQ client app is required. Use `--account` to select the intended cached identity when multiple accounts are available.
 
 Judge authentication is separate: GitHub Copilot uses GitHub authentication, while Azure/Foundry uses the configured Azure credential. EULA acceptance is a third, independent prerequisite. wiqd detects a missing or stale Eval CLI EULA marker and blocks for explicit human consent before authentication begins.
 

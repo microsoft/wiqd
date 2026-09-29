@@ -25,4 +25,4 @@ Saying any of these in Copilot Chat routes the orchestrator into the Eval workfl
 
 ## Where Eval sits in the journey
 
-Eval is **stage 2 of 4** in the wiqd agent journey — the **Improve** stage. It runs after [ATK](/extensions/provided/atk/skills/) builds a valid manifest, and before [Work IQ](/extensions/provided/workiq/skills/) takes the agent into Preview. The exit gate is "evals pass at acceptable rate."
+Eval is **stage 2 of 4** in the wiqd agent journey — the **Improve** stage. It runs after [wiqd Core](/extensions/provided/core/) builds a valid manifest, and before [Work IQ](/extensions/provided/workiq/skills/) takes the agent into Preview. The exit gate is "evals pass at acceptable rate."

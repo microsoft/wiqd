@@ -73,10 +73,10 @@ per-command tables below.
 | Command | Extension | Description |
 | --- | --- | --- |
 | [`wiqd agent`](#wiqd-agent) | wiqd (core) | Build, validate, provision, publish, and monitor declarative agents |
-| [`wiqd agent add`](#wiqd-agent-add) | Agents Toolkit / wiqd Core | Augment an existing declarative agent with an action, skill, or auth config. |
-| [`wiqd agent add action`](#wiqd-agent-add-action) | Agents Toolkit / wiqd Core | Add an OpenAPI or remote MCP action to a declarative agent. |
-| [`wiqd agent add auth`](#wiqd-agent-add-auth) | Agents Toolkit / wiqd Core | Add an auth configuration to a plugin manifest. |
-| [`wiqd agent add skill`](#wiqd-agent-add-skill) | Agents Toolkit / wiqd Core | Add a skill to a declarative agent. |
+| [`wiqd agent add`](#wiqd-agent-add) | wiqd Core | Augment an existing declarative agent with an action, skill, or auth config. |
+| [`wiqd agent add action`](#wiqd-agent-add-action) | wiqd Core | Add an OpenAPI or remote MCP action to a declarative agent. |
+| [`wiqd agent add auth`](#wiqd-agent-add-auth) | wiqd Core | Add an auth configuration to a plugin manifest. |
+| [`wiqd agent add skill`](#wiqd-agent-add-skill) | wiqd Core | Add a skill to a declarative agent. |
 | [`wiqd agent ask`](#wiqd-agent-ask) | Work IQ | Send a message directly to a declarative agent. |
 | [`wiqd agent create`](#wiqd-agent-create) | wiqd Core | Scaffold a new declarative agent project. |
 | [`wiqd agent create list`](#wiqd-agent-create-list) | wiqd Core | List available declarative agent templates. |
@@ -247,7 +247,7 @@ wiqd agent --help
 
 Augment an existing declarative agent with an action, skill, or auth config.
 
-**Extension:** Agents Toolkit / wiqd Core
+**Extension:** wiqd Core
 
 ```bash
 wiqd agent add <command>
@@ -266,7 +266,7 @@ wiqd agent add --help
 
 Add an OpenAPI or remote MCP action to a declarative agent.
 
-**Extension:** Agents Toolkit / wiqd Core
+**Extension:** wiqd Core
 
 ```bash
 wiqd agent add action [options]
@@ -295,8 +295,8 @@ wiqd agent add action [options]
 
 ```bash
 wiqd agent add action --openapi-spec <path-or-url> --operations <selectors>
-wiqd agent add action --mcp-server-url <https-url>   # fx-core only
-wiqd agent add action --mcp-server-url <https-url> --mcp-auth-type oauth --mcp-client-id <id> --mcp-client-secret <secret> [--mcp-scopes <scopes>]   # fx-core only
+wiqd agent add action --mcp-server-url <https-url>
+wiqd agent add action --mcp-server-url <https-url> --mcp-auth-type oauth --mcp-client-id <id> --mcp-client-secret <secret> [--mcp-scopes <scopes>]
 wiqd agent add action --openapi-spec <path-or-url> --operations <selectors> --json
 ```
 
@@ -304,7 +304,7 @@ wiqd agent add action --openapi-spec <path-or-url> --operations <selectors> --js
 
 Add an auth configuration to a plugin manifest.
 
-**Extension:** Agents Toolkit / wiqd Core
+**Extension:** wiqd Core
 
 ```bash
 wiqd agent add auth [options]
@@ -343,7 +343,7 @@ wiqd agent add auth --json
 
 Add a skill to a declarative agent.
 
-**Extension:** Agents Toolkit / wiqd Core
+**Extension:** wiqd Core
 
 ```bash
 wiqd agent add skill [options]
@@ -2356,16 +2356,12 @@ FxCore extension, off by default): the declarative-agent skills manifest schema 
 so the command stays opt-in until it is. Enable it with
 `wiqd config flags set agent-skills true` or the `WIQD_FLAG_AGENT_SKILLS` env var.
 
-After successfully setting or clearing `plugin-core-engine`, wiqd silently refreshes an already-installed
-plugin so its composed workflow and references match the selected backend. Other flag changes do not
-trigger a plugin reinstall. The backend refresh is a no-op when the plugin is not installed. If it fails,
-the flag change remains successful and wiqd prints a recovery hint; rerun `wiqd install plugin` manually.
+Flag changes do not trigger a plugin reinstall.
 
 <!-- BEGIN: generated-flag-table -->
 | Flag | Type | Default | Stage | Owner | Since | Description |
 |---|---|---|---|---|---|---|
 | `frontier` | `boolean` | `false` | `alpha` | wiqd-core | 0.14.0 | Enables preview capabilities across wiqd and participating extensions. |
-| `plugin-core-engine` | `string-enum` | `fxcore` | `internal` | wiqd-core | 0.9.0 | Selects the backend that services the agent lifecycle commands: the ATK subprocess (atk) or the in-process fx-core engine (fxcore). |
 | `agent-skills` | `boolean` | `false` | `beta` | microsoft.wiqd.core | 0.12.2 | Enables `wiqd agent add skill` (the declarative-agent skills capability). The DA manifest schema for skills is not yet worldwide (WW); off by default until the schema is generally available. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
 | `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `agent ask` and `agent list` are always available. |
@@ -2377,7 +2373,6 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 | Flag | Env var |
 |---|---|
 | `frontier` | `WIQD_FLAG_FRONTIER` |
-| `plugin-core-engine` | `WIQD_FLAG_PLUGIN_CORE_ENGINE` |
 | `agent-skills` | `WIQD_FLAG_AGENT_SKILLS` |
 | `devui` | `WIQD_FLAG_DEVUI` |
 | `workiq-monitor` | `WIQD_FLAG_WORKIQ_MONITOR` |

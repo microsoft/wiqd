@@ -27,7 +27,7 @@ Work IQ Dev Tools give you one command surface for the entire lifecycle — scaf
 
 ## What Work IQ Dev Tools don't change
 
-Work IQ Dev Tools do **not** replace Copilot, ATK, or the M365 platform. Under the hood they shell out to the right tool for each step: the Agents Toolkit for provisioning, the Work IQ service for monitoring, and so on. You can always drop down to those tools directly if you need to — Work IQ Dev Tools just make the common path fast and consistent.
+Work IQ Dev Tools do **not** replace Copilot or the M365 platform. Under the hood they use the bundled wiqd Core lifecycle backend for scaffold/provision/package/share/publish/delete, and the Work IQ service for monitoring. You can still drop down to platform tools directly when you need to — Work IQ Dev Tools make the common path fast and consistent.
 
 ## Go deeper
 
@@ -35,4 +35,4 @@ Work IQ Dev Tools do **not** replace Copilot, ATK, or the M365 platform. Under t
 - [Host vs extensions](/concepts/host-vs-extensions/) — how Work IQ Dev Tools route each command
 - [`wiqd agent create`](/cli/reference/#wiqd-agent-create) — scaffold your first agent
 - [`wiqd agent show`](/cli/reference/#wiqd-agent-show) — see what's in a project
-- [Agents Toolkit extension](/extensions/provided/atk/) — the upstream tool that owns the manifest format
+- [wiqd Core extension](/extensions/provided/core/) — the upstream tool that owns the manifest format

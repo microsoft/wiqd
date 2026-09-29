@@ -56,7 +56,7 @@ The installer will:
    - **Windows:** installs [fnm](https://github.com/Schniz/fnm) (Fast Node Manager) via `winget install Schniz.fnm` if fnm is not already present, activates it in the current PowerShell session, then installs Node LTS through `fnm i --lts`. No new terminal required — `node` and `npm` are available immediately.
    - **macOS/Linux:** installs via nvm, Homebrew, or apt.
    - Existing supported Node.js installations are preserved.
-2. **Install `wiqd`** — downloads and installs the wiqd CLI (includes ATK as a dependency)
+2. **Install `wiqd`** — downloads and installs the wiqd CLI (includes the core lifecycle backend)
 3. **Verify** — confirms `wiqd --version` works, then `wiqd doctor` reconciles managed
    extension owners and reports targeted remediation when needed
 4. **VS Code extension** — installs the Work IQ extension for real-time validation
@@ -138,7 +138,7 @@ wiqd --version
 wiqd doctor
 ```
 
-The `doctor` command verifies wiqd and the selected lifecycle backend (fx-core by default, or ATK
+The `doctor` command verifies wiqd and the core lifecycle backend (fx-core
 when explicitly selected), reconciles active managed owners such as Work IQ and Eval into isolated
 `~/.wiqd/extensions/` generations, and reports any remaining extension health or EULA warnings
 without treating those optional warnings as installer failures.

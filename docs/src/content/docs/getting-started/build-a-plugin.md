@@ -152,10 +152,13 @@ wiqd plugin delete --env local --yes
 ```
 
 :::note
-**Order matters:** `provision` must run before `package` — `provision` is the only command that
-writes `env/.env.<env>`, which `package` needs to resolve manifest variables and which `share`
-requires as a preflight. `wiqd plugin validate --mode deep` is itself package-first, so it needs
-Step 5's `.zip` to already exist.
+**Order matters:** `provision` must run before `package` — `provision` writes `.env.<env>` under
+the `m365agents.yml` `environmentFolderPath` (default `./env`), which `package` needs to resolve
+manifest variables and which `share` requires as a preflight. Re-provision detection and
+project-mode delete use that same configured folder. The folder must remain inside the plugin
+project, and `--env` must be one portable filename segment (for example `dev` or `test-west`, not
+a path). `wiqd plugin validate --mode deep` is itself package-first, so it needs Step 5's `.zip`
+to already exist.
 :::
 
 For every flag on every one of these commands, see
@@ -182,17 +185,27 @@ a new wiqd plugin project from it. `--privacy-url`/`--terms-url` are only requir
 **first** import — if the source was produced by a prior `wiqd plugin export`, the round-trip
 metadata already carries them. `wiqd plugin export` does the inverse, defaulting to
 `--format open-plugin` (also accepts `claude-plugin` and `cursor-plugin`), writing an uncompressed
-directory under `<path>/export/<format>`. The output layout depends on the active backend: ATK
+directory under `<path>/export/<format>`. The output layout uses the core backend:
 writes the selected format layout; FxCore always writes `plugin.json` at the export root and uses
 `--format` only for the default output directory and reported format.
 
-**Current limitation:** an imported project flows through the **read-only** lifecycle —
-[validate](/cli/reference/#wiqd-plugin-validate) and
-[show & list](/cli/reference/#wiqd-plugin-show) — but **cannot yet be packaged, provisioned, or
-shared**, because the import doesn't yet scaffold the local deploy files
-(`m365agents.local.yml` + `env/.env.local`) those steps need. This is a tracked, known gap, not a
-design choice — see [`wiqd plugin import`](/cli/reference/#wiqd-plugin-import) for the
-up-to-date status.
+The imported project is ready for the full lifecycle. The TeamsFx importer creates its deployment
+environment (currently `dev`), and wiqd binds the package manifest to that environment's
+`TEAMS_APP_ID`. For a default import with no app ID, continue with `wiqd plugin validate`, then run
+`wiqd plugin provision --env dev` **before** `wiqd plugin package --env dev`,
+`wiqd plugin share --env dev`, or package-first deep validation. Packaging through either backend
+fails closed while the selected environment file is missing or its `TEAMS_APP_ID` is empty,
+unresolved, or malformed, instead of allowing a random package-only ID.
+
+Mock import follows the same finalized project contract: the package manifest keeps the
+`${{TEAMS_APP_ID}}` binding, the generated `dev` environment is present, and an explicit
+`--app-id` is written to that environment before provision/package checks run.
+
+If you pass `--app-id`, or a supported source extension carries a real GUID, import writes that ID
+into `.env.dev`; the project is already identity-bound for packaging. A wiqd export does not invent
+or preserve an unresolved `${{TEAMS_APP_ID}}` token as a round-trip ID, so only a real GUID from a
+supported producer qualifies. Provision/update remains the normal tenant lifecycle step before
+sharing a newly imported app.
 
 ## Validation as a first-class step
 
@@ -207,7 +220,7 @@ you build:
   coverage.
 - **Deep (`--mode deep`)** — package-first: after `wiqd plugin package` builds a `.zip`,
   `wiqd plugin validate --mode deep` validates that built package against AVL (App Validation
-  Library) through the Teams Developer Portal, via ATK. This is where manifest-schema rejections
+  Library) through the Teams Developer Portal, via deep validation. This is where manifest-schema rejections
   and skill-content issues actually surface. See the
   [Plugin authoring reference](/getting-started/plugin-reference/#validation-codes) for the full validation-code
   tables and how they map to static vs. deep.

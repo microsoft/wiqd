@@ -87,7 +87,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.16.0"
+WIQD_INSTALLER_VERSION="0.17.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -807,43 +807,29 @@ show_dependency_status() {
     # Candidates are '|'-separated; `required=1` makes a miss fatal. An empty
     # check uses the extension id to print a registration repair; an emitted
     # managed failure uses doctor's own trimmed message and diagnostic command.
-    local active_backend_count=0 active_backend_id="" k
+    local core_active=0 core_inactive=0 k
     for ((k = 0; k < ${#c_name[@]}; k++)); do
         [[ "${c_name[$k]}" == "Extensions" ]] || continue
-        if [[ "${c_status[$k]}" != "error" ]] && extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" active "microsoft.atk"; then
-            active_backend_count=$((active_backend_count + 1)); active_backend_id="microsoft.atk"
-        fi
         if [[ "${c_status[$k]}" != "error" ]] && extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" active "microsoft.wiqd.core"; then
-            active_backend_count=$((active_backend_count + 1)); active_backend_id="microsoft.wiqd.core"
-        fi
-        local inactive_backend_count=0 inactive_backend_id=""
-        if extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" inactive "microsoft.atk"; then
-            inactive_backend_count=$((inactive_backend_count + 1)); inactive_backend_id="microsoft.atk"
+            core_active=1
         fi
         if extensions_check_has_id "${c_status[$k]}" "${c_msg[$k]}" inactive "microsoft.wiqd.core"; then
-            inactive_backend_count=$((inactive_backend_count + 1)); inactive_backend_id="microsoft.wiqd.core"
+            core_inactive=1
         fi
         break
     done
-    if [[ $active_backend_count -ne 1 ]]; then
-        if [[ $active_backend_count -eq 0 && ${inactive_backend_count:-0} -eq 1 ]]; then
+    if [[ $core_active -ne 1 ]]; then
+        if [[ $core_inactive -eq 1 ]]; then
             write_err "Lifecycle backend extension is inactive."
-            write_hint "Re-run: wiqd ext add ${inactive_backend_id}"
+            write_hint "Re-run: wiqd ext add microsoft.wiqd.core"
             return 1
         fi
         write_err "Could not determine the active lifecycle backend from wiqd doctor."
-        write_hint "Run 'wiqd doctor' and ensure exactly one of microsoft.atk or microsoft.wiqd.core is active."
+        write_hint "Run 'wiqd doctor' and ensure microsoft.wiqd.core is active."
         return 1
     fi
 
-    local backend_row="atk::atk::1::Installed::(required for \`wiqd agent\` commands)::::1"
-    if [[ "$active_backend_id" == "microsoft.wiqd.core" ]]; then
-        backend_row="Extensions::fx-core::1::Active::(required for \`wiqd agent\` commands)::::1"
-    elif ! printf '%s\n' "${c_name[@]}" | grep -qxF 'atk'; then
-        write_err "Could not verify the active ATK backend from wiqd doctor."
-        write_hint "Run 'wiqd doctor' and repair the reported extension state."
-        return 1
-    fi
+    local backend_row="Extensions::fx-core::1::Active::(required for \`wiqd agent\` commands)::::1"
     local rows=(
         "$backend_row"
         "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1::wiqd agent eval::M365_COPILOT_EVAL_PATH"
@@ -1426,7 +1412,7 @@ fi
 # Step 3: Verify installation
 # ─────────────────────────────────────────────
 #
-# ATK remains a host dependency. Eval and Work IQ are managed by their extension
+# Eval and Work IQ are managed by their extension
 # payloads and intentionally stay off PATH. Doctor reconciles active owners here;
 # related commands retry the same lifecycle if this verification was incomplete.
 
@@ -1466,7 +1452,7 @@ else
     exit 1
 fi
 
-# A missing REQUIRED dependency (atk) is fatal: stop before the VS Code /
+# A missing REQUIRED dependency (the fx-core backend) is fatal: stop before the VS Code /
 # plugin steps so the user fixes the broken install first.
 if ! show_dependency_status; then
     exit 1

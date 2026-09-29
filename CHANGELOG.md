@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.17.0] — 2026-09-28
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Fixes
+
+- converge imported plugin lifecycle review
+- validate imported package identity
+- make package identity authoritative
+- align package identity guards
+- align package guards across backends
+- bind provision mocks to valid app id
+- remove duplicate package validation contract
+- complete lifecycle review corrections
+- close lifecycle containment review gaps
+- restore ATK package identity contract
+- preserve explicit core app id presence
+- keep package guards identical across backends
+
 ## [0.16.0] — 2026-09-24
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

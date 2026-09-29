@@ -51,7 +51,7 @@ Capabilities compose into a single app package, in any combination, through one 
 same lifecycle a declarative-agent-only plugin uses:
 
 ```bash
-wiqd plugin create --name my-plugin                 # scaffold from the ATK blank app template
+wiqd plugin create --name my-plugin                 # scaffold from the core blank app template
 cd my-plugin
 wiqd plugin add agent                               # add a declarative agent component
 wiqd plugin add skill --name "Triage Issues"        # add a SKILL.md skill
@@ -60,7 +60,7 @@ wiqd plugin add connector --name "Tools" \
 wiqd plugin validate                                # static MVL check of the DA surface
 wiqd plugin provision                               # register with Microsoft 365 (writes env/.env.<env>)
 wiqd plugin package                                 # build a deployable .zip
-wiqd plugin validate --mode deep                    # full app-package validation via ATK/AVL
+wiqd plugin validate --mode deep                    # full app-package validation via MVL/deep validation
 wiqd plugin share --scope users --email you@contoso.com
 ```
 
@@ -79,7 +79,7 @@ new to the plugin construct.
 | # | Surface                                            | What it does                                                                                                    | Lives in                                                          |
 | - | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | 1 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Scaffolds a `SKILL.md` folder and registers it in the **plugin's own app manifest** (`agentSkills[]`)          | A standalone plugin project (`wiqd.plugin.json`)                  |
-| 2 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Adds a skill to an existing **declarative agent** project's own skill surface, via ATK (`atk add skill`)       | An agent project (`m365agents.yml`)                                |
+| 2 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Adds a skill to an existing **declarative agent** project's own skill surface, via the core lifecycle backend       | An agent project (`m365agents.yml`)                                |
 | 3 | Extension-contributed **Copilot skills**            | The `SKILL.md` packages a wiqd *extension* bundles, that Copilot CLI itself loads as part of the `wiqd@wiqd` plugin | A wiqd extension's `skills/` directory, merged into the `wiqd@wiqd` plugin at install time |
 
 ### 1. `wiqd plugin add skill` — a plugin capability
@@ -91,7 +91,7 @@ plugin can be skill-only.
 
 ### 2. `wiqd agent add skill` — an agent's own skill
 
-This uses the active FxCore or ATK backend to add a skill directly into an **existing agent project**,
+This uses the core FxCore backend to add a skill directly into an **existing agent project**,
 in-place. It produces the same kind of artifact (a `SKILL.md` folder referenced from
 `agentSkills[]`), but the command operates on an agent project rather than a standalone plugin, and
 it additionally supports `--from <path>` to import an existing skill directory or `.zip`. Use this
@@ -99,7 +99,7 @@ when you're extending an agent you already have; use `wiqd plugin add skill` whe
 a new, independent plugin from scratch.
 
 `wiqd agent add skill` sits behind the `agent-skills` [feature flag](/cli/reference/#feature-flags)
-(off by default, both backends) while the declarative-agent manifest schema for skills is not yet
+(off by default) while the declarative-agent manifest schema for skills is not yet
 worldwide (WW). Enable it with `wiqd config flags set agent-skills true`. Once a skill is added, the
 project's `appPackage/declarativeAgent.json` is bumped to manifest version `v1.9` so downstream
 services keep working ahead of general availability; `wiqd agent create`'s own scaffold version is
@@ -107,12 +107,12 @@ untouched by this.
 
 With the FxCore backend, the evaluated flag also enables SDK skill support during packaging,
 provisioning, and publishing. Its temporary SDK environment override is restored when SDK work
-settles; disabling the flag leaves your original environment unchanged. The ATK backend is unchanged.
+settles; disabling the flag leaves your original environment unchanged. The core backend remains the only lifecycle backend.
 
 ### 3. Extension-contributed Copilot skills
 
 This is a different axis entirely — it's not about the M365 app package at all. A wiqd *extension*
-(the packages that contribute `wiqd` CLI commands, like the Agents Toolkit or Work IQ extensions)
+(the packages that contribute `wiqd` CLI commands, like the Core or Work IQ extensions)
 can ship its own `SKILL.md` files that teach **GitHub Copilot CLI itself** how to drive that
 extension's commands conversationally. Those skills are merged into the single bundled `wiqd@wiqd`
 Copilot plugin at install time — they have nothing to do with `agentSkills[]` or any M365 app

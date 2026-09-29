@@ -7,7 +7,7 @@ description: How Work IQ Dev Tools use local, dev, staging, and prod environment
 
 An **environment** in Work IQ Dev Tools is a named slot that holds the configuration and cloud resources for one instance of your agent. The same project source can be provisioned into multiple environments, each with its own M365 app registration, tenant, and configuration values.
 
-Environments live in `env/.env.<name>` files inside your project. Work IQ Dev Tools, like ATK underneath, name them based on the file's suffix: `env/.env.local` becomes the `local` environment, `env/.env.dev` becomes `dev`, and so on.
+Environments live in `env/.env.<name>` files inside your project. Work IQ Dev Tools and the core lifecycle backend name them based on the file's suffix: `env/.env.local` becomes the `local` environment, `env/.env.dev` becomes `dev`, and so on.
 
 ## The conventional names
 
@@ -34,7 +34,7 @@ The selected environment determines which `.env.<name>` file Work IQ Dev Tools r
 
 ## The first provision creates the slot
 
-When you run `wiqd agent provision --env dev` for the first time, Work IQ Dev Tools (via the Agents Toolkit) create the M365 app registration, write the resulting IDs back into `env/.env.dev`, and commit the slot. Re-running the command updates the existing app instead of creating a new one. Use `wiqd agent env reset --env dev` if you want to wipe a slot and start fresh.
+When you run `wiqd agent provision --env dev` for the first time, Work IQ Dev Tools create the M365 app registration, write the resulting IDs back into `env/.env.dev`, and commit the slot. Re-running the command updates the existing app instead of creating a new one. Use `wiqd agent env reset --env dev` if you want to wipe a slot and start fresh.
 
 ## Listing and inspecting
 
@@ -51,4 +51,4 @@ The command that doesn't care about environments at all is `wiqd agent validate`
 - [Agent lifecycle](/concepts/agent-lifecycle/) — where environments fit into the bigger flow
 - [`wiqd agent env`](/cli/reference/#wiqd-agent-env) — manage environments
 - [`wiqd agent provision`](/cli/reference/#wiqd-agent-provision), [`wiqd agent publish`](/cli/reference/#wiqd-agent-publish)
-- [Agents Toolkit extension](/extensions/provided/atk/) — the upstream that defines the `.env.*` file format
+- [wiqd Core extension](/extensions/provided/core/) — the upstream that defines the `.env.*` file format

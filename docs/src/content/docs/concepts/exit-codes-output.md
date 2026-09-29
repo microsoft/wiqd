@@ -20,7 +20,7 @@ Scripts should treat `0` as success, any non-zero as failure, and check for `130
 
 ### Exit code 2: Missing prerequisite tools
 
-When a command requires an upstream tool (ATK for `wiqd agent` commands, eval for `wiqd agent eval`, or workiq for `wiqd agent monitor`/`ask`) and that tool is not installed, wiqd exits with code `2` in preflight — before attempting any work. The error message shows the exact install command (`npm install -g @microsoft/wiqd`). In an interactive terminal, you are offered to run the install with explicit consent (`y`/`yes`); in CI or non-interactive mode, the message prints and the command exits immediately without prompting.
+When a command requires a backend (wiqd Core for lifecycle commands, eval for `wiqd agent eval`, or workiq for `wiqd agent monitor`/`ask`) and that tool is not installed, wiqd exits with code `2` in preflight — before attempting any work. The error message shows the exact install command (`npm install -g @microsoft/wiqd`). In an interactive terminal, you are offered to run the install with explicit consent (`y`/`yes`); in CI or non-interactive mode, the message prints and the command exits immediately without prompting.
 
 ## Output formats
 
@@ -66,7 +66,7 @@ The top-level keys (`status`, `command`, `data` or `exitCode`/`error`) are stabl
 wiqd <cmd> --verbose
 ```
 
-Forwards raw upstream tool output (stderr from `atk`, `workiq`, etc.) to your stderr. Stdout stays clean — JSON mode still produces valid JSON when combined with `--verbose`, because the diagnostics go to a different stream. Use this when something fails and you want to see the underlying error before opening a bug.
+Forwards raw upstream tool output (stderr from `workiq`, eval, or other subprocess-backed extensions) to your stderr. Stdout stays clean — JSON mode still produces valid JSON when combined with `--verbose`, because the diagnostics go to a different stream. Use this when something fails and you want to see the underlying error before opening a bug.
 
 ## Banners and pagers
 
