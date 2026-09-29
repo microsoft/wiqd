@@ -23,6 +23,7 @@
 
 import { rename, stat, readdir, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
 const INTERNAL_DIR_NAME = 'internal';
 // Stash lives at the docs package root (outside src/content) so the `docs`
@@ -36,6 +37,20 @@ async function pathExists(p, statPath = stat) {
   } catch (error) {
     if (error?.code === 'ENOENT') return false;
     throw error;
+  }
+}
+
+async function renameWithRetry(from, to, renamePath = rename, wait = delay) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await renamePath(from, to);
+      return;
+    } catch (error) {
+      const transient =
+        error?.code === 'EBUSY' || (process.platform === 'win32' && error?.code === 'EPERM');
+      if (!transient || attempt >= 30) throw error;
+      await wait(Math.min(250 * (attempt + 1), 1_000));
+    }
   }
 }
 
@@ -103,7 +118,7 @@ export async function hideInternalPartition(contentRoot) {
 
   if (!hasInternal) return null;
 
-  await rename(internalDir, stashDir);
+  await renameWithRetry(internalDir, stashDir);
   return { internalDir, stashDir };
 }
 
@@ -122,7 +137,7 @@ export async function restoreInternalPartition(stash) {
         `while stash ${stashDir} is also present.`,
     );
   }
-  await rename(stashDir, internalDir);
+  await renameWithRetry(stashDir, internalDir);
 }
 
 /**
@@ -134,7 +149,7 @@ export async function recoverStaleStash(contentRoot) {
   const hasInternal = await pathExists(internalDir);
   const hasStash = await pathExists(stashDir);
   if (hasStash && !hasInternal) {
-    await rename(stashDir, internalDir);
+    await renameWithRetry(stashDir, internalDir);
     return true;
   }
   return false;
@@ -208,4 +223,5 @@ export const _internals = {
   INTERNAL_DIR_NAME,
   STASH_DIR_NAME,
   pathExists,
+  renameWithRetry,
 };

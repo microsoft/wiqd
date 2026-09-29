@@ -31,9 +31,8 @@
 # -Force         Full reinstall, end-to-end. Bypasses every "already installed"
 #                short-circuit:
 #                  * Step 2 (wiqd CLI): reinstall even when the version matches.
-#                                       This also re-resolves the transitive ATK
-#                                       rollback backend. Doctor separately
-#                                       reconciles extension-managed Eval/Work IQ.
+#                                       Doctor separately reconciles
+#                                       extension-managed Eval/Work IQ.
 #                  * Step 4 (VS Code extension): re-run --install-extension --force
 #                                                even if the extension is already
 #                                                listed by `code --list-extensions`.
@@ -132,7 +131,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.16.0"
+$script:WiqdVersion = "0.17.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -587,7 +586,7 @@ function Invoke-WiqdSeedDefaults {
 # (eval/workiq/EULA) degrades gracefully and only warns. Returns $true to
 # continue, $false when a required dependency is missing (caller exits 1).
 # Fails closed with the canonical reinstall hint when the probe is unavailable
-# or its JSON can't be parsed because required ATK presence cannot be verified.
+# or its JSON can't be parsed because the required lifecycle backend cannot be verified.
 function Show-DependencyStatus {
     # Ordered display rows. `Keys` maps onto the doctor check `name`s: the
     # healthy workiq probe is named "workiq --json", but a missing one collapses
@@ -616,38 +615,28 @@ function Show-DependencyStatus {
     }
 
     $extensionsCheck = @($checks | Where-Object { [string]$_.name -eq 'Extensions' }) | Select-Object -First 1
-    $activeBackendIds = @()
-    $inactiveBackendIds = @()
+    $coreActive = $false
+    $coreInactive = $false
     if (($null -ne $extensionsCheck) -and ([string]$extensionsCheck.status -ne 'error') -and ([string]$extensionsCheck.message -match '(?:^|;\s*)\d+ active \(([^)]*)\)')) {
         $activeIds = @($Matches[1] -split ',' | ForEach-Object { $_.Trim() })
-        $activeBackendIds = @($activeIds | Where-Object { @('microsoft.atk', 'microsoft.wiqd.core') -ccontains $_ })
+        $coreActive = $activeIds -ccontains 'microsoft.wiqd.core'
     }
     if (($null -ne $extensionsCheck) -and ([string]$extensionsCheck.message -match '(?:^|;\s*)\d+ inactive \(([^)]*)\)')) {
         $inactiveIds = @($Matches[1] -split ',' | ForEach-Object { $_.Trim() })
-        $inactiveBackendIds = @($inactiveIds | Where-Object { @('microsoft.atk', 'microsoft.wiqd.core') -ccontains $_ })
+        $coreInactive = $inactiveIds -ccontains 'microsoft.wiqd.core'
     }
-    if ($activeBackendIds.Count -ne 1) {
-        if (($activeBackendIds.Count -eq 0) -and ($inactiveBackendIds.Count -eq 1)) {
+    if (-not $coreActive) {
+        if ($coreInactive) {
             Write-Err "Lifecycle backend extension is inactive."
-            Write-Hint "Re-run: wiqd ext add $($inactiveBackendIds[0])"
+            Write-Hint "Re-run: wiqd ext add microsoft.wiqd.core"
             return $false
         }
         Write-Err "Could not determine the active lifecycle backend from wiqd doctor."
-        Write-Hint "Run 'wiqd doctor' and ensure exactly one of microsoft.atk or microsoft.wiqd.core is active."
+        Write-Hint "Run 'wiqd doctor' and ensure microsoft.wiqd.core is active."
         return $false
     }
 
-    if ($activeBackendIds[0] -ceq 'microsoft.wiqd.core') {
-        $backendRow = @{ Keys = @('Extensions'); Label = 'fx-core'; Required = $true; OkWord = 'Active'; Note = '(required for `wiqd agent` commands)'; ReRun = $true; ActiveExtensionId = 'microsoft.wiqd.core' }
-    } else {
-        $atkCheck = @($checks | Where-Object { [string]$_.name -eq 'atk' }) | Select-Object -First 1
-        if ($null -eq $atkCheck) {
-            Write-Err "Could not verify the active ATK backend from wiqd doctor."
-            Write-Hint "Run 'wiqd doctor' and repair the reported extension state."
-            return $false
-        }
-        $backendRow = @{ Keys = @('atk'); Label = 'atk'; Required = $true; OkWord = 'Installed'; Note = '(required for `wiqd agent` commands)'; ReRun = $true }
-    }
+    $backendRow = @{ Keys = @('Extensions'); Label = 'fx-core'; Required = $true; OkWord = 'Active'; Note = '(required for `wiqd agent` commands)'; ReRun = $true; ActiveExtensionId = 'microsoft.wiqd.core' }
     $rows = @($backendRow) + $optionalRows
 
     # Materialize the checks as an ordered list so rows can consume matches
@@ -1370,7 +1359,7 @@ if ($skipInstall) {
 # Step 3: Verify installation
 # ─────────────────────────────────────────────
 #
-# ATK remains a host dependency. Eval and Work IQ are managed by their extension
+# Eval and Work IQ are managed by their extension
 # payloads and intentionally stay off PATH. Doctor reconciles active owners here;
 # related commands retry the same lifecycle if this verification was incomplete.
 
@@ -1417,7 +1406,7 @@ try {
     return 1
 }
 
-# A missing REQUIRED dependency (atk) is fatal: stop before the VS Code /
+# A missing REQUIRED dependency (the fx-core backend) is fatal: stop before the VS Code /
 # plugin steps so the user fixes the broken install first.
 if (-not (Show-DependencyStatus)) {
     return 1

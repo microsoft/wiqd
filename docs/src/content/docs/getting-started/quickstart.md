@@ -14,7 +14,7 @@ Install `wiqd` and all dependencies with a single command:
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
 ```
 
-This installs Node.js (if needed), the `wiqd` CLI, ATK, and the VS Code extension.
+This installs Node.js (if needed), the `wiqd` CLI, the core lifecycle backend, and the VS Code extension.
 
 :::tip
 See [Installation](/getting-started/installation/) for all options.

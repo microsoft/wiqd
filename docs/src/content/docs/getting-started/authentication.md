@@ -8,9 +8,9 @@ Work IQ Dev Tools use extension-owned Microsoft identity providers for Microsoft
 
 ## How authentication works
 
-The domain-neutral WIQD host delegates `auth login`, `auth logout`, and `auth status` to activated extension providers. Subprocess-backed providers (such as ATK and workiq) run their own binaries; runtime-backed providers run in-process. The `wiqd-ext-core` provider owns its MSAL client, developer cache, and CI authentication backends. Those are extension responsibilities, not host-aggregator identity logic.
+The domain-neutral WIQD host delegates `auth login`, `auth logout`, and `auth status` to activated extension providers. Subprocess-backed providers (such as workiq) run their own binaries; runtime-backed providers run in-process. The `wiqd-ext-core` provider owns its MSAL client, developer cache, and CI authentication backends. Those are extension responsibilities, not host-aggregator identity logic.
 
-After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Verification reads the identity out of the login output first and falls back to re-probing the provider's status only when the login output shows none; a broker-backed account can be process-local and vanish before a separate status subprocess starts, so preferring the login output avoids reporting a real sign-in as a failure. Login and logout target the same provider session (for ATK, the `m365` account), so a `wiqd auth logout` followed by `wiqd auth login` performs a real re-sign-in rather than a silent no-op.
+After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Verification reads the identity out of the login output first and falls back to re-probing the provider's status only when the login output shows none; a broker-backed account can be process-local and vanish before a separate status subprocess starts, so preferring the login output avoids reporting a real sign-in as a failure. Login and logout target the same provider session, so a `wiqd auth logout` followed by `wiqd auth login` performs a real re-sign-in rather than a silent no-op.
 
 Runtime-backed providers return a structured signed-in / signed-out / error state directly, so no separate status subprocess or output pattern is used for them. The host reports the provider's result; it does not own that provider's client ID or token cache.
 
@@ -26,7 +26,7 @@ wiqd auth login --interactive
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--interactive` | `flag` | `false` | Force an interactive sign-in. Appends each provider's interactive arguments to the downstream invocation (e.g. ATK `-i true` instead of `-i false`) so a fresh sign-in is forced, and extends the per-provider timeout for browser-based flows. Does not change the terminal requirement — see below. |
+| `--interactive` | `flag` | `false` | Force an interactive sign-in. Appends each provider's interactive arguments to the downstream invocation (e.g. an interactive flag instead of the non-interactive default) so a fresh sign-in is forced, and extends the per-provider timeout for browser-based flows. Does not change the terminal requirement — see below. |
 
 ### Examples
 

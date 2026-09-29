@@ -12,12 +12,12 @@ secret and does not sign you into your normal WIQD developer session.
 
 These modes support core-backed `wiqd agent provision`, `wiqd agent publish`, and
 `wiqd agent share`, and corresponding plugin lifecycle operations. They do not
-authenticate Work IQ, eval, other extensions, the legacy ATK subprocess backend,
-or arbitrary Azure/SPFx drivers. Those require their own credentials.
+authenticate Work IQ, eval, other extensions, or arbitrary Azure/SPFx drivers. Those require their
+own credentials.
 
 ## Configure a Trusted Pipeline
 
-Activate the core/fx-core backend, use a configured agent project, and grant the
+Use a configured agent project, and grant the
 pipeline's user the permissions required by the operation. Supply credentials as
 environment variables from your pipeline secret store, never literal values in
 committed YAML, command arguments, or job logs. Never expose them to untrusted

@@ -11,7 +11,7 @@ description: Offline MVL static validation and the VS Code LSP server
 
 The Validate extension provides the fastest feedback loop in Work IQ Dev Tools: **offline static validation** of declarative agent manifests against the current shipping schema. It also hosts the **Language Server Protocol (LSP)** server that powers the VS Code live-diagnostics experience.
 
-Static validation runs the **Microsoft Validation Layer (MVL)** engine — the same one the M365 platform uses to accept a manifest. No network, no auth, sub-second on a normal project. Deep validation hands off to the [Agents Toolkit](/extensions/provided/atk/) for ATK's semantic checks.
+Static validation runs the **Microsoft Validation Layer (MVL)** engine — the same one the M365 platform uses to accept a manifest. No network, no auth, sub-second on a normal project. Deep validation runs through the [wiqd Core](/extensions/provided/core/) validation surface for semantic checks.
 
 This is the only extension that ships a .NET binary. The MVL engine depends on `Microsoft.DeclarativeAgents.Manifest.dll`, a platform-owned .NET assembly with no TypeScript port. Everything else in the Work IQ Dev Tools ecosystem is TypeScript/Node.
 
@@ -21,7 +21,7 @@ This is the only extension that ships a .NET binary. The MVL engine depends on `
 # 1. Fast static validation — run before every commit
 wiqd agent validate
 
-# 2. Deep validation including ATK semantic checks
+# 2. Deep validation including semantic checks
 wiqd agent validate --mode deep
 
 # 3. CI gate: machine-readable output

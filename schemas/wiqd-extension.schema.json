@@ -79,7 +79,7 @@
     },
     "activationWhen": {
       "type": "string",
-      "description": "Conditional participation gate. A single `<flag> == <value>` equality that gates the WHOLE extension on a feature-flag value, so one flag can select exactly one member of a mutually-exclusive set (e.g. `plugin-core-engine` choosing the atk subprocess backend vs. the fxcore in-process backend). The host branches only on the flag name/value, never on extension identity. Absent means the extension always participates."
+      "description": "Conditional participation gate. A single `<flag> == <value>` equality that gates the WHOLE extension on a feature-flag value, so one flag can select exactly one member of a mutually-exclusive set. The host branches only on the flag name/value, never on extension identity. Absent means the extension always participates."
     },
     "auth": {
       "$ref": "#/definitions/ExtensionAuthConfig"
@@ -954,6 +954,13 @@
               "items": {}
             }
           ]
+        },
+        "processEnv": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Per-command environment overrides for a subprocess invocation. Values use ordinary manifest interpolation and preserve explicit empty strings."
         },
         "errors": {
           "type": "array",

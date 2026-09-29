@@ -119,13 +119,13 @@ export default defineConfig({
           items: [
             { label: 'Overview', slug: 'extensions/provided' },
             {
-              label: 'Agents Toolkit (ATK)',
+              label: 'wiqd Core',
               collapsed: true,
               items: [
-                { label: 'Overview', slug: 'extensions/provided/atk' },
-                { label: 'CLI commands', slug: 'extensions/provided/atk/cli' },
-                { label: 'Agentic workflows', slug: 'extensions/provided/atk/workflows' },
-                { label: 'Agent plugins', slug: 'extensions/provided/atk/skills' },
+                { label: 'Overview', slug: 'extensions/provided/core' },
+                { label: 'CLI commands', slug: 'extensions/provided/core/cli' },
+                { label: 'Agentic workflows', slug: 'extensions/provided/core/workflows' },
+                { label: 'Agent plugins', slug: 'extensions/provided/core/skills' },
               ],
             },
             {
