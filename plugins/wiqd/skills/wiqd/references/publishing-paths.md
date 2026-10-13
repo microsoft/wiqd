@@ -6,18 +6,18 @@ How to take a declarative agent from idea to production.
 
 | Phase | What Happens | wiqd Tooling |
 |-------|-------------|-------------|
-| **Build** | Create agent, add capabilities, instructions, plugins | atk workflow ("create agent", "add a capability") |
-| **Validate** | Run manifest validation, fix errors | atk workflow ("validate my agent") |
+| **Build** | Create agent, add capabilities, instructions, plugins | wiqd-core workflow ("create agent", "add a capability") |
+| **Validate** | Run manifest validation, fix errors | wiqd-core workflow ("validate my agent") |
 | **Improve** | Run evals, iterate on quality | eval workflow ("run my evals", "evaluate my agent") |
-| **Package** | Build the app package (.zip) | atk workflow ("package my agent") |
-| **Provision** | Create Entra app + Teams app, sideload for testing | atk workflow ("provision my agent") |
-| **Preview** | Share with early users for testing | atk workflow ("share my agent") |
-| **Publish** | Submit to Partner Center and publish to store | atk workflow ("publish my agent") |
+| **Package** | Build the app package (.zip) | wiqd-core workflow ("package my agent") |
+| **Provision** | Create Entra app + Teams app, sideload for testing | wiqd-core workflow ("provision my agent") |
+| **Preview** | Share with early users for testing | wiqd-core workflow ("share my agent") |
+| **Publish** | Submit to Partner Center and publish to store | wiqd-core workflow ("publish my agent") |
 
 ## Key Details
 
 - **Partner Center owns certification and store listing.** wiqd helps build through publish — Partner Center handles the rest.
-- **atk provision handles sideloading.** Use "provision my agent" to deploy to a test environment for previewing.
+- **`wiqd agent provision` handles sideloading.** Use "provision my agent" to deploy to a test environment for previewing.
 - **Apps go live globally after certification.** Once certified, the agent is available in the store.
 
 ## What's Possible

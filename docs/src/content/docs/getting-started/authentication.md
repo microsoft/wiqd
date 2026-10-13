@@ -8,13 +8,35 @@ Work IQ Dev Tools use extension-owned Microsoft identity providers for Microsoft
 
 ## How authentication works
 
-The domain-neutral WIQD host delegates `auth login`, `auth logout`, and `auth status` to activated extension providers. Subprocess-backed providers (such as workiq) run their own binaries; runtime-backed providers run in-process. The `wiqd-ext-core` provider owns its MSAL client, developer cache, and CI authentication backends. Those are extension responsibilities, not host-aggregator identity logic.
+The domain-neutral WIQD host delegates `auth login`, `auth logout`, and `auth status` to the actions declared by activated extension providers. Subprocess-backed providers run their own binaries; runtime-backed providers run in-process. Diagnostic-only providers such as the current Work IQ extension do not join login/logout. Each provider owns its identity client, token cache, and CI authentication backends. Those are extension responsibilities, not host-aggregator identity logic.
 
-After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Verification reads the identity out of the login output first and falls back to re-probing the provider's status only when the login output shows none; a broker-backed account can be process-local and vanish before a separate status subprocess starts, so preferring the login output avoids reporting a real sign-in as a failure. Login and logout target the same provider session, so a `wiqd auth logout` followed by `wiqd auth login` performs a real re-sign-in rather than a silent no-op.
+After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Verification reads the identity out of the login output first and falls back to re-probing the provider's status only when the login output shows none; a broker-backed account can be process-local and vanish before a separate status subprocess starts, so preferring the login output avoids reporting a real sign-in as a failure.
 
 Runtime-backed providers return a structured signed-in / signed-out / error state directly, so no separate status subprocess or output pattern is used for them. The host reports the provider's result; it does not own that provider's client ID or token cache.
 
 Commands that interact with your tenant—including agent and plugin provisioning and sharing, plus agent info, uninstall, and publish—check the provider's status first. When the provider definitively reports that you are signed out, the command exits with code `2` and instructions to run `wiqd auth login --interactive` instead of waiting on an invisible upstream sign-in prompt. An unavailable or inconclusive status check does not block the command.
+
+### Provider accounts are independent
+
+Each provider owns its own account selection, token cache, and signed-in state.
+It is valid for one provider to use account A while another uses account B. It
+is also valid for one row to be signed out while another is healthy. A command's
+provider selection does not deactivate other activated providers, so the auth
+aggregator continues to visit and report each one.
+
+The rows from `wiqd auth status` are authoritative for the provider/account
+pairing. Do not infer the provider from an application name shown by a broker or
+consent dialog: providers can share client identity details. For example, this
+state is internally consistent:
+
+```text
+  ✗ Provider A: not signed in — Run `wiqd auth login --interactive` to sign in.
+  ✔ Provider B: signed in — account-b@contoso.com
+```
+
+The Provider A row is a truthful failure for that provider; it does not prove
+that an operation using Provider B failed. Check the provider used by the
+command and its corresponding status row before diagnosing the operation.
 
 ## Sign In
 
@@ -26,17 +48,17 @@ wiqd auth login --interactive
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--interactive` | `flag` | `false` | Force an interactive sign-in. Appends each provider's interactive arguments to the downstream invocation (e.g. an interactive flag instead of the non-interactive default) so a fresh sign-in is forced, and extends the per-provider timeout for browser-based flows. Does not change the terminal requirement — see below. |
+| `--interactive` | `flag` | `false` | Allows each provider to use its interactive path and extends the per-provider timeout. It does not guarantee an account picker or a fresh account: a provider may reuse a usable cached session. Does not change the terminal requirement — see below. |
 
 ### Examples
 
-Sign in to all installed extension providers:
+Resolve sessions for all active providers using each provider's default mode:
 
 ```bash
-wiqd auth login --interactive
+wiqd auth login
 ```
 
-Force interactive login:
+Allow each active provider to use its interactive path:
 
 ```bash
 wiqd auth login --interactive
@@ -93,11 +115,69 @@ View the currently signed-in account and token status:
 wiqd auth status
 ```
 
+### Check tenant consistency
+
+Being signed in does not mean that every tool uses the same Microsoft 365
+tenant. An agent deployed in a customer tenant may not appear when another
+provider queries your home organization's tenant.
+
+`wiqd auth status` now reports tenant information for providers that declare
+this capability. Raw tenant IDs are not displayed: `tenant-1`, `tenant-2`, and
+similar labels distinguish tenants **within one report only**. They are not
+tenant selectors and must not be compared across separate command invocations.
+
+```text
+Microsoft 365 (wiqd core): signed in [tenant: tenant-1]
+Work IQ: unknown [tenant: unknown (provider does not expose tenant status)]
+m365: Cannot confirm tenant consistency...
+```
+
+The core lifecycle provider can report its effective tenant. Current Work IQ
+1.0.0 has no supported read-only auth-status command, so its tenant remains
+unknown; wiqd never reads its token cache or triggers a login to fill that gap.
+Eval has the same inspection limitation. Providers can declare independent
+service identities as not applicable to resource-tenant comparison.
+
+When two providers in the same declared comparison group report different
+tenants, wiqd warns that a resource deployed through one may not be visible
+through the other. A consistent result requires at least two providers and
+complete tenant evidence for the group. A missing, signed-out, or unsupported
+provider means consistency cannot be confirmed.
+
+```bash
+wiqd auth status --json
+```
+
+JSON adds `tenant` to participating provider rows and `tenantComparisons` for
+declared groups. Unknown tenant reasons distinguish unsupported inspection,
+an unavailable provider, a missing tenant value, and an invalid value. Providers
+without a tenant declaration retain their existing output.
+
+These diagnostics are advisory and do not change the command's existing exit
+behavior. Verify the target tenant in each provider's supported tooling when a
+warning appears. **This does not add automatic switching or a
+`wiqd auth login --tenant` option**, and `auth status` never signs users out.
+
+Read each row independently. A signed-in row can coexist with another provider's
+signed-out row. `auth status` may silently refresh a provider-owned token while
+inspecting it, but never opens an interactive prompt.
+
 ## Sign Out
 
 ```bash
 wiqd auth logout
 ```
+
+Logout is blanket and best-effort: it asks every active provider to clear the
+session/cache that provider owns, continues when one provider fails, and returns
+a non-zero aggregate result when any provider reports failure. There is no
+provider-specific or account-specific logout selector.
+
+This does not globally sign the user out of Microsoft in the system browser,
+operating-system account manager, or tenant. Those external sessions can affect
+what a later provider-owned interactive flow shows. Always run
+`wiqd auth status` after logout or account switching to confirm the actual
+provider states.
 
 ## Brokered authentication
 

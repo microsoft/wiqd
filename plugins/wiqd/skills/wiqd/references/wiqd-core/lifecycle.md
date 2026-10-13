@@ -23,7 +23,7 @@ wiqd agent uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
 - In env/project mode the command cleans up the environment's `env/.env.<name>` file unless `--keep-env-file` is used
 - If not provisioned (no env file found) → report nothing to delete; suggest the provision workflow or `--title-id` to delete by Title ID instead
 
-**Title-ID mode (`--title-id`) — project-less teardown.** When `--title-id` is set, the command deletes the agent **by its Title ID alone**: it skips the project-structure and provisioned-env-file preflight, runs from **any directory** (no local project required), and touches **no local files**. Both Title ID forms are accepted — `T_xxx` or `T_xxx.declarativeAgent` (the dotted suffix is stripped before the id reaches ATK). Use this to clean up orphaned agents when there is no checked-out project:
+**Title-ID mode (`--title-id`) — project-less teardown.** When `--title-id` is set, the command deletes the agent **by its Title ID alone**: it skips the project-structure and provisioned-env-file preflight, runs from **any directory** (no local project required), and touches **no local files**. Both Title ID forms are accepted — `T_xxx` or `T_xxx.declarativeAgent` (the dotted suffix is stripped before the id reaches the core backend). Use this to clean up orphaned agents when there is no checked-out project:
 
 ```bash
 # Find the Title ID, then uninstall by it — works from anywhere

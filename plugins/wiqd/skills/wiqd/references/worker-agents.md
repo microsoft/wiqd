@@ -10,8 +10,7 @@ look for or invoke dedicated `wiqd agent add worker` or `wiqd agent remove worke
    gates before changing anything.
 2. Resolve the project directory selected by that gate and read its complete current
    `appPackage/declarativeAgent.json`.
-3. Read the active backend's schema reference: `references/atk/schema.md` for `atk`, or
-   `references/wiqd-core/schema.md` for `wiqd-core`. Follow its dynamic lookup procedure against the
+3. Read the core schema reference, `references/wiqd-core/schema.md`. Follow its dynamic lookup procedure against the
    manifest's declared `$schema`; when `$schema` is absent, use the manifest's `version` as that
    procedure specifies. When both fields are present, extract the version from `$schema` and require
    it to exactly match `version`. If they conflict, stop before confirmation or mutation even when
@@ -37,7 +36,7 @@ look for or invoke dedicated `wiqd agent add worker` or `wiqd agent remove worke
 ## Resolve a published Worker
 
 When `wiqd agent resolve worker-agent` is available, pass the id of the currently routed lifecycle
-workflow (`atk` or `wiqd-core`) as `<active-workflow-id>`:
+workflow (`wiqd-core`) as `<active-workflow-id>`:
 
 ```bash
 wiqd agent resolve worker-agent --name "<user-supplied-name>" --json --skill wiqd --workflow <active-workflow-id>

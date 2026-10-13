@@ -73,7 +73,7 @@ Follow these best practices for successful M365 Copilot agent development.
 
 ## Agent Skills
 
-- **Check the Flag First:** Verify `TEAMSFX_AGENT_SKILLS` is set before `wiqd agent add skill` on the `microsoft.atk` backend, and again before `wiqd agent package` — the flag gates packaging too, so a package built without it is silently missing its skill directories
+- **Enable the Flag First:** Turn on WIQD's `agent-skills` feature flag before `wiqd agent add skill` and keep it enabled for `wiqd agent package` — core sets the SDK environment during those operations, and the flag gates packaging too
 - **Scope Skills Narrowly:** Each `SKILL.md` should cover one focused, reusable procedure, not a catch-all
 - **Name for Triggering:** Write `description` around the phrases a user would actually say, not a summary of the skill's purpose
 - **Keep Name and Folder in Lockstep:** The frontmatter `name` and the containing folder name are one value — rename both together

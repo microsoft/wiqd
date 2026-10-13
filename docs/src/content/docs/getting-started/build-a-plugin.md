@@ -35,12 +35,15 @@ the interface may change without notice.
 
    See [Installation](/getting-started/installation/) for flags, troubleshooting, and manual steps.
 
-2. **Confirm the Copilot CLI plugin is installed** (the installer does this by default; run it
-   explicitly if you skipped that step or want to reinstall):
+2. **Install the Copilot CLI plugin from its marketplace** if you want guided authoring.
+   The WIQD installer does not manage host plugins:
 
    ```bash
-   wiqd component plugin install
+   copilot plugin marketplace add microsoft/wiqd
+   copilot plugin install wiqd@wiqd
    ```
+
+   For Claude Code, use `claude` instead of `copilot`. Start a new host session.
 
 3. **Sign in** — provisioning and sharing a plugin touch your Microsoft 365 tenant:
 
@@ -193,7 +196,7 @@ The imported project is ready for the full lifecycle. The TeamsFx importer creat
 environment (currently `dev`), and wiqd binds the package manifest to that environment's
 `TEAMS_APP_ID`. For a default import with no app ID, continue with `wiqd plugin validate`, then run
 `wiqd plugin provision --env dev` **before** `wiqd plugin package --env dev`,
-`wiqd plugin share --env dev`, or package-first deep validation. Packaging through either backend
+`wiqd plugin publish --env dev`, `wiqd plugin share --env dev`, or package-first deep validation. Packaging through either backend
 fails closed while the selected environment file is missing or its `TEAMS_APP_ID` is empty,
 unresolved, or malformed, instead of allowing a random package-only ID.
 
@@ -227,19 +230,34 @@ you build:
 
 ## Publishing paths
 
-wiqd carries you through build → validate → provision → package → share. Where you go from there
-depends on your audience:
+wiqd carries you through build → validate → provision → package → publish or share. Choose the
+tenant path based on how users should receive the plugin:
 
-- **Your tenant** — `wiqd plugin share --scope tenant` makes the plugin available org-wide, or an
-  admin can upload the packaged `.zip` directly via the Microsoft 365 admin center's "Upload custom
-  app" step.
-- **The public store** — certification and store submission happen in Partner Center, a human/admin
-  process outside wiqd.
+- **Organization app catalog** — `wiqd plugin publish --env <env>` submits the provisioned plugin
+  to the tenant's org admin catalog. Submission succeeds before approval; tenant users can discover
+  the plugin only after an administrator approves it.
+- **Direct access** — `wiqd plugin share --scope users --email ...` grants access to named users, or
+  `wiqd plugin share --scope tenant` grants tenant-wide access. Sharing is a different operation
+  from catalog submission.
+- **Public store** — run `wiqd plugin package --env <env>` and submit the `.zip` through Partner
+  Center. wiqd does not automate Partner Center certification or public-store submission.
 
-**Where wiqd stops:** wiqd's job ends at `share` (or at handing you the packaged `.zip`). Admin
-center uploads and Partner Center certification/submission are deliberate, human/admin actions —
-there is no `wiqd plugin publish` command, because publishing to the public store isn't something
-wiqd automates today.
+Before catalog submission, you can run a no-submit readiness check:
+
+```bash
+# Fully offline: project/path checks plus the applicable static DA phase
+wiqd plugin publish --dry-run --no-runtime --no-network
+
+# Full applicable validation for a plugin that contains a declarative agent
+wiqd plugin publish --dry-run --env dev
+```
+
+Declarative-agent checks are explicitly skipped for skill/connector-only plugins; a skip does not
+claim those components received full runtime validation.
+
+**Where wiqd stops:** wiqd automates submission to the tenant organization app catalog, but tenant
+administrator approval remains an admin action. Partner Center certification and public-store
+publication also remain outside wiqd.
 
 ## What's Next?
 

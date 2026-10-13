@@ -35,6 +35,20 @@ journey: |
 
 Generate, run, and analyze evaluation suites for M365 Copilot Declarative Agents using the Perceive-Reason-Act (PRA) framework. Produces a structured test suite that validates agent behavior against its declared manifest, instructions, grounding sources, and capabilities.
 
+## First Response
+
+Start with Phase 0, even for an explicit request such as "generate 20 fresh items".
+Discover existing datasets, use `ask_user` to offer **Use an existing dataset** or
+**Generate a new dataset**, and stop until the user answers. The request's count
+and preference do not replace that choice. Do not read the agent manifest or
+instructions, analyze PRA, or propose scenarios before the answer.
+
+After the choice, retain the requested count and present the proposal with both
+user-facing references: [PRA framework](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#perceive-reason-act-pra-framework)
+and [Eval CLI schema](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#eval-document-schema).
+Reading their local reference files does not substitute for including these links
+in the explanation. Dataset selection and approval to write are separate steps.
+
 ## When to Use
 
 - User says "Evaluate my agent" or "Test my agent"
@@ -261,6 +275,14 @@ Write-Output "wiqd agent eval exit code: $exitCode"
 
 Never overwrite an existing scorecard or log. Report the exit code and retain failed-run logs. Load `references/eval/workflow.md` for explicit dataset, path, environment, and agent-ID variants.
 
+### Authentication Failure: Diagnose Before Handoff
+
+If the eval returns an authentication or consent error, stop the failed eval operation, but do not skip read-only diagnosis. Before reporting the blocked state, actually run `wiqd auth status` or `wiqd doctor` once and inspect its result; merely suggesting that the user run it is not diagnosis. If the diagnostic itself is unavailable or fails, report that limitation without retrying the eval.
+
+Treat this as partial evidence: wiqd authentication status does not establish that the Eval CLI's independent MSAL cache or the selected judge credentials are valid. Distinguish the agent connection from the judge backend where the error permits it. Otherwise state that the cause remains unresolved; wrong account, expired credentials, or tenant consent are possibilities, not proven conclusions.
+
+Do not run login, logout, account switching, token refresh, consent grants, or EULA acceptance to recover the run. Do not retry the failed eval or use an alternate route around the failure. Hand off the observed error, diagnostic result, remaining uncertainty, and the specific human-run next step for the affected authentication path. Never claim that the pipeline has recovered. If a follow-up asks you to push authentication or consent through, decline, explain the human-only step, and repeat the relevant diagnostic or remediation command without executing it.
+
 ### Phase 5: Result Analysis
 
 After every successful HTML run, read the generated scorecard immediately. Do not ask a second permission question: the user's request to evaluate the agent includes scorecard analysis.
@@ -391,7 +413,7 @@ When the user makes such a request:
 
 **In scope:** ATK agent projects and minimal eval workspaces; generating, running, scorecard analysis, recommendations, and credential setup.
 
-**Out of scope:** Non-ATK projects, agent deployment/publishing (use ATK workflow), modifying agent manifests (use ATK workflow), performance/load testing.
+**Out of scope:** Non-declarative-agent projects, agent deployment/publishing (use the `wiqd-core` workflow), modifying agent manifests (use the `wiqd-core` workflow), performance/load testing.
 
 ## Evaluator Reference
 

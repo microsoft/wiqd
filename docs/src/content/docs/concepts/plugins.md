@@ -21,6 +21,26 @@ special case of a plugin whose single capability is a declarative agent — stru
 the same app package. Think in terms of the plugin first, and reach for the declarative agent as
 the capability that gives the plugin its conversational surface.
 
+## One artifact, many names
+
+"**Cowork plugin**", "**Copilot Cowork plugin**", "**Microsoft 365 Copilot plugin**", and
+"**standalone plugin**" all describe the **same artifact**: one MOS (Teams) app package. An
+unqualified "**Copilot plugin**" means that package too, whenever the surface in question is an
+M365 one. "Standalone" is a wiqd word that distinguishes a reusable plugin project from a
+declarative-agent project — it is not a platform qualifier. Copilot Cowork, Microsoft 365 Copilot
+chat, Teams, and Office are **surfaces that host that one package**, not separate plugin platforms
+with their own SDKs. So if you came here to build a plugin for Copilot Cowork, you are in the right
+place — `wiqd plugin` is the toolchain. Start with the
+[build-a-plugin walkthrough](/getting-started/build-a-plugin/).
+
+:::note[The GitHub Copilot CLI plugin is a different artifact]
+The `wiqd@wiqd` **Copilot CLI plugin** — the skills and guide agent that teach GitHub Copilot CLI
+how to drive `wiqd` — is **not** an M365 app package and is **not** authored with `wiqd plugin`. It
+is installed through the host's [marketplace flow](/getting-started/installation/#path-1-install-from-the-marketplace),
+independently of the CLI, rather than scaffolded. See Extension-contributed Copilot
+skills below for what it is made of.
+:::
+
 ## A plugin composes capabilities
 
 A plugin can carry one or more of these, declared as top-level components in the app manifest:
@@ -61,6 +81,7 @@ wiqd plugin validate                                # static MVL check of the DA
 wiqd plugin provision                               # register with Microsoft 365 (writes env/.env.<env>)
 wiqd plugin package                                 # build a deployable .zip
 wiqd plugin validate --mode deep                    # full app-package validation via MVL/deep validation
+wiqd plugin publish                                 # submit to the org catalog for tenant admin approval
 wiqd plugin share --scope users --email you@contoso.com
 ```
 
@@ -80,7 +101,7 @@ new to the plugin construct.
 | - | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | 1 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Scaffolds a `SKILL.md` folder and registers it in the **plugin's own app manifest** (`agentSkills[]`)          | A standalone plugin project (`wiqd.plugin.json`)                  |
 | 2 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Adds a skill to an existing **declarative agent** project's own skill surface, via the core lifecycle backend       | An agent project (`m365agents.yml`)                                |
-| 3 | Extension-contributed **Copilot skills**            | The `SKILL.md` packages a wiqd *extension* bundles, that Copilot CLI itself loads as part of the `wiqd@wiqd` plugin | A wiqd extension's `skills/` directory, merged into the `wiqd@wiqd` plugin at install time |
+| 3 | Extension-contributed **Copilot skills** | The `SKILL.md` packages a wiqd *extension* bundles, that the host loads as part of the marketplace plugin | A wiqd extension's `skills/` directory, selected by the marketplace release profile |
 
 ### 1. `wiqd plugin add skill` — a plugin capability
 
@@ -114,9 +135,10 @@ settles; disabling the flag leaves your original environment unchanged. The core
 This is a different axis entirely — it's not about the M365 app package at all. A wiqd *extension*
 (the packages that contribute `wiqd` CLI commands, like the Core or Work IQ extensions)
 can ship its own `SKILL.md` files that teach **GitHub Copilot CLI itself** how to drive that
-extension's commands conversationally. Those skills are merged into the single bundled `wiqd@wiqd`
-Copilot plugin at install time — they have nothing to do with `agentSkills[]` or any M365 app
-package.
+extension's commands conversationally. Those skills are selected by the release
+profile and composed into the published marketplace artifact, not merged when a
+user installs or activates the CLI extension. They have nothing to do with
+`agentSkills[]` or any M365 app package.
 
 ## Go deeper
 

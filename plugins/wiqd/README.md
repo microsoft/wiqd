@@ -72,20 +72,20 @@ Developer toolkit for building, validating, provisioning, and publishing Microso
 
 Each extension contributes a workflow file that the orchestrator reads inline.
 
-| Workflow    | Extension       | What It Does                                                                                                       |
-| ----------- | --------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `atk.md`    | wiqd-ext-atk    | Full ATK lifecycle — create, edit, validate, provision, package, share, show, delete, open, env, migrate, localize |
-| `eval.md`   | wiqd-ext-eval   | Generate, run, and analyze evaluation suites using the PRA framework                                               |
-| `workiq.md` | wiqd-ext-workiq | Monitor agent behavior, ask agents, list deployed agents                                                           |
+| Workflow       | Extension       | What It Does                                                                                                       |
+| -------------- | --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `wiqd-core.md` | wiqd-ext-core   | Native fx-core lifecycle — create, edit, validate, provision, package, share, show, delete, env, migrate, localize |
+| `eval.md`      | wiqd-ext-eval   | Generate, run, and analyze evaluation suites using the PRA framework                                               |
+| `workiq.md`    | wiqd-ext-workiq | Monitor agent behavior, ask agents, list deployed agents                                                           |
 
 
 ### Inline references (handled by orchestrator)
 
-| Reference           | Commands Covered                             |
-| ------------------- | -------------------------------------------- |
-| `orientation.md`    | Getting started, lifecycle phases            |
-| `install-update.md` | `wiqd install`, `wiqd update`, `wiqd doctor` |
-| `feedback.md`       | `wiqd feedback submit`, `wiqd feedback list` |
+| Reference           | Commands Covered                               |
+| ------------------- | ---------------------------------------------- |
+| `orientation.md`    | Getting started, lifecycle phases              |
+| `install-update.md` | CLI installation, `wiqd update`, `wiqd doctor` |
+| `feedback.md`       | `wiqd feedback submit`, `wiqd feedback list`   |
 
 | `docs-search.md` | Documentation search (docs site) |
 | `changelog.md` | `wiqd changelog` |

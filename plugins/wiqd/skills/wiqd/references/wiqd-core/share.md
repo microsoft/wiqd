@@ -34,10 +34,9 @@ composed in from the first-party overlay. Resolve it like this:
    targets above. Never mention or promise a fourth target that no active
    extension contributes.
 
-When `plugin-core-engine == fxcore`, this reference is the active owner for the
-three standard share targets. The optional first-party overlay may extend the
-guided menu, but all standard branches continue through the core-backed
-`wiqd agent share` commands below.
+This reference is the active owner for the three standard share targets. The optional
+first-party overlay may extend the guided menu, but all standard branches continue through the
+core-backed `wiqd agent share` commands below.
 
 ## Commands
 

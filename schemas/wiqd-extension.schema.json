@@ -55,7 +55,7 @@
     },
     "mcp": {
       "$ref": "#/definitions/ExtensionMcpConfig",
-      "description": "MCP servers this extension contributes to the composed plugin's `.mcp.json`. Aggregated at `wiqd component plugin install` time."
+      "description": "MCP servers this extension contributes to the composed plugin's `.mcp.json`. Aggregated when building release plugin artifacts."
     },
     "commands": {
       "anyOf": [
@@ -627,6 +627,10 @@
           "type": "string",
           "description": "Which command surfaces this provider applies to (e.g. \"all\")."
         },
+        "tenant": {
+          "$ref": "#/definitions/ExtensionAuthTenantConfig",
+          "description": "Read-only effective-tenant diagnostics; does not change login/logout participation."
+        },
         "commands": {
           "type": "object",
           "additionalProperties": {
@@ -635,6 +639,40 @@
           "description": "Per-action upstream invocations (login/logout/status)."
         }
       }
+    },
+    "ExtensionAuthTenantConfig": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["status", "unavailable", "not-applicable"],
+          "description": "Only the provider can attest that its status reports the effective resource tenant."
+        },
+        "group": {
+          "type": "string",
+          "description": "Opt-in comparison boundary; unrelated service identities must not be compared.",
+          "pattern": "^[a-z][a-z0-9-]{0,63}(?![\\s\\S])"
+        }
+      },
+      "required": ["source"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "not-applicable"
+              }
+            },
+            "required": ["source"]
+          },
+          "then": {
+            "not": {
+              "required": ["group"]
+            }
+          }
+        }
+      ]
     },
     "ExtensionCommand": {
       "type": "object",
@@ -778,16 +816,114 @@
       "required": ["servers"],
       "description": "MCP (Model Context Protocol) servers an extension contributes to the composed plugin's root `.mcp.json`. The shape mirrors the Copilot/VS Code `.mcp.json` contract — a `servers` map plus optional `inputs` prompts. wiqd treats each server definition as opaque: it is copied verbatim into the aggregate file so the host CLI (Copilot, Claude, VS Code) — not wiqd — owns launch semantics."
     },
+    "ExtensionProductEventDeclaration": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 74,
+          "description": "Dot-separated event name outside the reserved `application.` namespace.",
+          "pattern": "^(?!application\\.)[a-z][a-z0-9-]{0,23}(?:\\.[a-z][a-z0-9_-]{0,23}){1,2}$"
+        },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionProductEventDimension"
+          },
+          "description": "Enum dimensions, at most six, each with its complete set of allowed values.",
+          "maxItems": 6
+        },
+        "measures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionProductEventMeasure"
+          },
+          "description": "Bounded integer measures, at most six.",
+          "maxItems": 6
+        }
+      },
+      "required": ["name"],
+      "description": "A statically declared product event. The host validates it generically; every value an event may carry is declared here, so no free-text field exists.",
+      "additionalProperties": false
+    },
+    "ExtensionProductEventDimension": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "description": "Lowercase snake_case field name, unique within its event.",
+          "pattern": "^[a-z][a-z0-9_]{0,31}$"
+        },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{0,31}$"
+          },
+          "description": "The 1–24 statically declared values this dimension may take.",
+          "minItems": 1,
+          "maxItems": 24,
+          "uniqueItems": true
+        }
+      },
+      "required": ["name", "values"],
+      "additionalProperties": false
+    },
+    "ExtensionProductEventMeasure": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32,
+          "description": "Lowercase snake_case field name, unique within its event.",
+          "pattern": "^[a-z][a-z0-9_]{0,31}$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["count", "durationMs"]
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 604800000,
+          "description": "Inclusive maximum: at most 100000 for a count, or 604800000 for a duration."
+        }
+      },
+      "required": ["name", "kind", "max"],
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "count"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "max": {
+            "maximum": 100000
+          }
+        }
+      }
+    },
     "ExtensionRequirements": {
       "type": "object",
       "properties": {
         "wiqd": {
           "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
           "description": "Semver range for the wiqd host; the host refuses to load if its version is out of range."
         },
         "node": {
           "type": "string",
-          "description": "Documented minimum Node.js version. Not enforced by wiqd."
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Semver range for Node.js; the host refuses to load if its version is out of range."
         }
       }
     },
@@ -809,10 +945,29 @@
           "type": "string",
           "enum": ["1p", "3p"],
           "description": "Audience stamped on telemetry when this extension is registered."
+        },
+        "productEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtensionProductEventDeclaration"
+          },
+          "description": "Product events this extension's native application may submit through the host's internal ingestion boundary. Reserved for first-party extensions: valid only when `audience` is `\"1p\"`.",
+          "minItems": 1,
+          "maxItems": 32
         }
       },
       "required": ["audience"],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "if": {
+        "required": ["productEvents"]
+      },
+      "then": {
+        "properties": {
+          "audience": {
+            "const": "1p"
+          }
+        }
+      }
     },
     "HandlerConfig": {
       "type": "object",
@@ -913,7 +1068,7 @@
         "preflight": {
           "type": "array",
           "items": {},
-          "description": "Gate rules run before the command's primary invocation. Each rule declares exactly one check — `fileExists`, `fileNotExists`, `dirEmpty`, or `binaryOnPath` — plus the optional modifiers `when` (skip unless truthy), `say` (the failure message), and `exitCode`. Left as `unknown[]` rather than a union so a manifest using a check newer than the last schema regeneration still type-checks. A rule declaring none of the checks above is rejected at run time rather than skipped."
+          "description": "Gate rules run before the command's primary invocation. Each rule declares exactly one check — `fileExists`, `fileNotExists`, `dirEmpty`, or `binaryOnPath` — plus the optional modifiers `when`, `say`, `exitCode`, `code`, `details`, `remediation`, `data`, and `helpUrl`. Structured presentation fields use the same trusted envelope as mapped upstream failures, preserving manifest-owned identifiers while sanitizing free-form prose. Left as `unknown[]` rather than a union so a manifest using a check newer than the last schema regeneration still type-checks. A rule declaring none of the checks above is rejected at run time rather than skipped."
         },
         "validate": {
           "type": "array",

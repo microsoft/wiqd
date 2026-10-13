@@ -7,7 +7,7 @@
       "id": "wiqd-core",
       "file": "workflows/wiqd-core.md",
       "routingLabel": "Agent lifecycle tasks",
-      "routingIntent": "Creating, editing, setting response behavior, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents",
+      "routingIntent": "Creating, editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents",
       "order": 1,
       "triggers": [
         "create agent",
@@ -23,6 +23,12 @@
         "change capability scope",
         "add a plugin capability to my agent",
         "add an API plugin to my agent",
+        "create an Azure API for my agent",
+        "build an Azure backend for my agent",
+        "create an anonymous server for my declarative agent",
+        "create an API key server for my agent",
+        "create an Entra OAuth API for my agent",
+        "deploy my agent backend to Azure",
         "add an agent skill",
         "add a skill to my agent",
         "import an agent skill",
@@ -80,7 +86,7 @@
       "id": "plugin",
       "file": "workflows/plugin.md",
       "routingLabel": "Plugin authoring (alpha)",
-      "routingIntent": "Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, package, export)",
+      "routingIntent": "Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export)",
       "order": 2,
       "triggers": [
         "create a plugin",
@@ -96,11 +102,21 @@
         "plugin project",
         "plugin with a skill",
         "plugin with a connector",
+        "cowork plugin",
+        "build a cowork plugin",
+        "create a cowork plugin",
+        "copilot cowork plugin",
+        "build a plugin for cowork",
+        "microsoft copilot plugin",
+        "m365 copilot plugin",
         "add a skill to my plugin",
         "add a connector to my plugin",
         "add an agent to my plugin",
         "validate my plugin",
         "package my plugin",
+        "publish my plugin",
+        "submit my plugin to the org catalog",
+        "dry run plugin publish",
         "share my plugin",
         "show my plugin",
         "list my plugins",
@@ -138,6 +154,7 @@
         "plugin list",
         "plugin provision",
         "plugin package",
+        "plugin publish",
         "plugin share",
         "plugin export",
         "plugin delete"
@@ -364,6 +381,36 @@
     },
     {
       "phrase": "add an api plugin to my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "create an azure api for my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "build an azure backend for my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "create an anonymous server for my declarative agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "create an api key server for my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "create an entra oauth api for my agent",
+      "workflowId": "wiqd-core",
+      "workflowFile": "workflows/wiqd-core.md"
+    },
+    {
+      "phrase": "deploy my agent backend to azure",
       "workflowId": "wiqd-core",
       "workflowFile": "workflows/wiqd-core.md"
     },
@@ -598,6 +645,41 @@
       "workflowFile": "workflows/plugin.md"
     },
     {
+      "phrase": "cowork plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "build a cowork plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a cowork plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "copilot cowork plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "build a plugin for cowork",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "microsoft copilot plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "m365 copilot plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
       "phrase": "add a skill to my plugin",
       "workflowId": "plugin",
       "workflowFile": "workflows/plugin.md"
@@ -619,6 +701,21 @@
     },
     {
       "phrase": "package my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "publish my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "submit my plugin to the org catalog",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "dry run plugin publish",
       "workflowId": "plugin",
       "workflowFile": "workflows/plugin.md"
     },

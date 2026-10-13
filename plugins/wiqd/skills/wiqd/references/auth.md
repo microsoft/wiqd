@@ -58,6 +58,19 @@ Clears cached credentials for every extension auth provider. Idempotent: "alread
 
 ### Status
 
+When the user asks to check authentication status, complete the CLI preflight
+and then execute `wiqd auth status --json --skill wiqd` in the same turn.
+A successful `wiqd --version` only proves CLI availability; it does not check
+authentication. Do not end after the version probe or merely suggest the status
+command. Base the answer on the actual status result, reporting each provider
+independently; exit 0 alone does not mean every provider is signed in.
+
+If the CLI or shell is unavailable, or the status command fails, report the
+observed blocker and leave authentication unconfirmed. Do not invent a result
+from a version check or file inspection. A status-only request does not authorize
+login, logout, account switching, or consent changes; hand any required sign-in
+back to the user without performing it.
+
 ```bash
 wiqd auth status [--json] --skill wiqd
 ```
@@ -93,11 +106,11 @@ Reports:
 | Login reports `AUTH_LOGIN_REQUIRES_TTY` | Restore terminal stdin/stdout; use `winpty` under mintty or switch to PowerShell/Windows Terminal |
 | 404 on `gh` operations                  | Wrong active gh account — switch to the correct account                                           |
 
-Core Microsoft 365 authentication prefers the native broker on Windows and
-macOS. macOS brokered authentication requires an enrolled device and the
-Microsoft Enterprise SSO plug-in supplied by Company Portal; it provides the
-device-bound tokens required by Token Protection policies. Linux and systems
-where the native broker reports unavailable use browser authentication.
+Core Microsoft 365 authentication prefers the native WAM broker on Windows.
+macOS and Linux currently use browser authentication. The macOS native broker
+is temporarily disabled until the shared app registration includes its broker
+redirect URI; browser authentication may be rejected by Token Protection
+policies.
 
 ## Relationship to Other Commands
 

@@ -4,28 +4,53 @@ title: Getting Started
 
 # Getting Started with Work IQ Dev Tools
 
-Welcome to Work IQ Dev Tools (the `wiqd` CLI). This section walks you through installation, authentication, and creating your first M365 Copilot declarative agent.
+Welcome to Work IQ Dev Tools. This section walks you through installing the
+WIQD agentic experience or CLI, authenticating, and creating your first
+Microsoft 365 Copilot declarative agent.
 
 ## What are Work IQ Dev Tools?
 
-Work IQ Dev Tools provide a developer CLI for building, validating, and publishing M365 Copilot declarative agents. They deliver a streamlined experience for the full agent lifecycle — from scaffolding a new project to sharing it with your organization.
+Work IQ Dev Tools provide agentic workflows and a developer CLI for building,
+validating, and publishing Microsoft 365 Copilot declarative agents.
 
 ## Where to Start
 
-1. **[Installation](/getting-started/installation/)** — Install `wiqd` with a single command.
+1. **[Installation](/getting-started/installation/)** — Choose marketplace-first agentic setup or the existing installation script.
 2. **[Quickstart](/getting-started/quickstart/)** — Create your first agent in 5 minutes.
 3. **[Authentication](/getting-started/authentication/)** — Sign in to your Microsoft 365 account.
 4. **[Cookbooks](/cookbooks/)** — Build useful agents with end-to-end, outcome-focused recipes.
 
 ## Prerequisites
 
-- **Node.js 24+** (auto-installed via fnm on Windows, or nvm/Homebrew on macOS/Linux)
+- **GitHub Copilot CLI or Claude Code** for marketplace-first setup
+- **Node.js 24+** for the installation-script path
 - **A Microsoft 365 account** with access to Copilot
 - **An Azure subscription** (for provisioning agents)
 
-## Quick Install
+## Choose an installation path
 
-Install `wiqd` and all dependencies with a single command:
+### Option 1: Install the marketplace plugin
+
+**GitHub Copilot CLI:**
+
+```text
+copilot plugin marketplace add microsoft/wiqd
+copilot plugin install wiqd@wiqd
+```
+
+**Claude Code:**
+
+```text
+claude plugin marketplace add microsoft/wiqd
+claude plugin install wiqd@wiqd
+```
+
+Start a new host session and begin agentic authoring. This path does not install
+the `wiqd` CLI.
+
+### Option 2: Use the installation script
+
+Install the CLI and the components managed by the existing installer:
 
 ```powershell
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
