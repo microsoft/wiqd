@@ -192,6 +192,22 @@ wiqd agent publish --json --env prod
 - The `--env` parameter determines which provisioned environment to publish from
 - This is NOT publishing to the public Microsoft 365 store
 
+The standalone-plugin equivalent is:
+
+```bash
+wiqd plugin publish --json --env prod
+```
+
+It uses the same organization-catalog backend, but enforces
+`wiqd.plugin.json`, the plugin's configured `environmentFolderPath`, contained
+manifest paths, and plugin-specific provisioning remediation. Success means the
+plugin was **submitted for tenant administrator approval**; it does not mean the
+plugin was approved, shared directly, or published to the public store.
+
+Use `wiqd plugin publish --dry-run --no-runtime --no-network --json` for a fully
+offline no-submit readiness check. Declarative-agent phases are explicitly
+skipped for skill/connector-only plugins.
+
 #### Store Publish (Microsoft 365 Store via Partner Center)
 
 For public store listing, use `wiqd agent package` to build a `.zip`, then submit through Partner Center:
@@ -202,12 +218,13 @@ For public store listing, use `wiqd agent package` to build a `.zip`, then submi
 
 #### Publishing Audience Summary
 
-| Target | Command | Who can see the agent |
-|--------|---------|----------------------|
-| Org admin catalog | `wiqd agent publish --env <env>` | Tenant users after admin approval |
-| Specific users | `wiqd agent share --scope users --email ...` | Named users immediately |
-| Entire tenant | `wiqd agent share --scope tenant` | All tenant users immediately |
-| Public store | `wiqd agent package` → Partner Center | All M365 users after certification |
+| Target | Command | Availability |
+|--------|---------|--------------|
+| Org admin catalog (agent) | `wiqd agent publish --env <env>` | Tenant users after admin approval |
+| Org admin catalog (plugin) | `wiqd plugin publish --env <env>` | Tenant users after admin approval |
+| Specific users | `wiqd agent share --scope users --email ...` or plugin equivalent | Named users immediately |
+| Entire tenant | `wiqd agent share --scope tenant` or plugin equivalent | All tenant users immediately |
+| Public store | `wiqd agent package` / `wiqd plugin package` → Partner Center | All M365 users after certification |
 
 ### 7. Teardown (`wiqd agent uninstall` · alias `wiqd agent delete`)
 

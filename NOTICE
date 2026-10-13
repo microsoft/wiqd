@@ -1765,7 +1765,7 @@ Repository: https://github.com/microsoft/griffel
 
 ------------------------------------------------------------------------------
 
-Package:    @grpc/grpc-js@1.14.4
+Package:    @grpc/grpc-js@1.14.5
 License:    Apache-2.0
 Repository: https://github.com/grpc/grpc-node/tree/master/packages/grpc-js
 Publisher:  Google Inc.
@@ -2374,7 +2374,7 @@ Publisher:  Microsoft
 
 ------------------------------------------------------------------------------
 
-Package:    @microsoft/m365-copilot-eval@1.15.0
+Package:    @microsoft/m365-copilot-eval@1.18.0
 License:    MICROSOFT SOFTWARE LICENSE TERMS
 Repository: https://github.com/microsoft/m365-copilot-eval
 Publisher:  Microsoft
@@ -2538,7 +2538,7 @@ Repository: https://github.com/microsoft/work-iq
 
 ------------------------------------------------------------------------------
 
-Package:    @modelcontextprotocol/sdk@1.29.0
+Package:    @modelcontextprotocol/sdk@1.31.0
 License:    MIT
 Repository: https://github.com/modelcontextprotocol/typescript-sdk
 Publisher:  Anthropic, PBC
@@ -10216,7 +10216,7 @@ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH RE
 
 ------------------------------------------------------------------------------
 
-Package:    axios@1.18.1
+Package:    axios@1.20.0
 License:    MIT
 Repository: https://github.com/axios/axios
 Publisher:  Matt Zabriskie
@@ -11858,7 +11858,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ------------------------------------------------------------------------------
 
-Package:    dotenv@17.4.2
+Package:    dotenv@18.0.5
 License:    BSD-2-Clause
 Repository: https://github.com/motdotla/dotenv
 
@@ -12798,7 +12798,7 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    fast-uri@3.1.6
+Package:    fast-uri@3.1.7
 License:    BSD-3-Clause
 Repository: https://github.com/fastify/fast-uri
 Publisher:  Vincent Le Goff
@@ -13476,6 +13476,10 @@ Package:    handlebars@4.7.9
 License:    MIT
 Repository: https://github.com/handlebars-lang/handlebars.js
 Publisher:  Yehuda Katz
+Modification: locally modified by pnpm patch
+Patch:      patches/handlebars@4.7.9.patch
+Patch SHA-256: dc00a3337cee54528e098ecbcadc01019c9ad19cbf5096069d193b49e24947af
+pnpm patch hash: dcjqyrn6ixexfyozes5ji3y4cm
 
 Copyright (C) 2011-2019 by Yehuda Katz
 
@@ -17629,6 +17633,10 @@ Package:    node-forge@1.4.0
 License:    (BSD-3-Clause OR GPL-2.0)
 Repository: https://github.com/digitalbazaar/forge
 Publisher:  Digital Bazaar, Inc.
+Modification: locally modified by pnpm patch
+Patch:      patches/node-forge@1.4.0.patch
+Patch SHA-256: b6876574a5de19521a766856b293aeae2689848c5d8dab03f93040be0a64b8b4
+pnpm patch hash: gbz7gprc6x3m5j5qxjtdw3c4ly
 
 You may use the Forge project under the terms of either the BSD License or the
 GNU General Public License (GPL) Version 2.
@@ -18576,7 +18584,7 @@ support library is itself covered by the above license.
 
 ------------------------------------------------------------------------------
 
-Package:    proxy-addr@2.0.7
+Package:    proxy-addr@2.0.8
 License:    MIT
 Repository: jshttp/proxy-addr
 Publisher:  Douglas Christopher Wilson
@@ -19669,7 +19677,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ------------------------------------------------------------------------------
 
-Package:    shell-quote@1.10.0
+Package:    shell-quote@1.11.0
 License:    MIT
 Repository: http://github.com/ljharb/shell-quote
 Publisher:  James Halliday

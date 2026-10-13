@@ -439,6 +439,11 @@ Before editing, parse the manifest and require its `version` field. If `$schema`
 require it to identify the same version; `$schema` may be absent, but `version` may not. Fetch that
 exact version's raw schema, resolve the root `behavior_overrides` definition, and confirm
 `properties.default_response_mode` is a string whose enum contains the selected canonical value.
+Read and output the complete resolved property object in the schema-fetch tool result so both
+`type` and the full `enum` are visible. Check `type == "string"` independently of enum membership
+before making any edit. Printing only `present` or the enum values is incomplete evidence:
+retrieve the missing type first, rather than inferring it from strings in the enum or relying
+on post-edit validation.
 Do not use the latest schema as evidence for an older target. A missing required version, a
 conflicting `$schema`, malformed JSON, an unavailable or unresolvable schema, or an absent
 property/enum all stop the workflow without changing the file. When the exact schema is too old to

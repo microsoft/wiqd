@@ -2,7 +2,7 @@
 
 **Telemetry:** `--skill wiqd` on every ordinary `wiqd` command.
 
-View wiqd release notes and version history. No auth, project, or ATK required.
+View wiqd release notes and version history. No auth or project required.
 
 ```bash
 wiqd changelog --skill wiqd                           # current version

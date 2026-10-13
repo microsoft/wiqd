@@ -3,14 +3,19 @@ name: wiqd-core
 description: >
   Full lifecycle workflow for M365 Copilot declarative agents with wiqd.
   Covers creating, editing, adding capabilities, actions, skills, and authentication,
+  coordinating Azure-hosted OpenAPI servers,
   validating, provisioning, packaging, sharing, deleting,
   managing environments, showing agent details, migrating, and localizing agents.
-trigger-summary: "create agent, edit agent, scaffold agent, agent capabilities, default response mode, worker agents, add a plugin capability to an agent, add an agent skill, add authentication, validate, provision, deploy, package, share, delete, open, show, migrate, localize, manage environments"
+trigger-summary: "Azure API, create/edit agent, capabilities, default response mode, worker agents, add plugin capability, add agent skill, authentication, validate, provision, deploy, package, share, delete, open, show, migrate, localize, environments"
 triggers: >
   create agent, new agent, scaffold agent, edit my agent, update my agent, modify my agent,
   add a capability, add a capability to this agent, add a named capability,
   configure an agent capability, change capability scope,
   add a plugin capability to my agent, add an API plugin to my agent,
+  create an Azure API for my agent, build an Azure backend for my agent,
+  create an anonymous server for my declarative agent,
+  create an API key server for my agent,
+  create an Entra OAuth API for my agent, deploy my agent backend to Azure,
   add an agent skill, add a skill to my agent, import an agent skill, expose a skill to Copilot,
   add authentication, configure authentication,
   provision my agent, deploy my agent, package my agent,
@@ -21,7 +26,7 @@ triggers: >
   set quick response mode, set think deeper mode, review instructions, add a worker agent, connect a worker agent,
   remove a worker agent, disconnect a worker agent
 routing-label: "Agent lifecycle tasks"
-routing-intent: "Creating, editing, setting response behavior, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents"
+routing-intent: "Creating, editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents"
 routing-order: 1
 contract-version: 1
 routing-requires: [agent create, agent add, agent validate, agent provision, agent package, agent share, agent env, agent show, agent delete, agent publish]
@@ -87,6 +92,14 @@ Full lifecycle for M365 Copilot declarative agents with wiqd.
 
 > **Convention:** When calling wiqd commands from a skill context, always use `--json` for commands that produce output the model needs to parse. This gives the orchestrator structured, machine-readable output instead of lossy table text.
 
+For **default response mode** requests, read **Setting the default response mode**
+before the first edit. Fetch the exact manifest-version schema and confirm the
+property's string type and enum before changing any bytes. Never temporarily write
+`ThinkDeeper` and correct it later: the canonical value is `Think deeper`.
+After the edit, use the section's full validation command with an explicit project
+path and `--json --skill wiqd --workflow wiqd-core`, not a shortened generic
+validate command. Only a successful validation permits the requested local provision.
+
 This workflow handles two core flows directly and routes to reference files for other lifecycle operations:
 1. **Create** — scaffold a brand-new agent project from a template
 2. **Edit** — modify an existing agent's capabilities, instructions, starters, actions, skills, and authentication
@@ -111,10 +124,12 @@ Determine which flow to follow based on user intent:
 | User intent | Action |
 |-------------|--------|
 | **Standalone / reusable plugin** — "create a plugin", "a plugin project", "a plugin with a skill/connector", "package/publish/validate my plugin" | **Stop — this is not the agent workflow.** Read `workflows/plugin.md` (the `plugin` workflow authors a standalone plugin app package). |
+| Create/new/scaffold an agent **with an Azure-hosted OpenAPI server**, including requests phrased as an Azure backend or API, whether or not authentication was specified | Immediately read `references/wiqd-core/azure-openapi-server.md`. Resolve the required authentication shape, verify the required Azure capability and, for Generic OAuth, the Entra skill prerequisite before running **Create**. After creation passes the **Existing-Project Lifecycle Gate**, continue the same journey through the reference; do not stop and ask the user to request the server separately. |
 | Create/new/scaffold an agent **with a skill** | Run the **Create** workflow, then **Adding Agent Skills**. |
 | Create, new, scaffold | **Create** workflow (below) |
+| Create or deploy an anonymous, API-key, or Generic OAuth Azure-hosted OpenAPI server for this existing agent | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/azure-openapi-server.md`. Treat this as an incremental edit: do not rerun Create, re-scaffold the project, replace its existing Microsoft 365 identity or environments, or remove capabilities. Delegate server hosting and any Entra-backed OAuth client work to the owning Azure/Entra skills, return its OpenAPI contract to `wiqd agent add action`, and validate the agent. |
 | Add/connect/remove/disconnect a Worker Agent | Run the **Existing-Project Lifecycle Gate**, then read `../references/worker-agents.md`. Removing a Worker removes only its manifest reference; it never deletes the deployed agent. |
-| Set or change the agent's default response mode (`Auto`, `Quick response`, or `Think deeper`) | Run the **Existing-Project Lifecycle Gate**, then the **Edit** workflow and its **Setting the default response mode** section. |
+| Set or change the agent's default response mode (`Auto`, `Quick response`, or `Think deeper`) | Run the **Existing-Project Lifecycle Gate**, then read **Setting the default response mode** before editing: live schema first, surgical edit second, full validation command third, provision only after success unless opted out. |
 | Add or change any capability in an existing agent — including “add [named capability] to this agent” | Run the **Existing-Project Lifecycle Gate**, then the **Edit** workflow (below) |
 | Edit, update, add, modify, change, rename, rewrite, fix, improve, configure | Run the **Existing-Project Lifecycle Gate**, then the **Edit** workflow (below) |
 | Validate | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/validate.md` — run `wiqd agent validate` |
@@ -130,10 +145,55 @@ Determine which flow to follow based on user intent:
 | Migrate, convert TTK | Read `references/wiqd-core/migrate.md` |
 | Localize, multi-language | Read `references/wiqd-core/localize.md` |
 
+### Azure OpenAPI server routing invariant
+
+Enter this route only when the user explicitly asks to create or deploy an
+Azure-hosted OpenAPI server for the agent, including requests phrased as a
+backend, server, or API. A generic Create request that does not request a server
+stays in the normal Create workflow and MUST NOT ask about server authentication
+or run Azure/Entra skill prerequisite checks.
+
+For the Azure-hosted OpenAPI server route, wiqd MUST NOT research, compare,
+recommend, select, or name a hosting service, infrastructure format, project
+layout, or deployment method. Selecting the separate Server workspace required
+by the reference is a lifecycle-containment boundary, not a server project
+layout choice. Immediately read
+`references/wiqd-core/azure-openapi-server.md` and leave those decisions to the
+owning Azure application-hosting skill. In a plan-only response, state that the
+decision is deferred; do not offer Functions, App Service, Container Apps,
+Bicep, `azure.yaml`, or any other candidate as an example. Default to the
+reference's static validation command and do not suggest provisioning or
+publishing unless the user requested it.
+
+The initial server request starts one continuous wiqd-coordinated user journey.
+Coordination does not make the server part of the Declarative Agent lifecycle.
+Azure skills own the external server; for Entra-backed Generic OAuth, the Entra
+skill independently owns the identity resources. Only the verified endpoint and
+OpenAPI contract return to the Action flow. If the user did not specify server
+authentication, ask whether they prefer anonymous, API key, or Generic OAuth
+before any project or cloud mutation. For Generic OAuth, require
+`entra-app-registration` for creation, reuse, readiness verification, and
+repair. Generic OAuth in this route supports Microsoft Entra as the provider.
+If the user explicitly requests Auth0, Okta, GitHub, a custom authorization
+server, or any other non-Entra provider, explain that it is outside this
+proposal and stop before Create, project edits, Azure deployment, or identity
+mutation. Do not substitute Entra or another authentication shape. Verify all
+prerequisites, and only then enter Create or edit the existing project. Do not
+route this journey through the native Microsoft Entra Action identity-provider
+contract.
+After each owning skill returns, resume the next ready phase without asking the
+user to copy a prompt, rerun a command, or say "continue." Pause only for
+unresolved product choices, ambiguous cloud targets, required mutation approval,
+a guided Teams Developer Portal check of an exact OAuth configuration identifier
+under the verified account and tenant, an approved user-performed deletion of an
+old Microsoft 365 OAuth configuration in that Portal, required user completion
+of an approved secure credential-entry flow, or interactive sign-in/consent.
+
 ### Create vs Edit disambiguation
 
 | Condition | Workflow |
 |-----------|----------|
+| Existing agent files and the user requests a new Azure-hosted OpenAPI server | Run the **Existing-Project Lifecycle Gate**, then the Azure OpenAPI server reference; do not run Create |
 | No `appPackage/` directory, no `declarativeAgent.json` | **Create** workflow |
 | User explicitly says "create", "new", "scaffold" | **Create** workflow |
 | `appPackage/declarativeAgent.json` exists | **Edit** workflow |
@@ -565,6 +625,11 @@ Before editing:
    `$ref`, then confirm `properties.default_response_mode` is a string and that its enum contains
    the requested canonical value. Do not inspect "latest" as a substitute. If lookup, parsing,
    reference resolution, property confirmation, or enum confirmation fails, stop without mutation.
+   Read the **complete resolved property object**, not just `.enum`, and include its `type`
+   and full `enum` in the schema-fetch tool result. Explicitly check `type == "string"` and
+   that the requested value is an enum member before editing. Output such as `present` or
+   `enum=Auto, Quick response, Think deeper` alone does **not** confirm the type; retrieve
+   the missing type evidence first. Never infer it from the enum or later validation.
 4. If that exact schema does not support the property, explain that the author must upgrade the
    manifest schema/version to a version whose live schema does support it. Published v1.6-or-older
    manifests require this guidance and must not be upgraded automatically.

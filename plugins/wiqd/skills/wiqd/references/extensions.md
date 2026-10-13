@@ -54,17 +54,16 @@ The seeded default extensions (see **Bundled Extensions** below) are active out 
 
 ## Bundled Extensions
 
-wiqd's installer seeds **seven default 3P extensions** as registrations (origin `installer` in `~/.wiqd/extensions.json`) at install time. These are seeded defaults, NOT immovable bundled payload — any of them MAY be deactivated with `wiqd ext remove <id>` and later reactivated with `wiqd ext add <id>`. ATK and core are both installed and registered; the `plugin-core-engine` flag makes exactly one participate, so the other is hidden from `wiqd ext list` rather than missing:
+wiqd's installer seeds **six default 3P extensions** as registrations (origin `installer` in `~/.wiqd/extensions.json`) at install time. These are seeded defaults, NOT immovable bundled payload — any of them MAY be deactivated with `wiqd ext remove <id>` and later reactivated with `wiqd ext add <id>`. The native core lifecycle extension is the only agent/plugin lifecycle provider; the retired ATK registration is removed during upgrade:
 
-| Extension             | Purpose                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| `microsoft.atk`       | Agents Toolkit — agent lifecycle (create, provision, share, package, publish, delete, open) |
-| `microsoft.wiqd.core` | In-process core backend — selectable replacement for the ATK lifecycle                      |
-| `microsoft.workiq`    | Work IQ — agent monitoring (monitor, ask, list)                                             |
-| `microsoft.eval`      | Eval — agent evaluation (eval, eval init)                                                   |
-| `microsoft.validate`  | Validation — manifest validation and LSP                                                    |
-| `microsoft.github`    | GitHub — submit and list wiqd feedback as GitHub issues via `gh`                            |
-| `microsoft.devui`     | DevUI — local Work IQ DevUI web experience for testing and debugging agents                 |
+| Extension             | Purpose                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `microsoft.wiqd.core` | In-process core backend — agent lifecycle (create, provision, share, package, publish, delete, open) |
+| `microsoft.workiq`    | Work IQ — agent monitoring (monitor, ask, list)                                                      |
+| `microsoft.eval`      | Eval — agent evaluation (eval, eval init)                                                            |
+| `microsoft.validate`  | Validation — manifest validation and LSP                                                             |
+| `microsoft.github`    | GitHub — submit and list wiqd feedback as GitHub issues via `gh`                                     |
+| `microsoft.devui`     | DevUI — local Work IQ DevUI web experience for testing and debugging agents                          |
 
 
 ## Fallback (CLI unavailable)

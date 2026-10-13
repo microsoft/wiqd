@@ -3,18 +3,25 @@ name: plugin
 description: >
   Author a standalone, reusable M365 Copilot plugin — a Teams app package that composes a
   declarative agent, skill(s), and/or agent connector(s) as a first-class, independently
-  packageable and validatable deliverable — via the alpha `wiqd plugin` construct. This is
-  distinct from adding a plugin capability into a single agent (that is `wiqd agent`). Covers
+  packageable and validatable deliverable — via the alpha `wiqd plugin` construct. A
+  "Copilot Cowork plugin" is this same artifact, not a different platform. This is
+  distinct from adding a plugin capability into a single agent (that is `wiqd agent`), and
+  distinct from the GitHub Copilot CLI plugin (`wiqd@wiqd`), which is installed with
+  `wiqd component plugin install` and is not authored by this workflow. Covers
   the full flow: create (or import an existing Open Plugin) → add skill / connector / agent →
-  validate → provision / package / share, plus export back out to Open Plugin, Claude, or Cursor
-  format, including authoring a skill that calls a remote MCP server through an agent connector.
-trigger-summary: 'create a plugin, standalone plugin, reusable plugin, plugin project, build a plugin, plugin with a skill, plugin with a connector, MCP plugin project, package a plugin, validate a plugin, share a plugin, delete a plugin, tear down a plugin, import an open plugin, export to claude, export to cursor, convert a plugin'
+  validate → provision / package / publish / share, plus export back out to Open Plugin, Claude,
+  or Cursor format, including authoring a skill that calls a remote MCP server through an agent
+  connector.
+trigger-summary: 'create a plugin, cowork plugin, standalone plugin, reusable plugin, plugin project, build a plugin, plugin with a skill, plugin with a connector, MCP plugin project, package a plugin, validate a plugin, publish a plugin, share a plugin, delete a plugin, tear down a plugin, import an open plugin, export to claude, export to cursor, convert a plugin'
 triggers: >
   create a plugin, create a standalone plugin, new plugin, new plugin project, build a plugin,
   build a standalone plugin, author a plugin, make a reusable plugin, reusable plugin,
   standalone plugin, plugin project, plugin with a skill, plugin with a connector,
+  cowork plugin, build a cowork plugin, create a cowork plugin, copilot cowork plugin,
+  build a plugin for cowork, microsoft copilot plugin, m365 copilot plugin,
   add a skill to my plugin, add a connector to my plugin, add an agent to my plugin,
-  validate my plugin, package my plugin, share my plugin, show my plugin,
+  validate my plugin, package my plugin, publish my plugin, submit my plugin to the org catalog,
+  dry run plugin publish, share my plugin, show my plugin,
   list my plugins,
   import an open plugin, import a claude plugin, import a cursor plugin,
   convert an open plugin to a wiqd plugin, open a claude plugin in wiqd,
@@ -25,7 +32,7 @@ triggers: >
   delete my plugin, uninstall my plugin, tear down my plugin, remove my plugin from the tenant,
   clean up my provisioned plugin, delete the plugin app registration, undo plugin provision
 routing-label: 'Plugin authoring (alpha)'
-routing-intent: 'Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, package, export)'
+routing-intent: 'Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export)'
 routing-order: 2
 contract-version: 1
 routing-requires:
@@ -40,6 +47,7 @@ routing-requires:
     plugin list,
     plugin provision,
     plugin package,
+    plugin publish,
     plugin share,
     plugin export,
     plugin delete,
@@ -48,9 +56,13 @@ routing-requires:
 
 # Plugin — Standalone Plugin Authoring (alpha)
 
-Author a **standalone, reusable M365 Copilot plugin** as a first-class, independently shippable unit — not something bolted inside one agent project. A plugin is a **Teams app package** (the same `appPackage/` infrastructure `wiqd agent` uses) that composes one or more capabilities: a **declarative agent**, one or more **skills** (`SKILL.md` folders), and one or more **agent connectors** (most often a remote MCP server). It is marked by a light `wiqd.plugin.json` descriptor and flows through the familiar lifecycle: `create → add → validate → provision → package → share`, with `show` / `list` available for inspection at any point. Two interoperability commands bracket that lifecycle: `import` is an alternate **entry point** (in place of `create`) that converts an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project, and `export` is an **exit point** that converts a wiqd plugin project back out to those formats.
+Author a **standalone, reusable M365 Copilot plugin** as a first-class, independently shippable unit — not something bolted inside one agent project. A plugin is a **Teams app package** (the same `appPackage/` infrastructure `wiqd agent` uses) that composes one or more capabilities: a **declarative agent**, one or more **skills** (`SKILL.md` folders), and one or more **agent connectors** (most often a remote MCP server). It is marked by a light `wiqd.plugin.json` descriptor and flows through the familiar lifecycle: `create → add → validate → provision → package → publish / share`, with `show` / `list` available for inspection at any point. `publish` submits to the tenant organization app catalog for administrator approval; `share` grants direct access and is not the same operation. Two interoperability commands bracket that lifecycle: `import` is an alternate **entry point** (in place of `create`) that converts an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project, and `export` is an **exit point** that converts a wiqd plugin project back out to those formats.
 
 > **Convention:** When calling `wiqd` commands from this skill, always pass `--skill wiqd --workflow plugin`, and add `--json` for any command whose output you need to parse (structured, machine-readable output instead of lossy table text).
+
+> **Terminology — one artifact, many names.** "**Cowork plugin**", "**Copilot Cowork plugin**", "**Microsoft 365 Copilot plugin**", and "**standalone plugin**" all name the **same artifact** this workflow builds: one MOS (Teams) app package. An unqualified "**Copilot plugin**" names that same artifact **whenever the request points at an M365 host surface, or names no host at all**. "Standalone" is a wiqd word that separates a reusable plugin project from a declarative-agent project — it is **not** a platform qualifier. Cowork, Microsoft 365 Copilot chat, Teams, and Office are **host surfaces** for that one package, not separate plugin platforms with their own SDKs. A request to "build a Cowork plugin" belongs **here** — never treat it as out of scope or redirect the user to another toolchain.
+
+> **Exception — a GitHub Copilot CLI plugin is a different artifact.** When the request names **GitHub Copilot CLI** as the host ("a plugin **for Copilot CLI**", "the **`wiqd@wiqd` plugin**", "install the wiqd Copilot plugin"), it is **not** a MOS app package and `wiqd plugin create` would scaffold the wrong thing. That plugin is a wiqd **component** — the composed skills + guide-agent bundle Copilot CLI itself loads — installed with `wiqd component plugin install`, not authored here. wiqd does not author third-party Copilot CLI plugins: say so and point at the install command instead of scaffolding.
 
 > **Alpha.** The `wiqd plugin` construct is enabled by default. The interface may change without notice.
 
@@ -59,9 +71,10 @@ Author a **standalone, reusable M365 Copilot plugin** as a first-class, independ
 Use this workflow — **not** the `wiqd-core` (agent) workflow — when the user wants a **standalone / reusable plugin**:
 
 - "Create a **standalone plugin**" / "build a **plugin project**" / "author a **reusable plugin**"
+- "Build a **Cowork plugin**" / "a **Microsoft Copilot plugin**" — same artifact, named by its host surface (see Terminology above)
 - "Build a **plugin with a skill**" (optionally one that calls an MCP server)
 - "Add a **skill** / **connector** / **agent** **to my plugin**"
-- "Validate / provision / package / share **my plugin**"
+- "Validate / provision / package / publish / share **my plugin**"
 - "**Import** an Open Plugin / Claude plugin / Cursor plugin" — bring an existing cross-tool plugin into the wiqd lifecycle
 - "**Export** my plugin to Open Plugin / Claude / Cursor" / "make my plugin work in Claude"
 
@@ -71,7 +84,9 @@ The words "plugin", "skill", and "import" are all overloaded. Route correctly:
 
 | The user wants…                                                                                                         | Workflow                        | Why                                                                                                     |
 | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| A **standalone / reusable plugin** as its own deliverable (create, add skill/connector/agent, validate, package, share) | **this `plugin` workflow**      | The artifact is a plugin app package with its own lifecycle, not an agent                               |
+| A **standalone / reusable plugin** as its own deliverable (create, add skill/connector/agent, validate, package, publish/share) | **this `plugin` workflow**      | The artifact is a plugin app package with its own lifecycle, not an agent                               |
+| A **Cowork plugin** / **Microsoft Copilot plugin** / **M365 Copilot plugin** — any **M365** host surface named in the request    | **this `plugin` workflow**      | All the same MOS app package; the surface name is not a different product, SDK, or toolchain            |
+| A **GitHub Copilot CLI plugin** — "a plugin for **Copilot CLI**", the **`wiqd@wiqd`** plugin                           | **neither** — not authored by wiqd | A wiqd **component**, not a MOS app package. Install it with `wiqd component plugin install`; wiqd does not author third-party Copilot CLI plugins |
 | To **convert an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project**                              | **this `plugin` workflow** → `plugin import` | Cross-**format** conversion producing a whole new plugin project                                         |
 | To convert **a wiqd plugin project out** to Open Plugin / Claude / Cursor format                                        | **this `plugin` workflow** → `plugin export` | Cross-**format** conversion producing an interoperable output directory                                 |
 | To add an **API / MCP plugin capability into one existing declarative agent**                                           | `wiqd-core` workflow → Adding Plugins | There "plugin" means a capability composed _inside_ a single agent's manifest (`actions[]` / MCP)       |
@@ -180,12 +195,29 @@ wiqd plugin list [--root <dir>]                # plugins under a directory
 
 wiqd plugin provision [--env local]            # 1. register with M365, writes env/.env.<env>
 wiqd plugin package                            # 2. build a deployable .zip
-wiqd plugin share [--email <e>]                # 3. share with users/tenant
+wiqd plugin publish [--env local]              # 3a. submit to the org catalog for admin approval
+wiqd plugin share [--email <e>]                # 3b. share directly with users/tenant
 
 wiqd plugin delete [--env local]               # 4. tear down what provision created
 ```
 
-> **`provision` comes before `package`.** `provision` is the only command that writes `env/.env.<env>`, which `package` needs to resolve manifest variables and which `share` requires as a preflight. Running `package` first yields an app package with unresolved tokens.
+> **`provision` comes before `package`, `publish`, and `share`.** `provision` is the only command that writes the selected `.env.<env>` under the configured `environmentFolderPath`. `package` needs it to resolve manifest variables; `publish` and `share` require it as provisioning evidence.
+
+Before catalog submission, use the no-submit readiness path when the user asks
+for a check rather than an actual tenant change:
+
+```bash
+# Fully offline project/path + applicable static DA checks
+wiqd plugin publish --dry-run --no-runtime --no-network --json --skill wiqd --workflow plugin
+
+# Full applicable runtime validation for a plugin containing a DA
+wiqd plugin publish --dry-run --env local --json --skill wiqd --workflow plugin
+```
+
+A skill/connector-only plugin returns an explicit DA-not-applicable skip. Do not
+describe that skip as full skill or connector runtime validation. A successful
+normal publish means **submitted for tenant admin approval**; it does not mean
+approved, immediately tenant-wide, shared, or public-store published.
 
 ### 5. Teardown
 
@@ -299,6 +331,7 @@ After each step, report the outcome and suggest the logical next action:
 ## Anti-patterns
 
 - ❌ Don't scaffold a `wiqd agent` when the user asked for a **standalone plugin** — that produces an agent, not a reusable plugin.
+- ❌ Don't tell the user a **Cowork plugin** needs a different platform, SDK, or toolchain — it is the same MOS app package this workflow builds (see Terminology). Treating a host surface as a separate product is never a reason to decline.
 - ❌ Don't hand-author plugin manifest files — always go through `wiqd plugin add …` so `manifest.json` and `wiqd.plugin.json` stay in sync.
 - ❌ Don't declare a plugin "ready" without a clean `wiqd plugin validate`.
 - ❌ Don't silently enable the alpha flag — tell the user first (Preflight step 2).

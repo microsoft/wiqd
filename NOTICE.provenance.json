@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "5ffda8ffa0301b25a6822effb173bc81a40143879497e723bc74672a125f5c2e",
+  "inputDigest": "04eafe0f766640c05fe79cedafedb96d72f2bf24e1ba3a182dcb1944c39a651d",
   "componentCount": 520,
   "components": [
     {
@@ -505,7 +505,7 @@
     {
       "type": "npm",
       "name": "@grpc/grpc-js",
-      "version": "1.14.4",
+      "version": "1.14.5",
       "license": "Apache-2.0",
       "origin": "both"
     },
@@ -582,7 +582,7 @@
     {
       "type": "npm",
       "name": "@microsoft/m365-copilot-eval",
-      "version": "1.15.0",
+      "version": "1.18.0",
       "license": "MICROSOFT SOFTWARE LICENSE TERMS",
       "origin": "managed"
     },
@@ -617,7 +617,7 @@
     {
       "type": "npm",
       "name": "@modelcontextprotocol/sdk",
-      "version": "1.29.0",
+      "version": "1.31.0",
       "license": "MIT",
       "origin": "both"
     },
@@ -1092,7 +1092,7 @@
     {
       "type": "npm",
       "name": "axios",
-      "version": "1.18.1",
+      "version": "1.20.0",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -1491,7 +1491,7 @@
     {
       "type": "npm",
       "name": "dotenv",
-      "version": "17.4.2",
+      "version": "18.0.5",
       "license": "BSD-2-Clause",
       "origin": "managed"
     },
@@ -1687,7 +1687,7 @@
     {
       "type": "npm",
       "name": "fast-uri",
-      "version": "3.1.6",
+      "version": "3.1.7",
       "license": "BSD-3-Clause",
       "origin": "both"
     },
@@ -1850,7 +1850,12 @@
       "name": "handlebars",
       "version": "4.7.9",
       "license": "MIT",
-      "origin": "bundled"
+      "origin": "bundled",
+      "patch": {
+        "path": "patches/handlebars@4.7.9.patch",
+        "sha256": "dc00a3337cee54528e098ecbcadc01019c9ad19cbf5096069d193b49e24947af",
+        "pnpmHash": "dcjqyrn6ixexfyozes5ji3y4cm"
+      }
     },
     {
       "type": "npm",
@@ -2753,7 +2758,12 @@
       "name": "node-forge",
       "version": "1.4.0",
       "license": "(BSD-3-Clause OR GPL-2.0)",
-      "origin": "bundled"
+      "origin": "bundled",
+      "patch": {
+        "path": "patches/node-forge@1.4.0.patch",
+        "sha256": "b6876574a5de19521a766856b293aeae2689848c5d8dab03f93040be0a64b8b4",
+        "pnpmHash": "gbz7gprc6x3m5j5qxjtdw3c4ly"
+      }
     },
     {
       "type": "npm",
@@ -2912,7 +2922,7 @@
     {
       "type": "npm",
       "name": "proxy-addr",
-      "version": "2.0.7",
+      "version": "2.0.8",
       "license": "MIT",
       "origin": "both"
     },
@@ -3157,7 +3167,7 @@
     {
       "type": "npm",
       "name": "shell-quote",
-      "version": "1.10.0",
+      "version": "1.11.0",
       "license": "MIT",
       "origin": "bundled"
     },

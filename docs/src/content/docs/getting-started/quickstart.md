@@ -4,23 +4,61 @@ title: Quickstart
 
 # Quickstart: Create Your First Agent in 5 Minutes
 
-This guide walks you through creating, validating, provisioning, and sharing a declarative agent for Microsoft 365 Copilot.
+This guide walks you through creating a declarative agent for Microsoft 365
+Copilot. Choose the marketplace-first agentic path or the existing
+installation-script path.
 
-## Step 1: Install
+## Step 1: Choose an installation path
 
-Install `wiqd` and all dependencies with a single command:
+### Path 1: Marketplace-first agentic setup
+
+**GitHub Copilot CLI:**
+
+```text
+copilot plugin marketplace add microsoft/wiqd
+copilot plugin install wiqd@wiqd
+```
+
+**Claude Code:**
+
+```text
+claude plugin marketplace add microsoft/wiqd
+claude plugin install wiqd@wiqd
+```
+
+Start a new host session and ask WIQD to create the project files. For example,
+in GitHub Copilot CLI:
+
+```bash
+copilot -i "create a new declarative agent" --agent wiqd:wiqd
+```
+
+Marketplace installation does not install the `wiqd` CLI. You can begin
+agentic and file-based authoring immediately; use the separate
+[installation-script path](/getting-started/installation/#path-2-use-the-installation-script)
+if you need direct authentication, validation, provisioning, or sharing
+commands.
+
+### Path 2: Installation script
+
+Install the CLI and the components managed by the existing installer:
 
 ```powershell
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
 ```
 
-This installs Node.js (if needed), the `wiqd` CLI, the core lifecycle backend, and the VS Code extension.
+This installs Node.js (if needed), the `wiqd` CLI, the core lifecycle backend,
+and the VS Code extension.
 
 :::tip
 See [Installation](/getting-started/installation/) for all options.
 :::
 
-## Step 2: Authenticate
+## Step 2: Continue with direct CLI lifecycle commands
+
+The remaining steps apply to the installation-script path.
+
+### Authenticate
 
 Sign in to your Microsoft 365 account:
 
@@ -34,7 +72,7 @@ Verify your session:
 wiqd auth status
 ```
 
-## Step 3: Create an Agent
+### Create an Agent
 
 Scaffold a new agent project from a template:
 
@@ -48,7 +86,7 @@ This creates a new directory `my-first-agent/` with the agent manifest and suppo
 Run `wiqd agent create list` to see all available templates.
 :::
 
-## Step 4: Validate
+### Validate
 
 Validate the agent manifests to catch errors before deployment:
 
@@ -62,7 +100,7 @@ A clean validation returns exit code `0` with no errors.
 Use `--mode deep` for enhanced validation that checks external references and API plugin schemas.
 :::
 
-## Step 5: Provision
+### Provision
 
 Deploy the agent to your development environment:
 
@@ -72,7 +110,7 @@ wiqd agent provision --path my-first-agent
 
 This packages and uploads your agent to Microsoft 365.
 
-## Step 6: Share
+### Share
 
 Share the agent with specific users:
 

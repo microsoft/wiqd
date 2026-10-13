@@ -25,6 +25,10 @@
       "$ref": "#/$defs/EvaluatorMap",
       "description": "File-level default evaluators (overrides system defaults)"
     },
+    "default_allowed_tools": {
+      "$ref": "#/$defs/AllowedToolList",
+      "description": "File-level default allowlist of tool calls the CLI may approve when an A2A task pauses for confirmation. Absent means no tool call is approved."
+    },
     "items": {
       "type": "array",
       "minItems": 1,
@@ -109,6 +113,14 @@
           "enum": ["extend", "replace"],
           "default": "extend",
           "description": "How per-prompt evaluators combine with defaults"
+        },
+        "allowed_tools": {
+          "$ref": "#/$defs/AllowedToolList",
+          "description": "Per-prompt allowlist override. Additive by default: see allowed_tools_mode."
+        },
+        "allowed_tools_mode": {
+          "$ref": "#/$defs/AllowedToolsMode",
+          "description": "How per-prompt allowed_tools combine with default_allowed_tools"
         },
         "citations": {
           "type": "array",
@@ -204,6 +216,14 @@
           "enum": ["extend", "replace"],
           "default": "extend",
           "description": "How per-turn evaluators combine with defaults"
+        },
+        "allowed_tools": {
+          "$ref": "#/$defs/AllowedToolList",
+          "description": "Per-turn allowlist override. Additive by default: see allowed_tools_mode."
+        },
+        "allowed_tools_mode": {
+          "$ref": "#/$defs/AllowedToolsMode",
+          "description": "How per-turn allowed_tools combine with default_allowed_tools"
         },
         "citations": {
           "type": "array",
@@ -345,7 +365,61 @@
               }
             }
           }
+        },
+        "tool_calls": {
+          "type": "object",
+          "description": "Sanitized Developer Info evidence used to replay tool-call evaluators in evaluate-only mode.",
+          "required": ["selected_functions", "executions"],
+          "additionalProperties": false,
+          "properties": {
+            "selected_functions": {
+              "type": ["array", "null"],
+              "description": "Selected tool identities. Null means the evidence was unavailable; an empty array is an authoritative observation that no function was selected.",
+              "items": {
+                "$ref": "#/$defs/ToolCallDiagnosticIdentity"
+              }
+            },
+            "executions": {
+              "type": ["array", "null"],
+              "description": "Tool execution identities and HTTP outcomes. Null means the evidence was unavailable; an empty array is an authoritative observation that no execution occurred.",
+              "items": {
+                "$ref": "#/$defs/ToolCallDiagnosticExecution"
+              }
+            },
+            "evidence_error": {
+              "type": "string",
+              "enum": [
+                "Multiple Developer Info artifacts were returned; no authoritative telemetry snapshot could be identified."
+              ],
+              "description": "A safe, replayable explanation of why no authoritative Developer Info evidence was available."
+            }
+          }
         }
+      }
+    },
+    "ToolCallDiagnosticIdentity": {
+      "type": "object",
+      "required": ["plugin_name", "function_name"],
+      "additionalProperties": false,
+      "properties": {
+        "plugin_name": {
+          "type": ["string", "null"],
+          "description": "Normalized Developer Info plugin identity. Null means an entry was observed but its plugin name was missing or unparseable; preserving the entry lets evaluate-only reproduce whether that incomplete evidence could change the verdict."
+        },
+        "function_name": {
+          "type": ["string", "null"],
+          "description": "Normalized Developer Info function identity. Null means an entry was observed but its function name was missing or unparseable; preserving the entry lets evaluate-only reproduce whether that incomplete evidence could change the verdict."
+        }
+      }
+    },
+    "ToolCallDiagnosticExecution": {
+      "type": "object",
+      "required": ["plugin_name", "function_name", "response_status"],
+      "additionalProperties": false,
+      "properties": {
+        "plugin_name": { "type": ["string", "null"] },
+        "function_name": { "type": ["string", "null"] },
+        "response_status": { "type": ["integer", "null"] }
       }
     },
     "ScoreCollection": {
@@ -388,8 +462,56 @@
         "retrievalResult": {
           "$ref": "#/$defs/RetrievalResultScore",
           "description": "RetrievalResult evaluation result or errored entry"
+        },
+        "toolCallSelection": {
+          "$ref": "#/$defs/ToolCallEvaluatorScore",
+          "description": "ToolCallSelection deterministic result"
+        },
+        "toolCallExecution": {
+          "$ref": "#/$defs/ToolCallEvaluatorScore",
+          "description": "ToolCallExecution deterministic result"
         }
       }
+    },
+    "ToolCallEvaluatorScore": {
+      "description": "Deterministic tool-call evaluator result or errored-evaluator record.",
+      "oneOf": [
+        { "$ref": "#/$defs/ToolCallEvaluatorScoreValid" },
+        { "$ref": "#/$defs/ErroredScore" }
+      ]
+    },
+    "ToolCallEvaluatorScoreValid": {
+      "type": "object",
+      "required": ["score", "result", "threshold", "reason"],
+      "additionalProperties": true,
+      "properties": {
+        "score": {
+          "type": "number",
+          "enum": [0, 1],
+          "description": "1.0 on pass and 0.0 on fail."
+        },
+        "result": { "type": "string", "enum": ["pass", "fail"] },
+        "threshold": { "type": "number", "const": 1.0 },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable explanation naming the unmet or satisfied expectations."
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "result": { "const": "pass" },
+            "score": { "const": 1.0 }
+          }
+        },
+        {
+          "properties": {
+            "result": { "const": "fail" },
+            "score": { "const": 0.0 }
+          }
+        }
+      ]
     },
     "EvalScore": {
       "description": "Standard evaluation score (1-5 scale) — valid result OR errored-evaluator record.",
@@ -669,9 +791,10 @@
             "evaluatorConfigurationError",
             "evaluatorLoadError",
             "invalidEvaluatorResult",
-            "evaluatorError"
+            "evaluatorError",
+            "toolCallEvidenceIndeterminate"
           ],
-          "description": "Optional machine-readable failure category. One of: 'emptyAgentResponse' (agent returned empty/None/whitespace), 'judgeOutputUnparseable' (LLM judge returned empty/non-JSON output), 'judgeAuthenticationError' (authentication to the Azure AI/OpenAI judge backend failed), 'judgeRateLimited' (the LLM judge backend was throttled / rate-limited), 'judgeTimeout' (the LLM judge call or Foundry evaluation timed out), 'evaluatorConfigurationError' (the evaluator was misconfigured for the run, e.g. a custom LLM evaluator with the Copilot SDK judge backend and no Azure OpenAI credentials), 'evaluatorLoadError' (a custom evaluator failed to import/resolve), 'invalidEvaluatorResult' (a custom evaluator returned a malformed result: not a dict, missing/non-numeric/out-of-range score), 'evaluatorError' (any other uncaught evaluator failure)."
+          "description": "Optional machine-readable failure category. One of: 'emptyAgentResponse' (agent returned empty/None/whitespace), 'judgeOutputUnparseable' (LLM judge returned empty/non-JSON output), 'judgeAuthenticationError' (authentication to the Azure AI/OpenAI judge backend failed), 'judgeRateLimited' (the LLM judge backend was throttled / rate-limited), 'judgeTimeout' (the LLM judge call or Foundry evaluation timed out), 'evaluatorConfigurationError' (the evaluator was misconfigured for the run, e.g. a custom LLM evaluator with the Copilot SDK judge backend and no Azure OpenAI credentials), 'evaluatorLoadError' (a custom evaluator failed to import/resolve), 'invalidEvaluatorResult' (a custom evaluator returned a malformed result: not a dict, missing/non-numeric/out-of-range score), 'evaluatorError' (any other uncaught evaluator failure), 'toolCallEvidenceIndeterminate' (the available Developer Info evidence could not determine a tool-call verdict)."
         },
         "error": {
           "type": "string",
@@ -694,10 +817,12 @@
             "agentRateLimited",
             "agentTimeout",
             "agentResponseUnparseable",
+            "toolCallNotAllowed",
             "turnSkipped",
-            "evaluatorsFailed"
+            "evaluatorsFailed",
+            "evaluationCrashed"
           ],
-          "description": "Machine-readable error category. Agent-request failures: 'agentRequestFailed' (generic), 'agentAuthenticationError' (auth/HTTP 401 to the agent), 'agentRateLimited' (agent throttled / HTTP 429), 'agentTimeout' (agent request timed out), 'agentResponseUnparseable' (agent returned a malformed / non-JSON / protocol-invalid response). Other: 'turnSkipped' (a preceding turn failed), 'evaluatorsFailed' (at least one evaluator errored)."
+          "description": "Machine-readable error category. Agent-request failures: 'agentRequestFailed' (generic), 'agentAuthenticationError' (auth/HTTP 401 to the agent, or an A2A task that paused to authenticate with a downstream service), 'agentRateLimited' (agent throttled / HTTP 429), 'agentTimeout' (agent request timed out), 'agentResponseUnparseable' (agent returned a malformed / non-JSON / protocol-invalid response). Other: 'toolCallNotAllowed' (the agent asked to call a tool that allowed_tools does not permit; the CLI refused it, so nothing was executed), 'turnSkipped' (a preceding turn failed), 'evaluatorsFailed' (at least one evaluator errored), 'evaluationCrashed' (evaluation of this item crashed before any result could be produced; currently emitted by the --evaluate-only pipeline)."
         },
         "message": {
           "type": "string",
@@ -705,6 +830,27 @@
           "description": "Human-readable message paired with the code."
         }
       }
+    },
+    "AllowedToolList": {
+      "type": "array",
+      "description": "Tool call identifiers the CLI may approve on the user's behalf when an A2A task pauses for confirmation. Each entry is a full 'namespace_toolname' identifier, matched exactly and case-sensitively. An empty array means no tool call is approved. An absent list resolves to empty (fail closed) - it never means 'approve everything'.",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S",
+        "description": "Full tool call identifier as it appears in the pause payload, e.g. 'zavainsurance_get-claim-summary'. Must contain at least one non-whitespace character: entries are trimmed before matching, so a whitespace-only entry can never match a tool call."
+      },
+      "examples": [
+        ["zavainsurance_get-claim-summary"],
+        ["learnmicro_microsoft_docs_search", "learnmicro_microsoft_docs_fetch"],
+        []
+      ]
+    },
+    "AllowedToolsMode": {
+      "type": "string",
+      "enum": ["extend", "replace"],
+      "default": "extend",
+      "description": "How a prompt-level allowed_tools combines with default_allowed_tools. 'extend' takes the union; 'replace' uses only the prompt-level list. Mirrors evaluators_mode."
     },
     "EvaluatorMap": {
       "type": "object",
@@ -722,7 +868,9 @@
         "ExactMatch": { "$ref": "#/$defs/ExactMatchOptions" },
         "PartialMatch": { "$ref": "#/$defs/PartialMatchOptions" },
         "RetrievalQuery": { "$ref": "#/$defs/RetrievalQueryOptions" },
-        "RetrievalResult": { "$ref": "#/$defs/RetrievalResultOptions" }
+        "RetrievalResult": { "$ref": "#/$defs/RetrievalResultOptions" },
+        "ToolCallSelection": { "$ref": "#/$defs/ToolCallSelectionOptions" },
+        "ToolCallExecution": { "$ref": "#/$defs/ToolCallExecutionOptions" }
       }
     },
     "CustomEvaluatorOptions": {
@@ -798,6 +946,55 @@
           "type": "boolean",
           "default": false,
           "description": "Case-sensitive matching (default: false)."
+        }
+      }
+    },
+    "ToolIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plugin_name", "function_name"],
+      "properties": {
+        "plugin_name": { "type": "string", "minLength": 1 },
+        "function_name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ToolCallExpectedCall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Evaluator-local label used only for diagnostics."
+        },
+        "tool": { "$ref": "#/$defs/ToolIdentity" }
+      }
+    },
+    "ToolCallSelectionOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calls"],
+      "properties": {
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Expected tool identities. Repeated identities are de-duplicated; selection asserts which tools were selected, not how many times.",
+          "items": { "$ref": "#/$defs/ToolCallExpectedCall" }
+        },
+        "allow_additional_calls": { "type": "boolean", "default": true }
+      }
+    },
+    "ToolCallExecutionOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calls"],
+      "properties": {
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Expected tool executions. Repeating the same identity requires that many successful executions.",
+          "items": { "$ref": "#/$defs/ToolCallExpectedCall" }
         }
       }
     },
