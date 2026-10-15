@@ -6,7 +6,8 @@ description: Build a Microsoft 365 Copilot plugin — an app package composing a
 # Build a Plugin
 
 A **plugin** is a Microsoft 365 app package that composes a declarative agent, one or more skills,
-and/or one or more remote MCP connectors into a single, independently shippable unit. This guide
+and/or agent connectors (remote MCP servers or references to existing OpenAPI custom connectors)
+into a single, independently shippable unit. This guide
 gets you from nothing to a validated, provisioned, and shared plugin — the same outcome the
 Microsoft Learn "Build plugins for Copilot Cowork" walkthrough targets, reached the wiqd way. If
 you haven't yet, read [What is a plugin?](/concepts/plugins/) first for the mental model.
@@ -39,11 +40,18 @@ the interface may change without notice.
    The WIQD installer does not manage host plugins:
 
    ```bash
+   copilot plugin install wiqd@awesome-copilot
+   ```
+
+   Or use the WIQD marketplace:
+
+   ```bash
    copilot plugin marketplace add microsoft/wiqd
    copilot plugin install wiqd@wiqd
    ```
 
-   For Claude Code, use `claude` instead of `copilot`. Start a new host session.
+   For Claude Code, add `microsoft/wiqd` and install `wiqd@wiqd`. Start a new
+   host session.
 
 3. **Sign in** — provisioning and sharing a plugin touch your Microsoft 365 tenant:
 
@@ -98,8 +106,10 @@ adding another capability, or validating what you have so far.
 
 **You say:** "Validate my plugin."
 **wiqd does:** runs `wiqd plugin validate` (the offline static check). On a clean result, it
-suggests provisioning the plugin, reusing it inside an existing agent, or exporting it for another
-tool.
+suggests provisioning the plugin or exporting it for another tool. There is no shipped command
+that merges a whole plugin into an existing agent. For an OpenAPI custom connector, it omits export because that format cannot represent the
+`ConnectionVault` reference, and explains that static validation does not establish packaging or
+deployment readiness.
 
 **You say:** "Provision it, then package and share it with my team."
 **wiqd does:** runs `wiqd plugin provision`, then `wiqd plugin package` now that the environment
@@ -128,6 +138,12 @@ wiqd plugin add agent
 wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add connector --name "Contoso Tools" \
   --description "Contoso toolbelt over MCP" --url https://tools.contoso.com/mcp
+
+# Or reference an existing custom connector by its logical name.
+# --dev-preview explicitly updates both manifestVersion and $schema.
+wiqd plugin add connector --kind openapi --name "Contoso Kusto" \
+  --description "Queries the existing Contoso Kusto connector" \
+  --auth-reference-id shared_kusto --dev-preview
 
 # 3. Validate offline before you provision or package
 wiqd plugin validate
@@ -167,6 +183,13 @@ to already exist.
 For every flag on every one of these commands, see
 [`wiqd plugin` in the CLI reference](/cli/reference/#wiqd-plugin) rather than duplicating the
 full flag set here.
+
+`--kind openapi` does not author an OpenAPI API-plugin action and does not create a custom
+connector. It writes a `ConnectionVault` pointer to an existing custom connector. The
+`--auth-reference-id` value is its logical name (for example `shared_kusto`), not a URL, secret,
+connection instance, or OAuth registration id. This connector shape is currently available only
+through explicit `devPreview` authoring; wiqd does not assume a tentative numbered manifest version
+supports it.
 
 ## Import / export (interop)
 
@@ -227,6 +250,16 @@ you build:
   and skill-content issues actually surface. See the
   [Plugin authoring reference](/getting-started/plugin-reference/#validation-codes) for the full validation-code
   tables and how they map to static vs. deep.
+
+Static validation does not inspect root `agentConnectors[]`, including `openApiConnector`.
+For a preview custom connector, attempt packaging before deep validation. The pinned local fx-core
+package schema can reject `agentConnectors` before producing a ZIP even when the deployed
+server-side AVL supports devPreview. The source manifest remains unchanged on that local failure;
+do not mistake it for a server verdict. An existing built ZIP can instead be checked with
+`wiqd plugin validate --mode deep --package-file <zip>`. Report the returned findings rather than
+assuming every rejection is a rollout issue. Runtime invocation and Store/Partner Center acceptance
+remain separate checks. `wiqd plugin export` also fails explicitly for this connector kind
+because Open Plugin has no verified representation for the `ConnectionVault` logical reference.
 
 ## Publishing paths
 

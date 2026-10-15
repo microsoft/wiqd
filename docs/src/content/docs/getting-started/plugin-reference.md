@@ -41,6 +41,11 @@ upload fails with an HTTP 400. Authoring against wiqd's pinned 1.29 schema sides
 failure — but not the platform one: Cowork requires `mcpToolDescription` regardless of what 1.29
 permits, so a URL-only connector still fails to verify in the product. Supply one.
 
+The numbered 1.29 pin remains the default. `wiqd plugin add connector --kind openapi
+--dev-preview` is an explicit exception for referencing an existing OpenAPI custom connector: it
+updates both `manifestVersion` and `$schema` to the canonical devPreview values. wiqd does not
+assume a tentative numbered manifest version supports that connector.
+
 ## SKILL.md frontmatter rules
 
 Every skill's `SKILL.md` starts with YAML frontmatter. Two fields are load-bearing:
@@ -96,7 +101,16 @@ Every companion-file path must additionally be:
   or without an extension) are all rejected.
 - Composed of safe filename characters only.
 
-## Connector / remote MCP server requirements
+## Connector requirements
+
+`wiqd plugin add connector` supports two explicit kinds:
+
+| Kind | Inputs | Manifest shape |
+| ---- | ------ | -------------- |
+| `remote-mcp` (default) | HTTPS `--url`, optional tool description and MCP auth | `toolSource.remoteMcpServer` |
+| `openapi` | Existing custom-connector logical name in `--auth-reference-id`; explicit devPreview eligibility | `toolSource.openApiConnector.authorization` with `type: "ConnectionVault"` |
+
+### Remote MCP servers
 
 An agent connector that fronts a remote MCP server must satisfy:
 
@@ -131,10 +145,55 @@ manifest in the first place:
 | `displayName` (from `--name`)    | ≤ 128 characters           |
 | `description` (from `--description`) | ≤ 4000 characters       |
 | `mcpServerUrl` (from `--url`)    | ≤ 2048 characters          |
+| `ConnectionVault.referenceId` (OpenAPI logical name) | ≤ 128 characters |
 
-## Auth types
+### Existing OpenAPI custom connectors
 
-A connector or API plugin can declare one of these authentication types:
+Use this path only when the custom connector already exists:
+
+```bash
+wiqd plugin add connector --kind openapi --name "Contoso Kusto" \
+  --description "Queries the existing Contoso Kusto connector" \
+  --auth-reference-id shared_kusto --dev-preview
+```
+
+The command writes:
+
+```json
+{
+  "toolSource": {
+    "openApiConnector": {
+      "authorization": {
+        "type": "ConnectionVault",
+        "referenceId": "shared_kusto"
+      }
+    }
+  }
+}
+```
+
+The reference is the custom connector's logical name. It is not a URL, secret, connection
+instance, OAuth registration id, OpenAPI file, or operation list. The platform resolves the
+endpoint and OpenAPI description at runtime. URL, tool-description, and MCP `--auth-type` inputs
+are rejected on this path.
+
+This shape is currently **devPreview-only**. A fresh 1.29 project must use `--dev-preview`, which
+updates both app-manifest version fields explicitly. A numbered version such as 1.30 or a tentative
+future version is not treated as support without a confirmed platform contract. The same explicit
+opt-in can repair those fields for an identical existing connector without duplicating it; the
+command reports a manifest update, while a later unchanged invocation is a no-op. Package-first deep
+validation is the relevant check; static validation does not inspect root connectors. The
+currently pinned fx-core package schema may reject `agentConnectors` before it produces a ZIP;
+that local failure leaves the source manifest unchanged and does not establish whether server-side
+AVL supports devPreview. With an existing built ZIP, use `wiqd plugin validate --mode deep
+--package-file <zip>` and inspect the actual server verdict. Do not rewrite or drop the connector
+to bypass the local schema. Public schema docs, runtime invocation, and Store/Partner Center
+acceptance are separate checks. Open Plugin export fails explicitly because that format has no verified
+representation for the `ConnectionVault` logical reference.
+
+## Remote MCP auth types
+
+A remote MCP connector or API plugin can declare one of these authentication types:
 
 - **`None`** — no authentication.
 - **`OAuthPluginVault`** — OAuth, with tokens managed by the plugin vault.
@@ -217,8 +276,8 @@ platform rules rather than numbered `ASKILL-*` codes:
 
 - Every connector needs both an `id` and a `displayName`, and `id`s must be unique across the
   manifest's connector list.
-- A connector must pick exactly one tool source — either `plugin` or `remoteMcpServer` — never
-  both, never neither.
+- A connector must pick exactly one tool source — `plugin`, `remoteMcpServer`, `localMcpServer`, or
+  `openApiConnector` — never multiple and never none.
 - `mcpServerUrl` must be a well-formed HTTPS URL.
 - On manifest **1.28**, a `remoteMcpServer` connector must also carry `mcpToolDescription`, and the
   file it names must be present in the uploaded ZIP. wiqd's `add connector` targets the pinned
@@ -227,6 +286,8 @@ platform rules rather than numbered `ASKILL-*` codes:
   you do declare one, `zipAppPackage` collects the referenced file into the app package.
 - `authorization.referenceId` is required whenever the auth type isn't `None`, and conversely must
   be absent when the type is `None`.
+- `openApiConnector.authorization.type` must be `ConnectionVault`, with a nonblank logical
+  `referenceId` no longer than 128 characters.
 
 ### Where each surfaces
 
@@ -258,7 +319,7 @@ tools without hand-translating the format.
 - **Keep `SKILL.md` lean.** Move detailed or rarely-needed material into `references/` — remember
   the body loads on every trigger, but references load only on demand.
 - **Never embed secrets** in `SKILL.md` or any companion file. Use connector auth (see
-  [Auth types](#auth-types)) instead.
+  [Remote MCP auth types](#remote-mcp-auth-types)) instead.
 
 ## Learn-parity table
 
@@ -271,7 +332,8 @@ equivalent:
 | Convert a Claude plugin               | **Covered** — [`wiqd plugin import`](/getting-started/build-a-plugin/#import--export-interop) replaces `Convert-ClaudePluginToMOS3.ps1` |
 | Create a skill                       | **Covered** — [Build a Plugin → Path 1 & 2](/getting-started/build-a-plugin/), [SKILL.md frontmatter rules](#skillmd-frontmatter-rules) |
 | Reference materials                  | **Covered** — [Three-layer context-loading model](#three-layer-context-loading-model)                   |
-| Connector (MCP)                      | **Covered** — [Connector / remote MCP server requirements](#connector--remote-mcp-server-requirements)  |
+| Connector (MCP)                      | **Covered** — [Remote MCP servers](#remote-mcp-servers)  |
+| Connector (existing OpenAPI custom connector) | **Covered** — [Existing OpenAPI custom connectors](#existing-openapi-custom-connectors) |
 | Manifest                             | **Covered** — [Package anatomy](#package-anatomy)                                                       |
 | Icons                                 | **Covered** — [Package anatomy](#package-anatomy) (192×192 / 32×32)                                    |
 | Package (zip with Compress-Archive)   | **Covered, different mechanism** — `wiqd plugin package` replaces hand-zipping                          |

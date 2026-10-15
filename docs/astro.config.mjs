@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 
 // @ts-check
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import starlightThemeTerminal from 'starlight-theme-terminal';
@@ -9,6 +11,28 @@ import { remarkStripMdExtensions } from './src/plugins/remark-strip-md-extension
 import { remarkScrubInternalChangelog } from './src/plugins/remark-scrub-internal-changelog.js';
 import { remarkBaseRelativeLinks } from './src/plugins/remark-base-relative-links.js';
 import { site, base } from './src/site-config.mjs';
+
+const docsRequire = createRequire(import.meta.url);
+const astroRequire = createRequire(docsRequire.resolve('astro/package.json'));
+// js-yaml 4.3's ESM build has no default export, while Astro 6 imports one
+// during prerendering. Keep the patched release and synthesize that interop shape.
+const jsYamlEsm = join(
+  dirname(astroRequire.resolve('js-yaml/package.json')),
+  'dist',
+  'js-yaml.mjs',
+).replaceAll('\\', '/');
+const jsYamlDefaultInterop = {
+  name: 'wiqd-js-yaml-default-interop',
+  enforce: 'pre',
+  resolveId(source) {
+    return source === 'js-yaml' ? '\0wiqd-js-yaml-default-interop' : null;
+  },
+  load(id) {
+    if (id !== '\0wiqd-js-yaml-default-interop') return null;
+    const target = JSON.stringify(jsYamlEsm);
+    return `import * as yaml from ${target}; export * from ${target}; export default yaml;`;
+  },
+};
 
 // The internal docs partition (everything under src/content/docs/internal/) is
 // excluded from the public build. Its sidebar entries are appended only when
@@ -34,6 +58,9 @@ export default defineConfig({
       remarkScrubInternalChangelog,
       [remarkBaseRelativeLinks, { base }],
     ],
+  },
+  vite: {
+    plugins: [jsYamlDefaultInterop],
   },
   integrations: [
     starlight({

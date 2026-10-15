@@ -15,6 +15,12 @@ installation-script path.
 **GitHub Copilot CLI:**
 
 ```text
+copilot plugin install wiqd@awesome-copilot
+```
+
+Or use the WIQD marketplace:
+
+```text
 copilot plugin marketplace add microsoft/wiqd
 copilot plugin install wiqd@wiqd
 ```

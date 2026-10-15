@@ -8,7 +8,7 @@ WIQD supports two alternative installation paths:
 
 | Path                     | Start here when                                                              | Installs                                                                                 |
 | ------------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Plugin-first agentic** | You want to begin in GitHub Copilot CLI or Claude Code                       | The public `wiqd@wiqd` plugin from [`microsoft/wiqd`](https://github.com/microsoft/wiqd) |
+| **Plugin-first agentic** | You want to begin in GitHub Copilot CLI or Claude Code                       | The public WIQD plugin from Awesome Copilot or [`microsoft/wiqd`](https://github.com/microsoft/wiqd) |
 | **Installation script**  | You want direct `wiqd` shell commands and VS Code validation | The WIQD CLI, optional VS Code extension, and public plugin for detected native hosts |
 
 ## Path 1: Install from the marketplace
@@ -21,6 +21,14 @@ Install a supported agent host first:
 Then add the public marketplace and install WIQD for your chosen host.
 
 ### GitHub Copilot CLI
+
+Install WIQD from the built-in Awesome Copilot marketplace:
+
+```text
+copilot plugin install wiqd@awesome-copilot
+```
+
+Alternatively, add the WIQD marketplace and install the same public plugin:
 
 ```text
 copilot plugin marketplace add microsoft/wiqd
@@ -60,7 +68,7 @@ as an empty installation.
 
 Before switching an existing installation, inspect your chosen host's native
 plugin and marketplace inventory to identify the actual source. An old local
-deployment may share the `wiqd@wiqd` name with the public marketplace plugin;
+deployment may share the WIQD plugin name with a public marketplace plugin;
 the name alone does not prove the source is correct. Use the host's native
 uninstall flow for that old deployment, remove or rebind its old local
 marketplace entry, then follow the marketplace commands above. Start a new
@@ -168,6 +176,8 @@ deployment.
 
 If host-plugin installation succeeded, start a new host session; no reinstall is needed.
 If skipped or no host was detected, install the marketplace plugin manually.
+For Copilot, `wiqd@awesome-copilot` is listed first; the installer currently
+continues to use `wiqd@wiqd` from `microsoft/wiqd` automatically.
 If installation failed, follow the reported remediation and retry.
 Success confirms the native install command completed, not that individual skills were tested.
 See [Build a Plugin](/getting-started/build-a-plugin/) for the complete workflow.

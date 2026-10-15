@@ -451,8 +451,12 @@ print_wiqd_quickstart() {
         fi
         printf "${CYAN} Manual plugin setup (choose the host needing setup):${RESET}\n"
         printf "${YELLOW} Resolve any reported errors or source conflicts first.${RESET}\n"
+        printf "${CYAN} Copilot (Awesome Copilot):${RESET}\n"
+        printf "${WHITE}   copilot plugin install wiqd@awesome-copilot${RESET}\n"
+        printf "${CYAN} Copilot alternative:${RESET}\n"
         printf "${WHITE}   copilot plugin marketplace add microsoft/wiqd${RESET}\n"
         printf "${WHITE}   copilot plugin install wiqd@wiqd${RESET}\n"
+        printf "${CYAN} Claude Code:${RESET}\n"
         printf "${WHITE}   claude plugin marketplace add microsoft/wiqd${RESET}\n"
         printf "${WHITE}   claude plugin install wiqd@wiqd${RESET}\n"
         echo ""
@@ -699,14 +703,14 @@ wiqd_plugin_host() {
 
 wiqd_plugin_kill_tree() {
     local parent="$1" child
+    local -a ps_args
+    case "${OSTYPE:-}" in
+        msys*|cygwin*) ps_args=(-a) ;;
+        *) ps_args=(-eo 'pid=,ppid=') ;;
+    esac
     while read -r child; do
         [[ -n "$child" ]] && wiqd_plugin_kill_tree "$child"
-    done < <(
-        case "${OSTYPE:-}" in
-            msys*|cygwin*) ps -a ;;
-            *) ps -eo pid=,ppid= ;;
-        esac | awk -v parent="$parent" '$2 == parent { print $1 }'
-    )
+    done < <(ps "${ps_args[@]}" | awk -v parent="$parent" '$2 == parent { print $1 }')
     kill -TERM "$parent" 2>/dev/null || true
     kill -KILL "$parent" 2>/dev/null || true
 }
