@@ -1276,8 +1276,12 @@ function Write-WiqdQuickstart {
         }
         Write-Host " Manual plugin setup (choose the host needing setup):" -ForegroundColor Cyan
         Write-Host " Resolve any reported errors or source conflicts first." -ForegroundColor Yellow
+        Write-Host " Copilot (Awesome Copilot):" -ForegroundColor Cyan
+        Write-Host "   copilot plugin install wiqd@awesome-copilot" -ForegroundColor White
+        Write-Host " Copilot alternative:" -ForegroundColor Cyan
         Write-Host "   copilot plugin marketplace add microsoft/wiqd" -ForegroundColor White
         Write-Host "   copilot plugin install wiqd@wiqd" -ForegroundColor White
+        Write-Host " Claude Code:" -ForegroundColor Cyan
         Write-Host "   claude plugin marketplace add microsoft/wiqd" -ForegroundColor White
         Write-Host "   claude plugin install wiqd@wiqd" -ForegroundColor White
         Write-Host ""

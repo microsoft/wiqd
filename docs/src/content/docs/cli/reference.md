@@ -196,7 +196,7 @@ per-command tables below.
 | [`wiqd plugin`](#wiqd-plugin) | wiqd (core) | Build, validate, package, and publish standalone plugins (agent + skills + connector) |
 | [`wiqd plugin add`](#wiqd-plugin-add) | wiqd Core | add |
 | [`wiqd plugin add agent`](#wiqd-plugin-add-agent) | wiqd Core | Add a declarative agent component to a plugin. |
-| [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | wiqd Core | Add a remote MCP agent connector to the plugin manifest. |
+| [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | wiqd Core | Add a remote MCP or OpenAPI custom connector to the plugin manifest. |
 | [`wiqd plugin add skill`](#wiqd-plugin-add-skill) | wiqd Core | Scaffold a SKILL.md skill folder and register it in the plugin manifest. |
 | [`wiqd plugin create`](#wiqd-plugin-create) | wiqd Core | Scaffold a new, empty standalone plugin project from the built-in blank app template. |
 | [`wiqd plugin delete`](#wiqd-plugin-delete) | wiqd Core | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
@@ -1885,7 +1885,7 @@ wiqd plugin add agent --json
 
 ### wiqd plugin add connector
 
-Add a remote MCP agent connector to the plugin manifest.
+Add a remote MCP or OpenAPI custom connector to the plugin manifest.
 
 **Extension:** wiqd Core
 
@@ -1899,18 +1899,20 @@ wiqd plugin add connector [options]
 | --- | --- |
 | `-n, --name <value>` | Connector display name |
 | `--description <value>` | Connector description |
-| `--url <value>` | Remote MCP server https:// URL |
+| `--kind <value>` | Connector kind (choices: "remote-mcp", "openapi", default: "remote-mcp") |
+| `--url <value>` | Remote MCP server https:// URL (required for remote-mcp) |
 | `--tool-description <value>` | Existing tool-description file, relative to appPackage/ |
-| `--auth-type <value>` | Connector authorization type (dcr omits the block, which is how the host enables it) (choices: "none", "oauth", "api-key", "dcr", default: "none") |
-| `--auth-reference-id <value>` | Vault reference id for the credential (required for oauth and api-key; not accepted for none or dcr) |
+| `--auth-type <value>` | Remote MCP authorization type (omission means none; dcr omits the block) (choices: "none", "oauth", "api-key", "dcr") |
+| `--auth-reference-id <value>` | Remote MCP credential reference id, or OpenAPI custom-connector logical name |
+| `--dev-preview` | Explicitly move the manifest to devPreview for an OpenAPI connector |
 | `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
 
 **Examples**
 
 ```bash
-wiqd plugin add connector
-wiqd plugin add connector --name <value> --description <value>
-wiqd plugin add connector --json
+wiqd plugin add connector --name "Contoso Tools" --description "MCP toolbelt" --url https://tools.contoso.com/mcp
+wiqd plugin add connector --kind openapi --name "Contoso Kusto" --description "Existing custom connector" --auth-reference-id shared_kusto --dev-preview
+wiqd plugin add connector --kind openapi --name "Contoso Kusto" --description "Existing custom connector" --auth-reference-id shared_kusto --dev-preview --json
 ```
 
 ### wiqd plugin add skill
