@@ -2,8 +2,8 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "cebf0df3e2971b357b7e919c9bacc0d9700ba9bb5e7a145cc530e0c8a54ff70e",
-  "componentCount": 519,
+  "inputDigest": "5102430a1cb9cecafa0b9a36ab603deed441ebfbad21a972e2470fde01179b52",
+  "componentCount": 533,
   "components": [
     {
       "type": "npm",
@@ -490,6 +490,13 @@
     },
     {
       "type": "npm",
+      "name": "@github/copilot-sdk",
+      "version": "1.0.11",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "@griffel/core",
       "version": "1.21.2",
       "license": "MIT",
@@ -626,6 +633,13 @@
       "name": "@monaco-editor/react",
       "version": "4.7.0",
       "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@open-policy-agent/opa-wasm",
+      "version": "1.10.0",
+      "license": "Apache-2.0",
       "origin": "bundled"
     },
     {
@@ -1189,6 +1203,13 @@
     },
     {
       "type": "npm",
+      "name": "character-entities",
+      "version": "2.0.2",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "chownr",
       "version": "1.1.4",
       "license": "ISC",
@@ -1534,6 +1555,13 @@
       "type": "npm",
       "name": "entities",
       "version": "4.5.0",
+      "license": "BSD-2-Clause",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "entities",
+      "version": "6.0.1",
       "license": "BSD-2-Clause",
       "origin": "bundled"
     },
@@ -2538,6 +2566,13 @@
     },
     {
       "type": "npm",
+      "name": "micromark-util-encode",
+      "version": "2.0.1",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "micromark-util-html-tag-name",
       "version": "2.0.1",
       "license": "MIT",
@@ -2680,6 +2715,13 @@
       "type": "npm",
       "name": "mustache",
       "version": "4.2.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "nanoid",
+      "version": "3.3.18",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -2851,6 +2893,13 @@
     },
     {
       "type": "npm",
+      "name": "parse5",
+      "version": "7.3.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "parseurl",
       "version": "1.3.3",
       "license": "MIT",
@@ -2879,10 +2928,38 @@
     },
     {
       "type": "npm",
+      "name": "pend",
+      "version": "1.2.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "license": "ISC",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "pkce-challenge",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "both"
+    },
+    {
+      "type": "npm",
+      "name": "pngjs",
+      "version": "7.0.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "postcss",
+      "version": "8.5.21",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -3229,6 +3306,13 @@
     },
     {
       "type": "npm",
+      "name": "sprintf-js",
+      "version": "1.1.3",
+      "license": "BSD-3-Clause",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "state-local",
       "version": "1.0.7",
       "license": "MIT",
@@ -3345,6 +3429,13 @@
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "tldts",
+      "version": "7.0.17",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -3639,6 +3730,13 @@
       "version": "21.1.1",
       "license": "ISC",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "yauzl",
+      "version": "3.4.0",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",

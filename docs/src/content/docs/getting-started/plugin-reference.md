@@ -126,12 +126,13 @@ and the [Agent Skills specification](https://agentskills.io/specification).
 
 Microsoft 365 catalog titles can publish complete `agentConnectors` nodes. Discover those
 definitions directly instead of asking the user to manually provide an MCP URL or authorization
-details:
+details. Discovery is the top-level [`wiqd connector`](/cli/connector/) command, which needs no
+plugin project; composition is `wiqd plugin add connector --selector`:
 
 ```bash
-wiqd plugin connector list --search "Azure DevOps"
-wiqd plugin connector show "Azure DevOps MCP"
-wiqd plugin connector use "Azure DevOps MCP"
+wiqd connector list --search "Azure DevOps"
+wiqd connector show "Azure DevOps MCP"
+wiqd plugin add connector --selector "Azure DevOps MCP"
 ```
 
 Discovery uses the same Microsoft 365 identity as the core lifecycle commands and calls the titles
@@ -142,7 +143,7 @@ Keep the identities distinct:
 
 | Identity | Example | Purpose |
 | --- | --- | --- |
-| Selector | `Azure DevOps MCP` | Copyable input emitted by `list` |
+| Selector | `Azure DevOps MCP` | Copyable input emitted by `wiqd connector list` |
 | Catalog title ID | `P_8d7e60b7-...` | Internal source-package provenance |
 | Connector element ID | `5947d764-...` | `agentConnectors[]` element |
 | Vault reference ID | `shared_adomcpserver` | Managed connector connection |
@@ -152,29 +153,32 @@ the tool: a Remote MCP endpoint or an existing OpenAPI custom connector. Connect
 the platform obtains access: managed connection, OAuth, API key, dynamic registration, or anonymous.
 The same managed `ConnectionVault` mechanism can therefore appear on either connector type.
 
-`show` returns the canonical node, including its `toolSource`. `use` copies that exact validated
-node, preserves its returned authorization definition, updates the plugin capability cache, and
-moves the app manifest to `devPreview`. It does not acquire the title, register credentials, sign in
-to the connector, create a connection, or mutate tenant state.
+`show` returns the canonical node, including its `toolSource`. Composition with
+`wiqd plugin add connector --selector` copies that exact validated node, preserves its returned
+authorization definition, updates the plugin capability cache, and moves the app manifest to
+`devPreview`. It does not acquire the title, register credentials, sign in to the connector,
+create a connection, or mutate tenant state.
 If the catalog node carries an inline tool list or references a title-owned file that is unavailable
-in the target package, `use` fails without writes and directs the author to materialize that file
-through the manual connector path.
+in the target package, composition fails without writes and directs the author to materialize that
+file through the manual connector path. `--selector` cannot be combined with the manual connector
+options.
 
 When the same MCP is published through multiple titles with equivalent tool and reuse definitions,
 `list` deduplicates it and retains the friendly display-name selector. If materially different
 connectors share a display name, `list` emits opaque composite selectors such as
-`P_abc...::6c00...`. Copy the emitted name or composite selector directly into `show` or `use`;
-users never need a separate title-ID option.
+`P_abc...::6c00...`. Copy the emitted name or composite selector directly into `show` or
+`--selector`; users never need a separate title-ID option.
 
 Catalog composition accepts `remoteMcpServer` nodes using `ConnectionVault`, `OAuthPluginVault`,
 `ApiKeyPluginVault`, `DynamicClientRegistration`, or `None`. `openApiConnector` nodes are visible to
-`list` and `show`, but normal catalog `use` refuses them because runtime support is not yet broad.
+`list` and `show`, but catalog composition refuses them because runtime support is not yet broad.
 After the user explicitly confirms the preview choice, use the result's displayed `referenceId`
 through the manual `--kind openapi --dev-preview` path below.
 
 ## Connector requirements
 
-`wiqd plugin add connector` supports two explicit kinds:
+`wiqd plugin add connector` supports two explicit kinds, plus `--selector` for reusing an exact
+[catalog connector](#discover-and-compose-catalog-connectors):
 
 | Kind | Inputs | Manifest shape |
 | ---- | ------ | -------------- |
