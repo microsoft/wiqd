@@ -49,7 +49,7 @@ A plugin can carry one or more of these, declared as top-level components in the
 | ---------------- | ---------------------------------------------- | -------------------------------------------- |
 | An **agent**     | `copilotAgents.declarativeAgents` (→ `declarativeAgent.json`) | [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) |
 | **Skills**       | `agentSkills[]` (each a `SKILL.md` folder)     | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) |
-| **Connectors**   | `agentConnectors[]` (remote MCP or existing OpenAPI custom connectors) | [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) |
+| **Connectors**   | `agentConnectors[]` (remote MCP or existing OpenAPI custom connectors) | [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) — or reuse a published catalog connector found with [`wiqd connector`](/cli/connector/) |
 
 A declarative agent brings its own API plugins (`actions[]`) and MCP references along with it —
 those live inside the agent's own manifest, not as separate top-level plugin components.

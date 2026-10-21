@@ -139,6 +139,11 @@ wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add connector --name "Contoso Tools" \
   --description "Contoso toolbelt over MCP" --url https://tools.contoso.com/mcp
 
+# Or reuse a connector the Microsoft 365 catalog already publishes — the catalog
+# supplies its URL and credential reference. Copy the selector from `connector list`.
+wiqd connector list --search "Azure DevOps"
+wiqd plugin add connector --selector "Azure DevOps MCP"
+
 # Or reference an existing custom connector by its logical name.
 # --dev-preview explicitly updates both manifestVersion and $schema.
 wiqd plugin add connector --kind openapi --name "Contoso Kusto" \

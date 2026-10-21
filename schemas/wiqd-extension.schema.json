@@ -717,6 +717,10 @@
           "type": "string",
           "description": "Optional command-availability feature-flag gate for an individual command (e.g. the opt-in `monitor` command). When set, the host skips registering this command unless the named boolean flag is enabled. Fail-closed semantics live in `feature-flags/gating.ts`."
         },
+        "activationWhen": {
+          "type": "string",
+          "description": "Select this command subtree when a registered flag matches the literal value."
+        },
         "namespaceOverride": {
           "type": "string",
           "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
@@ -1037,6 +1041,10 @@
           "type": "string",
           "description": "Canonical scoped or unscoped npm package name.",
           "pattern": "^(?:@[a-z0-9][a-z0-9._-]*\\/)?[a-z0-9][a-z0-9._-]*$"
+        },
+        "retainedFallback": {
+          "type": "boolean",
+          "description": "Opt-in: when refreshing to the exact pin fails (npm/registry/postcondition), run the previously active generation instead of failing. First installs and cancellation never fall back."
         }
       },
       "required": ["npmPackage"],
@@ -1294,6 +1302,10 @@
         "gatedBy": {
           "type": "string",
           "description": "Optional command-availability feature-flag gate for the manifest-driven command definition (e.g. the opt-in `monitor` command). When set, the host skips registering this command unless the named boolean flag is enabled."
+        },
+        "activationWhen": {
+          "type": "string",
+          "description": "Optional command selector, for example \"backend == next\". Evaluated before registration and execution; other commands in the extension remain available."
         }
       },
       "allOf": [
