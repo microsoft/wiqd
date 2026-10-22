@@ -139,6 +139,11 @@ wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add connector --name "Contoso Tools" \
   --description "Contoso toolbelt over MCP" --url https://tools.contoso.com/mcp
 
+# Or reuse a connector the Microsoft 365 catalog already publishes — the catalog
+# supplies its URL and credential reference. Copy the selector from `connector list`.
+wiqd connector list --search "Azure DevOps"
+wiqd plugin add connector --selector "Azure DevOps MCP"
+
 # Or reference an existing custom connector by its logical name.
 # --dev-preview explicitly updates both manifestVersion and $schema.
 wiqd plugin add connector --kind openapi --name "Contoso Kusto" \
@@ -252,10 +257,10 @@ you build:
   tables and how they map to static vs. deep.
 
 Static validation does not inspect root `agentConnectors[]`, including `openApiConnector`.
-For a preview custom connector, attempt packaging before deep validation. The pinned local fx-core
-package schema can reject `agentConnectors` before producing a ZIP even when the deployed
-server-side AVL supports devPreview. The source manifest remains unchanged on that local failure;
-do not mistake it for a server verdict. An existing built ZIP can instead be checked with
+For a preview custom connector, package before deep validation. The bundled fx-core
+`3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of OpenAPI and remote MCP
+connectors using `ConnectionVault`, preserving their fields and leaving the source manifest
+unchanged. Local packaging success is not a server verdict. Check the built ZIP with
 `wiqd plugin validate --mode deep --package-file <zip>`. Report the returned findings rather than
 assuming every rejection is a rollout issue. Runtime invocation and Store/Partner Center acceptance
 remain separate checks. `wiqd plugin export` also fails explicitly for this connector kind

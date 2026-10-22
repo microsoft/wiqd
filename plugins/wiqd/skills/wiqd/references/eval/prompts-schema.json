@@ -10,6 +10,10 @@
       "required": ["schemaVersion", "items"],
       "additionalProperties": false,
       "properties": {
+        "$schema": {
+          "type": "string",
+          "description": "Optional URI identifying the JSON schema used to author this document."
+        },
         "schemaVersion": {
           "type": "string",
           "description": "Schema version. Generated suites must use 1.6.0 or a newer compatible 1.x version.",

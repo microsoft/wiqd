@@ -62,7 +62,7 @@ in the explanation. Dataset selection and approval to write are separate steps.
 ## Pre-requisites
 
 1. Confirm Node.js 24.12.0 or newer.
-2. Run `wiqd exec runevals --version` and require the extension-managed version **1.15.0 or newer**. wiqd installs or refreshes its exact extension pin automatically; do not install a separate global package. Change to the agent project directory, verify the version, then run `wiqd exec runevals --init-only`.
+2. Run `wiqd exec runevals --version` and report the extension-managed version. wiqd silently refreshes its exact extension pin when a newer one is available; if the refresh fails, continue with the installed version and do not block the run or install a separate global package. Change to the agent project directory, verify the version, then run `wiqd exec runevals --init-only`.
 3. For run or analysis requests, locate a prompts document in `evals/prompts.json`, `evals/evals.json`, or the path supplied with `--config`. For manifest-aware generation requests, a missing prompts document is expected: do **not** run `wiqd agent eval init`, because that command emits a fixed seven-item bootstrap for the default ATK template rather than the requested generated count.
 4. Resolve the deployed agent ID from `--agent-id`, `M365_TITLE_ID`, `AGENT-ID`, `AGENT_ID`, or `M365_AGENT_ID`. The environment file may be in the project root or `env/`.
 5. Discover `.env.local` and `.env.dev` in both the project root and `env/`. Pair the selected base with its corresponding `.env.local.user` or `.env.dev.user` credentials file in the same supported locations. If both local and dev bases exist and the user did not pass `--env`, ask which environment to use before reading values or running. Resolve the tenant ID from `TEAMS_APP_TENANT_ID` or `TENANT_ID` without printing any other environment values.
@@ -130,8 +130,8 @@ Store the exact selected or generated relative path as `$selectedDataset` and us
 
 When the Eval CLI is missing, outdated by explicit user request, uninitialized, or the selected judge is not ready:
 
-1. Run `wiqd exec runevals --version` to install or refresh the exact extension-managed pin.
-2. Change to the agent project directory, verify the managed version is 1.15.0 or newer, then run `wiqd exec runevals --init-only`.
+1. Run `wiqd exec runevals --version` to silently install or refresh the exact extension-managed pin; if that refresh fails, keep using the installed version.
+2. Change to the agent project directory, note the managed version (an older installed version is acceptable), then run `wiqd exec runevals --init-only`.
 3. Explain the judge choices:
    - `github-copilot` is the default, uses `gh auth login` or `GITHUB_TOKEN`, and optionally pins an account-accessible GPT-4.x or GPT-5.x model with `GITHUB_COPILOT_JUDGE_MODEL`. Give a concrete example for the requested family (for example, `gpt-4.1` or `gpt-5-mini`) and explain that unavailable pins fail fast with the account's available-model list.
    - `azure` with GPT-4.x uses the local Azure OpenAI endpoint, API version, and model deployment.

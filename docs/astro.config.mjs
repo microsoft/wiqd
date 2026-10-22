@@ -44,14 +44,21 @@ const includeInternalDocs = process.env.WIQD_DOCS_INTERNAL === '1';
 // ONLY for the internal build. This keeps every internal slug string out of
 // astro.config.mjs itself so the file is safe to ship verbatim in the public
 // mirror, and lets the mirror generator omit src/internal-sidebar.mjs entirely.
-const internalSidebarGroups = includeInternalDocs
-  ? (await import('./src/internal-sidebar.mjs')).internalSidebarGroups
-  : [];
+const { internalSidebarGroups, internalRedirects } = includeInternalDocs
+  ? await import('./src/internal-sidebar.mjs')
+  : { internalSidebarGroups: [], internalRedirects: {} };
+
+// Astro matches redirect sources below the base but emits destinations
+// verbatim, so destinations need the deployment base prepended.
+const redirects = Object.fromEntries(
+  Object.entries(internalRedirects).map(([from, to]) => [from, `${base}${to.replace(/^\/+/, '')}`]),
+);
 
 // https://astro.build/config
 export default defineConfig({
   site,
   base,
+  redirects,
   markdown: {
     remarkPlugins: [
       remarkStripMdExtensions,
@@ -115,7 +122,13 @@ export default defineConfig({
             { label: 'Build a plugin', slug: 'getting-started/build-a-plugin' },
             { label: 'Plugin authoring reference', slug: 'getting-started/plugin-reference' },
             { label: 'Authentication', slug: 'getting-started/authentication' },
-            { label: 'CI/CD Authentication', slug: 'getting-started/ci-cd-authentication' },
+            {
+              label: 'CI/CD',
+              items: [
+                { label: 'Pipeline setup', slug: 'getting-started/ci-cd-pipelines' },
+                { label: 'Authentication', slug: 'getting-started/ci-cd-authentication' },
+              ],
+            },
           ],
         },
         { label: 'Cookbooks', slug: 'cookbooks' },
@@ -139,6 +152,7 @@ export default defineConfig({
           items: [
             { label: 'Command reference', slug: 'cli/reference' },
             { label: 'Agent package', slug: 'cli/agent/agent-package' },
+            { label: 'Connectors', slug: 'cli/connector' },
           ],
         },
         {

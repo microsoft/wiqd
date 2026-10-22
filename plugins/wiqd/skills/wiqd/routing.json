@@ -157,9 +157,8 @@
         "plugin import",
         "plugin add skill",
         "plugin add connector",
-        "plugin connector list",
-        "plugin connector show",
-        "plugin connector use",
+        "connector list",
+        "connector show",
         "plugin add agent",
         "plugin validate",
         "plugin show",
@@ -326,6 +325,28 @@
       "requires": [
         "devui start",
         "devui ask"
+      ],
+      "journeyPhases": []
+    },
+    {
+      "id": "agent-ci-cd",
+      "file": "workflows/agent-ci-cd.md",
+      "routingLabel": "Agent development CI/CD setup",
+      "routingIntent": "Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands",
+      "order": 11,
+      "triggers": [
+        "set up agent CI/CD",
+        "create an agent pipeline",
+        "GitHub Actions for my agent",
+        "Azure Pipelines for my agent",
+        "automate agent deployment",
+        "unattended agent deployment"
+      ],
+      "requires": [
+        "agent validate",
+        "agent provision",
+        "agent package",
+        "agent publish"
       ],
       "journeyPhases": []
     }
@@ -1295,6 +1316,36 @@
       "phrase": "open the debugger",
       "workflowId": "devui",
       "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "set up agent ci/cd",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "create an agent pipeline",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "github actions for my agent",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "azure pipelines for my agent",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "automate agent deployment",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "unattended agent deployment",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
     }
   ]
 }

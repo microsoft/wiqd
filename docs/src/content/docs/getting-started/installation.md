@@ -49,30 +49,18 @@ separate [installation-script path](#path-2-use-the-installation-script).
 
 ### Migrating from a CLI-composed plugin
 
-The WIQD CLI no longer exposes host-plugin management commands. The installer
-can migrate a proven WIQD-owned local marketplace to the public source, but
-stops on unverified local ownership or a conflicting requested marketplace binding.
-Other remote registrations stay untouched and do not block installation. It never
-deletes your plugin source directories. Extension activation does not change host plugins.
+Rerun the installation script to replace an older CLI-composed plugin with the
+marketplace version. Your local source files are preserved. Avoid running other
+plugin-management commands during migration.
 
-Copilot may report that uninstall disabled a local live plugin without removing
-its files. The installer handles that specific WIQD state by unregistering the
-owned local marketplace without force, then installing the public plugin. Other
-plugins that reference the marketplace still block migration, even if disabled.
+If setup warns that it could not clean up an older installation, check your
+host's plugin settings for duplicates before starting a new session. If setup
+stops, follow the displayed instructions and retry.
 
-The installer reads native JSON inventories from both hosts. Use host versions
-that support `plugin marketplace list --json` and `plugin list --json`.
-If a required JSON command is unsupported, update that host and rerun the
-installer; unreadable inventory stops plugin changes rather than being treated
-as an empty installation.
-
-Before switching an existing installation, inspect your chosen host's native
-plugin and marketplace inventory to identify the actual source. An old local
-deployment may share the WIQD plugin name with a public marketplace plugin;
-the name alone does not prove the source is correct. Use the host's native
-uninstall flow for that old deployment, remove or rebind its old local
-marketplace entry, then follow the marketplace commands above. Start a new
-host session. Do not delete configuration directories or run a blanket cleanup.
+Claude plugins installed only for a project need manual handling. You can skip
+plugin setup with `-SkipPlugin`
+(PowerShell) or `--skip-plugin` (Bash) and use the marketplace commands above.
+Do not delete configuration directories or run a blanket cleanup.
 
 The `wiqd component plugin` subtree, `wiqd install plugin`,
 `wiqd uninstall plugin`, and `wiqd install --status` have been removed.
@@ -139,15 +127,9 @@ The installer will:
   Copilot and Claude hosts. It does not install either host. Use `-SkipPlugin`
   (PowerShell) or `--skip-plugin` (Bash) to skip this step.
 
-The installer manages plugins with native PowerShell or bash functions,
-independent of the installed CLI version. Bash reuses the Node.js runtime verified
-earlier in the installation for plugin inventory and migration checks. The parser
-is embedded in the downloaded script; no `jq` or separate helper download is
-needed. PowerShell uses its built-in JSON parser. Skipping plugin installation,
-including when no hosts are detected, does not require a parser.
-Conflicting plugin sources require manual resolution; forcing a CLI
-reinstall does not bypass the plugin ownership checks. A plugin failure leaves
-the verified CLI installed but returns a failure result.
+Plugin setup is managed by the installation script. Conflicting plugin sources
+require manual resolution; forcing a CLI reinstall does not bypass those checks.
+A plugin setup failure leaves the CLI installed but reports an installation error.
 
 Successful bootstrap installs record their hosted installer in
 `~/.wiqd/install-method.json`. `wiqd update` reuses that installer to upgrade,
@@ -176,17 +158,14 @@ deployment.
 
 If host-plugin installation succeeded, start a new host session; no reinstall is needed.
 If skipped or no host was detected, install the marketplace plugin manually.
-The installer installs or updates `wiqd@awesome-copilot` for Copilot, reusing
-the default Awesome Copilot marketplace or adding `github/awesome-copilot`
-when absent. Claude continues to use `wiqd@wiqd` from `microsoft/wiqd`.
-Existing remote plugins and marketplaces are preserved. If you previously
-installed the Microsoft WIQD Copilot alternative, inspect your host plugin
-settings and choose which WIQD plugin to enable before starting a new session.
-Plugin detection uses the host's native inventory, not a fixed manifest-file
-layout. If a host is unavailable but a WIQD cache directory remains, restore
-that host and inspect its plugin inventory before retrying the installer.
-If installation failed, follow the reported remediation and retry.
-Success confirms the native install command completed, not that individual skills were tested.
+New Copilot installations use `wiqd@awesome-copilot`; Claude uses `wiqd@wiqd`
+from `microsoft/wiqd`. Existing verified Microsoft plugins are updated in place.
+If both Copilot variants are installed, setup updates the Awesome Copilot
+variant and warns about duplicates. Choose which WIQD plugin to enable in your
+host's settings before starting a new session.
+Setup runs only for detected hosts; each stage inspects and changes only its own host.
+For older local installations or setup warnings, see
+[Migrating from a CLI-composed plugin](#migrating-from-a-cli-composed-plugin).
 See [Build a Plugin](/getting-started/build-a-plugin/) for the complete workflow.
 
 ## Pass parameters to the bootstrap installer

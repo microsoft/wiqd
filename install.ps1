@@ -94,6 +94,9 @@ $ErrorActionPreference = 'Stop'
 # by $LASTEXITCODE; Invoke-Native enforces this locally too. PowerShell 5.x
 # / 7.0–7.2 ignore the variable, so the assignment is a safe no-op there.
 $PSNativeCommandUseErrorActionPreference = $false
+$UpdateResultPath = [Environment]::GetEnvironmentVariable('WIQD_UPDATE_RESULT_PATH')
+$script:InstallerVersionExplicit = $PSBoundParameters.ContainsKey('Version')
+$script:InstallerForceRequested = [bool]$Force
 
 $script:InstallUrl = 'https://aka.ms/wiqd/install.ps1'
 
@@ -119,13 +122,14 @@ $script:NpmRegistryArgs = @()
 # summary banners, the skills-list gate, and the final exit code.
 $script:PluginInstallFailed = $false
 $script:PluginInstallSucceeded = $false
+$script:PluginNotices = @()
 $script:PluginInstallSkipped = $false
 $script:PluginInstallCancelled = $false
 $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.19.0"
+$script:WiqdVersion = "0.20.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -215,6 +219,77 @@ function Invoke-Native {
     }
 }
 
+function Test-WiqdUpdaterProcess {
+    param(
+        [string]$Name,
+        [string]$CommandLine
+    )
+
+    if ([System.IO.Path]::GetFileName($Name) -notmatch '^(?i:node(?:\.exe)?)$') { return $false }
+    if ($CommandLine -notmatch '(?i:[\\/](?:bin[\\/]wiqd\.js|dist[\\/]wiqd-cli\.cjs)(?:"|''|\s|$))') {
+        return $false
+    }
+    return $CommandLine -match '(?i)(?:^|\s)update(?:\s|$)'
+}
+
+function Get-WiqdAncestorProcesses {
+    $ancestors = [System.Collections.Generic.List[object]]::new()
+    if ($IsWindows) {
+        try {
+            $currentId = $PID
+            for ($depth = 0; $depth -lt 4; $depth++) {
+                $current = Get-CimInstance Win32_Process -Filter "ProcessId=$currentId" -ErrorAction Stop
+                if (-not $current -or -not $current.ParentProcessId) { break }
+                $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($current.ParentProcessId)" -ErrorAction Stop
+                if (-not $parent) { break }
+                $ancestors.Add([pscustomobject]@{
+                    Name = [string]$parent.Name
+                    CommandLine = [string]$parent.CommandLine
+                })
+                $currentId = [int]$parent.ProcessId
+            }
+        } catch {
+            return @()
+        }
+        return $ancestors.ToArray()
+    }
+
+    $currentId = $PID
+    for ($depth = 0; $depth -lt 4; $depth++) {
+        $parentResult = Invoke-Native { & ps -o ppid= -p $currentId }
+        if ($parentResult.Failed) { break }
+        $parentText = ($parentResult.StdOut -join '').Trim()
+        $parentId = 0
+        if (-not [int]::TryParse($parentText, [ref]$parentId) -or $parentId -le 0) { break }
+        $nameResult = Invoke-Native { & ps -o comm= -p $parentId }
+        $commandResult = Invoke-Native { & ps -o command= -p $parentId }
+        if ($nameResult.Failed -or $commandResult.Failed) { break }
+        $ancestors.Add([pscustomobject]@{
+            Name = ($nameResult.StdOut -join '').Trim()
+            CommandLine = ($commandResult.StdOut -join ' ').Trim()
+        })
+        $currentId = $parentId
+    }
+    return $ancestors.ToArray()
+}
+
+function Test-LegacyWiqdUpdaterInvocation {
+    param(
+        [bool]$ForceRequested = $script:InstallerForceRequested,
+        [bool]$VersionWasExplicit = $script:InstallerVersionExplicit,
+        [string]$ResultPath = $UpdateResultPath,
+        [object[]]$Ancestors
+    )
+
+    if (-not $ForceRequested -or -not $VersionWasExplicit -or -not [string]::IsNullOrEmpty($ResultPath)) {
+        return $false
+    }
+    if ($null -eq $Ancestors) { $Ancestors = @(Get-WiqdAncestorProcesses) }
+    return @($Ancestors | Where-Object {
+        Test-WiqdUpdaterProcess -Name ([string]$_.Name) -CommandLine ([string]$_.CommandLine)
+    }).Count -gt 0
+}
+
 # native-plugin:start
 function Get-WiqdPluginHostPath {
     param([string]$Cli)
@@ -261,7 +336,11 @@ function Invoke-WiqdPluginHost {
         $stderr = $process.StandardError.ReadToEndAsync()
         $timer = [Diagnostics.Stopwatch]::StartNew()
         while (-not $process.WaitForExit(100)) {
-            if ($timer.ElapsedMilliseconds -ge $timeout) { throw "Plugin setup failed:`n  $Cli $($Arguments -join ' ')`nError: $Cli timed out.`nLet other plugin operations finish, then rerun this installer." }
+            if ($timer.ElapsedMilliseconds -ge $timeout) {
+                $failure = [TimeoutException]::new("Plugin setup failed:`n  $Cli $($Arguments -join ' ')`nError: $Cli timed out.`nLet other plugin operations finish, then rerun this installer.")
+                $failure.Data['TimedOut'] = $true
+                throw $failure
+            }
         }
         $code = $process.ExitCode
         if ($code -in @(130, -1073741510)) { $code = 130 }
@@ -279,14 +358,15 @@ function Invoke-WiqdPluginHost {
 function Assert-WiqdPluginHostSuccess {
     param($Result, [string]$InventoryCli)
     if ($Result.ExitCode -ne 0) {
-        $message = "Plugin setup failed:`n  $($Result.Command)`nError: $($Result.StdErr.Trim())"
+        $message = "Plugin setup failed:`n  $($Result.Command)`nError (exit $($Result.ExitCode)): $($Result.StdErr.Trim())`n$($Result.StdOut.Trim())"
         if ($Result.ExitCode -eq 130) { $message = "Plugin setup cancelled:`n  $($Result.Command)" }
         else {
-            if ($InventoryCli) { $message += "`nCannot read $InventoryCli JSON inventory. Update $InventoryCli to a version supporting native plugin/marketplace list --json." }
+            if ($InventoryCli) { $message += "`nCannot read $InventoryCli inventory. Inspect the native command output before retrying." }
             $message += "`nResolve the reported error, then rerun this installer."
         }
         $failure = [InvalidOperationException]::new($message)
         $failure.Data['ExitCode'] = if ($Result.ExitCode -eq 130) { 130 } else { 1 }
+        $failure.Data['TimedOut'] = $Result.ExitCode -eq 124
         throw $failure
     }
 }
@@ -299,15 +379,20 @@ function ConvertFrom-WiqdMarketplaceList {
     foreach ($entry in $entries) {
         if ($entry -isnot [pscustomobject] -or $entry.name -isnot [string] -or -not $entry.name.Trim() -or $entry.name -match '[\s@]') { throw 'Invalid JSON marketplace entry.' }
         if ($Cli -eq 'copilot') {
-            if ($entry.source -isnot [string] -or $entry.source -cnotmatch '^(GitHub|Local): (.+)$' -or $entry.isDefault -isnot [bool]) { throw 'Invalid Copilot JSON marketplace entry.' }
-            $kind = $Matches[1]
-            $source = $Matches[2]
+            if ($entry.source -isnot [string] -or -not $entry.source.Trim()) { throw 'Invalid Copilot JSON marketplace entry.' }
+            if ($entry.source -cmatch '^([^:\s]+): (.*)$') { $kind = $Matches[1]; $source = $Matches[2] }
+            else { $kind = 'Unknown'; $source = $entry.source }
         } elseif ($Cli -eq 'claude') {
             switch -CaseSensitive ($entry.source) {
                 'github' { $kind = 'GitHub'; $source = $entry.repo }
                 'directory' { $kind = 'Directory'; $source = $entry.path }
                 'url' { $kind = 'URL'; $source = $entry.url }
-                default { throw 'Unsupported Claude JSON marketplace source.' }
+                default {
+                    if ($entry.source -isnot [string] -or -not $entry.source.Trim()) { throw 'Invalid Claude JSON marketplace source.' }
+                    $values = @('repo', 'path', 'url' | ForEach-Object { if ($entry.PSObject.Properties[$_]) { $entry.$_ } })
+                    if ($values.Count -ne 1) { throw 'Unreadable Claude JSON marketplace source.' }
+                    $kind = $entry.source; $source = $values[0]
+                }
             }
         } else { throw 'Unknown inventory host.' }
         if ($source -isnot [string] -or -not $source.Trim() -or $source -match '[\r\n\x00]') { throw 'Invalid JSON marketplace source.' }
@@ -334,27 +419,164 @@ function ConvertFrom-WiqdNativePluginList {
     }
 }
 
-function Get-WiqdNativePluginList {
-    param([string]$Cli)
-    $result = Invoke-WiqdPluginHost $Cli @('plugin', 'list', '--json')
-    if ($Cli -eq 'claude') {
-        if ($result.ExitCode -eq 1 -and $result.StdErr.Trim() -match '(?im)^(?:error:\s*)?unknown (?:command [''"]list[''"]|option [''"]--json[''"])(?:\s|$)') {
-            $registry = Join-Path $HOME '.claude/plugins/installed_plugins.json'
-            if (-not (Test-Path -LiteralPath $registry)) { return }
-            $data = Get-Content -LiteralPath $registry -Raw | ConvertFrom-Json
-            if (-not $data.plugins -or $data.plugins -is [array] -or $data.plugins -isnot [pscustomobject]) { throw 'Invalid Claude plugin registry.' }
-            foreach ($property in $data.plugins.PSObject.Properties) {
-                if ($property.Value -isnot [array] -or $property.Value.Count -eq 0) { throw 'Incomplete Claude plugin registry.' }
-                foreach ($entry in $property.Value) {
-                    if ($entry.version -isnot [string] -or $entry.scope -isnot [string]) { throw 'Incomplete Claude plugin registry.' }
-                    [pscustomobject]@{ id = $property.Name; version = $entry.version; scope = $entry.scope }
-                }
-            }
-            return
+function Test-WiqdUnsupportedClaudePluginList {
+    param($Result)
+    $pattern = '\A(?:error:\s*)?unknown (?:command [''"]list[''"]|option [''"]--json[''"])\s*\z'
+    return $Result.ExitCode -eq 1 -and -not $Result.StdOut -and $Result.StdErr.Trim() -match $pattern
+}
+
+function ConvertFrom-WiqdLegacyInventory {
+    param([string]$Cli, [string]$Text, [switch]$Marketplaces, [switch]$AllowNoMatch)
+    if ($Marketplaces) { ConvertFrom-WiqdMarketplacePresence $Text; return }
+    $text = $Text.TrimStart([char]0xFEFF) -replace '\x1b\[[0-9;]*m', ''
+    $lines = @($text -split '\r?\n' | Where-Object { $_.Trim() })
+    if (-not $lines.Count -and -not $AllowNoMatch) { throw 'Blank legacy inventory.' }
+    $entries = @()
+    $current = $null
+    foreach ($line in $lines) {
+        $entry = $line.Trim() -replace '^[•·❯*>-]\s+', ''
+        if ($entry -cmatch '^([A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+|wiqd)(?=\s|$)') {
+            $current = [pscustomobject]@{ id = $Matches[1]; inventorySource = 'text-presence' }
+            $entries += $current
+        } elseif ($entry -match '@wiqd(?=$|[^A-Za-z0-9_.-])') {
+            throw 'Ambiguous marketplace consumer in text inventory.'
+        } elseif ($Cli -eq 'claude' -and $current -and $entry -match '^Scope\s*:\s*(\S+)\s*$') {
+            if ($current.scope -and $current.scope -cne $Matches[1]) { throw 'Conflicting Claude plugin scopes in text inventory.' }
+            $current | Add-Member -NotePropertyName scope -NotePropertyValue $Matches[1] -Force
+        } elseif ($Cli -ne 'claude' -or -not $current -or $line -notmatch '^\s+\S[^:]*:\s*.*$') {
+            $current = $null
         }
     }
-    Assert-WiqdPluginHostSuccess $result $Cli
-    ConvertFrom-WiqdNativePluginList $Cli $result.StdOut
+    if (-not $entries.Count -and ($AllowNoMatch -or $text.Trim() -match '^No plugins installed\.?$')) { return }
+    if (-not $entries.Count) { throw 'No plugin identities found in text inventory.' }
+    $entries
+}
+
+function ConvertFrom-WiqdMarketplacePresence {
+    param([string]$Text)
+    $text = $Text.TrimStart([char]0xFEFF) -replace '\x1b\[[0-9;]*m', ''
+    $entries = @()
+    $pending = ''
+    foreach ($line in ($text -split '\r?\n')) {
+        $entry = $line.Trim() -replace '^[•·❯*>-]\s+', ''
+        if ($entry -match '^([A-Za-z0-9_.-]+)\s+\(Local:\s*(.+)\)$') {
+            $entries += [pscustomobject]@{ name = $Matches[1]; kind = 'Local'; source = $Matches[2]; inventorySource = 'text-local' }
+            $pending = ''
+        } elseif ($entry -match '^([A-Za-z0-9_.-]+)$') {
+            $pending = $Matches[1]
+        } elseif ($pending -and $entry -match '^Source\s*:\s*Directory\s*\((.+)\)$') {
+            $entries += [pscustomobject]@{ name = $pending; kind = 'Directory'; source = $Matches[1]; inventorySource = 'text-local' }
+            $pending = ''
+        } elseif ($entry) { $pending = '' }
+    }
+    if (@($entries | Where-Object { $_.source -match '[\x00-\x1f]' }).Count) { throw 'Invalid local marketplace source.' }
+    foreach ($source in @('microsoft/wiqd', 'github/awesome-copilot')) {
+        $pattern = '(?<![A-Za-z0-9_./:@\\+-])(?:(?:git\+)?https?://github\.com/|git@github\.com:)?' + [regex]::Escape($source) + '(?:\.git)?/?(?=$|[\s''"()<>,;])'
+        if ($text -match $pattern) {
+            $name = if ($source -eq 'microsoft/wiqd') { 'wiqd' } else { 'awesome-copilot' }
+            $entries += [pscustomobject]@{ name = $name; kind = 'GitHub'; source = $source; inventorySource = 'text-presence' }
+        }
+    }
+    if (-not $entries.Count -and $text.Trim() -match '^No marketplaces configured\.?$') { return }
+    if (-not $entries.Count) { throw 'No known WIQD marketplace repository found in text inventory.' }
+    $entries
+}
+
+function Get-WiqdNativeMarketplaceList {
+    param([string]$Cli)
+    $diagnostics = @()
+    try {
+        $result = Invoke-WiqdPluginHost $Cli @('plugin', 'marketplace', 'list', '--json')
+        if ($result.ExitCode -ne 0 -and $result.ExitCode -notin @(124, 130)) {
+            $diagnostics += "JSON inventory failed: $($result.Command) (exit $($result.ExitCode))`n$($result.StdErr.Trim())`n$($result.StdOut.Trim())"
+            $result = Invoke-WiqdPluginHost $Cli @('plugin', 'marketplace', 'list')
+            Assert-WiqdPluginHostSuccess $result $Cli
+            try { ConvertFrom-WiqdMarketplacePresence $result.StdOut }
+            catch { throw "$($result.Command): $($_.Exception.Message)`n$($result.StdOut)`n$($result.StdErr)" }
+            return
+        }
+        Assert-WiqdPluginHostSuccess $result $Cli
+        try { ConvertFrom-WiqdMarketplaceList $Cli $result.StdOut } catch { throw "$($result.Command): $($_.Exception.Message)`n$($result.StdOut)`n$($result.StdErr)" }
+    } catch {
+        foreach ($diagnostic in $diagnostics) { [Console]::Error.WriteLine($diagnostic) }
+        throw
+    }
+}
+
+function Get-WiqdStoredCopilotPlugins {
+    $configRoot = if ($env:COPILOT_HOME) { $env:COPILOT_HOME } else { Join-Path $HOME '.copilot' }
+    $registry = Join-Path $configRoot 'config.json'
+    try {
+        $file = Get-Item -LiteralPath $registry -Force -ErrorAction Stop
+        if ($file.PSIsContainer -or $file.Length -gt 1048576) { throw 'Invalid registry file.' }
+        $data = Get-Content -LiteralPath $registry -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+        if ($data -isnot [pscustomobject] -or $data.installed_plugins -isnot [array]) { throw 'Missing installed_plugins array.' }
+        $ids = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        $entries = @(
+            foreach ($record in $data.installed_plugins) {
+                if ($record -isnot [pscustomobject] -or $record.name -isnot [string] -or -not $record.name.Trim() -or $record.name -match '[\s@]' -or $record.marketplace -isnot [string] -or $record.marketplace -match '[\s@]' -or $record.enabled -isnot [bool]) { throw 'Invalid registry entry.' }
+                $id = $record.name
+                if ($record.marketplace) { $id += '@' + $record.marketplace }
+                if (-not $ids.Add($id)) { throw 'Duplicate registry identity.' }
+                $entry = [ordered]@{ id = $id; enabled = $record.enabled; inventorySource = 'config' }
+                if ($record.PSObject.Properties['version']) {
+                    if ($record.version -isnot [string] -or -not $record.version.Trim()) { throw 'Invalid registry version.' }
+                    $entry.version = $record.version
+                }
+                [pscustomobject]$entry
+            }
+        )
+    } catch {
+        # JSON parser diagnostics can contain authentication state from this file.
+        throw 'Plugin setup failed: Cannot read a valid Copilot installed_plugins array from config.json. Check the Copilot configuration, then retry, or use -SkipPlugin to install only the CLI.'
+    }
+    $entries
+}
+
+function Get-WiqdNativePluginList {
+    param([string]$Cli, [switch]$RequireNative, [switch]$AllowNoMatch)
+    $diagnostics = @()
+    try {
+        $result = Invoke-WiqdPluginHost $Cli @('plugin', 'list', '--json')
+        $jsonResult = $result
+        if ($result.ExitCode -ne 0 -and $result.ExitCode -notin @(124, 130)) {
+            $diagnostics += "JSON inventory failed: $($result.Command) (exit $($result.ExitCode))`n$($result.StdErr.Trim())`n$($result.StdOut.Trim())"
+            $result = Invoke-WiqdPluginHost $Cli @('plugin', 'list')
+            if ($result.ExitCode -eq 0) {
+                try { ConvertFrom-WiqdLegacyInventory $Cli $result.StdOut -AllowNoMatch:$AllowNoMatch } catch { throw "$($result.Command): $($_.Exception.Message)`n$($result.StdOut)`n$($result.StdErr)" }
+                return
+            }
+            if ($result.ExitCode -in @(124, 130)) { Assert-WiqdPluginHostSuccess $result $Cli }
+        }
+        if ($Cli -eq 'claude') {
+            if (Test-WiqdUnsupportedClaudePluginList $jsonResult) {
+                $registry = Join-Path $HOME '.claude/plugins/installed_plugins.json'
+                if (-not (Test-Path -LiteralPath $registry)) { return }
+                try {
+                    $data = Get-Content -LiteralPath $registry -Raw | ConvertFrom-Json
+                    if (-not $data.plugins -or $data.plugins -is [array] -or $data.plugins -isnot [pscustomobject]) { throw 'Invalid Claude plugin registry.' }
+                    foreach ($property in $data.plugins.PSObject.Properties) {
+                        if ($property.Value -isnot [array] -or $property.Value.Count -eq 0) { throw 'Incomplete Claude plugin registry.' }
+                        foreach ($entry in $property.Value) {
+                            if ($entry.version -isnot [string] -or $entry.scope -isnot [string]) { throw 'Incomplete Claude plugin registry.' }
+                            [pscustomobject]@{ id = $property.Name; version = $entry.version; scope = $entry.scope }
+                        }
+                    }
+                } catch { throw "$($result.Command): $($_.Exception.Message)`n$($result.StdErr)" }
+                return
+            }
+        }
+        if ($Cli -eq 'copilot' -and $result.ExitCode -ne 0 -and $result.ExitCode -notin @(124, 130) -and -not $RequireNative) {
+            $diagnostics += "Native inventory failed: $($result.Command) (exit $($result.ExitCode))`n$($result.StdErr.Trim())`n$($result.StdOut.Trim())"
+            Get-WiqdStoredCopilotPlugins
+            return
+        }
+        Assert-WiqdPluginHostSuccess $result $Cli
+        try { ConvertFrom-WiqdNativePluginList $Cli $result.StdOut } catch { throw "$($result.Command): $($_.Exception.Message)`n$($result.StdOut)`n$($result.StdErr)" }
+    } catch {
+        foreach ($diagnostic in $diagnostics) { [Console]::Error.WriteLine($diagnostic) }
+        throw
+    }
 }
 
 function Test-WiqdPluginSourcePath {
@@ -420,23 +642,52 @@ function Test-WiqdPluginCache {
 }
 
 function Get-WiqdPluginInventory {
+    param([switch]$AllowUnknown, [string]$InstallCli)
     $legacy = if ($env:WIQD_MARKETPLACE_DIR) { $env:WIQD_MARKETPLACE_DIR } else { Join-Path $HOME '.wiqd/marketplace/wiqd' }
-    foreach ($cli in @('copilot', 'claude')) {
+    $hosts = if ($InstallCli) { @($InstallCli) } else { @('copilot', 'claude') }
+    foreach ($cli in $hosts) {
         if (-not (Get-WiqdPluginHostPath $cli)) {
             if (Test-WiqdPluginCache $cli) { throw "$cli is unavailable but a WIQD plugin cache exists. Restore the host to inspect native plugin inventory before retrying." }
             continue
         }
-        $result = Invoke-WiqdPluginHost $cli @('plugin', 'marketplace', 'list', '--json')
-        Assert-WiqdPluginHostSuccess $result $cli
-        $markets = @(ConvertFrom-WiqdMarketplaceList $cli $result.StdOut)
-        $plugins = @(Get-WiqdNativePluginList $cli)
+        $readErrors = @()
+        if (-not $AllowUnknown) { $markets = @(Get-WiqdNativeMarketplaceList $cli) }
+        try { $plugins = @(Get-WiqdNativePluginList $cli -AllowNoMatch:($AllowUnknown -and $InstallCli -eq $cli)) } catch {
+            if (-not $AllowUnknown -or $_.Exception.Data['ExitCode'] -eq 130 -or $_.Exception.Data['TimedOut']) { throw }
+            $plugins = @(); $readErrors += $_.Exception.Message
+        }
+        if ($AllowUnknown -and $InstallCli -ceq $cli -and -not $readErrors.Count) {
+            $wiqd = @($plugins | Where-Object { $_.id -ceq 'wiqd' -or $_.id -clike 'wiqd@*' })
+            $awesome = @($wiqd | Where-Object { $_.id -ceq 'wiqd@awesome-copilot' })
+            $legacyTarget = @($wiqd | Where-Object { $_.id -ceq 'wiqd@wiqd' })
+            if (($cli -eq 'copilot' -and $awesome.Count -gt 0) -or $legacyTarget.Count -eq 0) {
+                $duplicate = @($wiqd | Where-Object { $_.id -ceq (Get-WiqdPluginTarget $cli).id }).Count -gt 1
+                $publicError = if ($duplicate) { 'Requested WIQD plugin identity is duplicated.' } else { '' }
+                $unknown = @($wiqd | Where-Object { $_.id -ceq 'wiqd' }).Count -gt 0
+                $warnCoexistence = $cli -eq 'copilot' -and @($wiqd | Where-Object { $_.id -cne 'wiqd@awesome-copilot' }).Count -gt 0
+                [pscustomobject]@{ cli = $cli; state = 'absent'; publicState = 'absent'; publicError = $publicError; marketplaces = @(); plugins = $plugins; skipMarketplace = $cli -eq 'copilot'; inventoryUnknown = $unknown; warnCoexistence = $warnCoexistence }
+                return
+            }
+        }
+        if ($AllowUnknown) {
+            try { $markets = @(Get-WiqdNativeMarketplaceList $cli) } catch {
+                if ($_.Exception.Data['ExitCode'] -eq 130 -or $_.Exception.Data['TimedOut']) { throw }
+                $markets = @(); $readErrors += $_.Exception.Message
+            }
+        }
         $destination = Get-WiqdPluginTarget $cli
+        if ($readErrors.Count) {
+            foreach ($message in $readErrors) { [Console]::Error.WriteLine($message) }
+            [pscustomobject]@{ cli = $cli; state = 'unknown'; publicState = 'unknown'; publicError = ''; marketplaces = $markets; plugins = $plugins; inventoryUnknown = $true }
+            continue
+        }
         $wiqd = @($plugins | Where-Object { $_.id -ceq 'wiqd' -or $_.id -clike 'wiqd@*' })
         $relevant = @($markets | Where-Object { $_.name -ceq 'wiqd' -or $_.name -ceq $destination.marketplace -or @($wiqd | ForEach-Object { $_.id -replace '^wiqd@', '' }) -ccontains $_.name -or (Test-WiqdPublicPluginSource $_.source) -or (Test-WiqdPluginSourcePath $_.source $legacy) })
         $binding = @($markets | Where-Object { $_.name -ceq $destination.marketplace })
         $target = @($wiqd | Where-Object { $_.id -ceq $destination.id })
         $legacyBinding = @($markets | Where-Object { $_.name -ceq 'wiqd' })
         $legacyTarget = @($wiqd | Where-Object { $_.id -ceq 'wiqd@wiqd' })
+        $presenceOnly = @($markets | Where-Object { $_.inventorySource -ceq 'text-presence' }).Count -gt 0
         $local = @($relevant | Where-Object { $_.kind -in @('Local', 'Directory') -or (Test-WiqdPluginSourcePath $_.source $legacy) })
         $state = 'absent'
         $reason = ''
@@ -449,8 +700,9 @@ function Get-WiqdPluginInventory {
         if ($local.Count -gt 0) {
             $state = 'conflict'
             $reason = 'Local WIQD plugin ownership cannot be verified.'
-            if ($local.Count -eq 1 -and $legacyBinding.Count -eq 1 -and $local[0].name -ceq 'wiqd' -and $legacyTarget.Count -eq 1 -and (Test-WiqdOwnedPluginSource $local[0].source)) {
+            if ($local.Count -eq 1 -and $legacyBinding.Count -eq 1 -and $local[0].name -ceq 'wiqd' -and $local[0].kind -cin @('Local', 'Directory') -and $legacyTarget.Count -eq 1 -and (Test-WiqdOwnedPluginSource $local[0].source)) {
                 if (@($plugins | Where-Object { $_.id -clike '*@wiqd' -and $_.id -cne 'wiqd@wiqd' }).Count -gt 0) { $reason = "Other plugins also use marketplace 'wiqd'." }
+                elseif (@($plugins | Where-Object { $_.inventorySource -eq 'config' }).Count -gt 0) { $reason = 'Stored plugin inventory cannot verify all consumers; native inventory is required for local migration.' }
                 else { $state = 'local'; if ($cli -eq 'claude') { $targetError = '' } }
             }
         }
@@ -461,7 +713,31 @@ function Get-WiqdPluginInventory {
             $targetError = 'Claude WIQD scope is not user or cannot be determined.'
             if ($state -eq 'local') { $state = 'conflict'; $reason = $targetError }
         }
-        [pscustomobject]@{ cli = $cli; state = $state; marketplaces = $markets; plugins = $plugins; reason = $reason; targetError = $targetError }
+        $publicState = $state
+        $publicError = $targetError
+        if ($cli -eq 'claude' -and $local.Count -eq 0 -and $target.Count -eq 1 -and $target[0].inventorySource -eq 'text-presence' -and -not $target[0].scope -and $binding.Count -eq 1 -and $binding[0].kind -ceq 'GitHub' -and (Test-WiqdPublicPluginSource $binding[0].source $destination.repository)) {
+            $publicError = ''
+        }
+        if ($cli -eq 'copilot') {
+            $publicError = ''
+            if ($state -eq 'conflict' -and $local.Count -eq 1 -and $local[0].name -ceq $destination.marketplace) { $publicState = 'coexist' }
+        }
+        if ($legacyTarget.Count -gt 1 -or ($cli -eq 'claude' -and $legacyBinding.Count -gt 1)) { $publicError = 'Requested WIQD plugin or marketplace identity is duplicated.' }
+        $remote = $legacyBinding.Count -eq 1 -and $legacyBinding[0].kind -ceq 'GitHub' -and (Test-WiqdPublicPluginSource $legacyBinding[0].source 'microsoft/wiqd')
+        if ($cli -eq 'copilot' -and ($legacyBinding.Count -gt 0 -or $legacyTarget.Count -gt 0) -and $state -ne 'local') {
+            $publicState = 'coexist'
+            if ($remote -and $legacyTarget.Count -eq 1 -and $target.Count -eq 0) { $publicState = 'preserve' }
+        } elseif ($cli -eq 'claude' -and $remote -and $legacyTarget.Count -eq 1 -and $legacyTarget[0].scope -ceq 'user' -and -not $publicError) { $publicState = 'preserve' }
+        $identityUnknown = @($wiqd | Where-Object { $_.id -ceq 'wiqd' -or ($_.id -cne 'wiqd@wiqd' -and @($markets.name) -cnotcontains ($_.id -replace '^wiqd@', '')) }).Count -gt 0
+        if ($identityUnknown) { $publicState = 'conflict' }
+        $inventoryUnknown = $false
+        if ($AllowUnknown -and $identityUnknown -and -not $publicError) { $inventoryUnknown = $true }
+        if ($wiqd.Count -gt 0 -and $presenceOnly -and $binding.Count -eq 0 -and $state -ne 'local' -and $publicState -notin @('preserve', 'conflict') -and -not $publicError) {
+            if (-not $AllowUnknown) { throw "Cannot establish absence of the requested $cli marketplace from presence-only text inventory." }
+            $inventoryUnknown = $true
+        }
+        $warnCoexistence = $publicState -eq 'coexist' -and -not ($cli -eq 'copilot' -and ($target.Count -eq 1 -or $remote))
+        [pscustomobject]@{ cli = $cli; state = $state; publicState = $publicState; publicError = $publicError; warnCoexistence = $warnCoexistence; marketplaces = $markets; plugins = $plugins; reason = $reason; targetError = $targetError; inventoryUnknown = $inventoryUnknown }
     }
 }
 
@@ -488,10 +764,11 @@ function Get-WiqdPluginRecovery {
 function Assert-WiqdPluginInventory {
     param([object[]]$Inventory, [bool]$Internal, [string]$Cli)
     foreach ($entry in $Inventory) {
-        if ($entry.state -eq 'conflict' -or (-not $Internal -and $entry.cli -eq $Cli -and $entry.targetError)) {
-            if ($entry.state -ne 'conflict') {
-                throw "Cannot install WIQD: $($entry.targetError)`nNo plugin changes were made.`n`nInspect the existing setup:`n  $($entry.cli) plugin marketplace list --json`n  $($entry.cli) plugin list --json`n`nTo install only the CLI, rerun with -SkipPlugin."
-            }
+        if (-not $Internal -and $entry.cli -ne $Cli) { continue }
+        $state = if ($Internal) { $entry.state } else { $entry.publicState }
+        $targetError = if ($Internal) { '' } else { $entry.publicError }
+        if ($state -eq 'conflict' -or $targetError) {
+            if ($targetError) { throw "Cannot install WIQD: $targetError Expected $((Get-WiqdPluginTarget $entry.cli).repository). Existing state was not replaced.`n$(Get-WiqdPluginRecovery $entry)" }
             throw "Cannot replace the existing WIQD plugin setup in $($entry.cli).`nReason: $($entry.reason)`n$(Get-WiqdPluginRecovery $entry)"
         }
     }
@@ -501,58 +778,82 @@ function Invoke-WiqdPluginMutation {
     param([string]$Cli, [string[]]$Arguments)
     for ($attempt = 0; $attempt -lt 3; $attempt += 1) {
         $result = Invoke-WiqdPluginHost $Cli $Arguments
-        if ($result.ExitCode -eq 130 -or $result.ExitCode -eq 0 -or $result.StdErr -notmatch '(?i)EBUSY|EPERM|EACCES|being used by another process|resource busy|file.*locked') { break }
+        if ($result.ExitCode -in @(0, 124, 130) -or $result.StdErr -notmatch '(?i)EBUSY|EPERM|EACCES|being used by another process|resource busy|file.*locked') { break }
         if ($attempt -lt 2) { Start-Sleep -Milliseconds (200 * [Math]::Pow(2, $attempt)) }
     }
     Assert-WiqdPluginHostSuccess $result
 }
 
 function Move-WiqdLegacyPlugin {
-    param($Current, [bool]$Internal)
-    $fresh = @(Get-WiqdPluginInventory)
+    param($Current, [bool]$Internal, [ref]$MigrationStarted)
+    $fresh = if ($Internal) { @(Get-WiqdPluginInventory) } else { @(Get-WiqdPluginInventory -InstallCli $Current.cli) }
     $changed = "Plugin configuration changed during setup ($($Current.cli)).`nThis migration stopped before uninstalling the old local WIQD plugin.`nLet other plugin operations finish, then rerun this installer."
-    try { Assert-WiqdPluginInventory $fresh $Internal } catch { throw $changed }
+    try { Assert-WiqdPluginInventory $fresh $Internal $Current.cli } catch { throw $changed }
     $rechecked = @($fresh | Where-Object { $_.cli -eq $Current.cli })
     if ($rechecked.Count -ne 1 -or $rechecked[0].state -ne 'local' -or (ConvertTo-Json -InputObject $rechecked[0] -Depth 20 -Compress) -cne (ConvertTo-Json -InputObject $Current -Depth 20 -Compress)) { throw $changed }
     [Console]::Error.WriteLine("Migrating the old local WIQD plugin 'wiqd@wiqd' in $($Current.cli)...")
     [Console]::Error.WriteLine("Uninstalling the old local plugin 'wiqd@wiqd'...")
+    $MigrationStarted.Value = $true
     Invoke-WiqdPluginMutation $Current.cli @('plugin', 'uninstall', 'wiqd@wiqd')
-    try {
-        $remaining = @(Get-WiqdNativePluginList $Current.cli)
-        $result = Invoke-WiqdPluginHost $Current.cli @('plugin', 'marketplace', 'list', '--json')
-        Assert-WiqdPluginHostSuccess $result $Current.cli
-        $sources = @(ConvertFrom-WiqdMarketplaceList $Current.cli $result.StdOut)
-    } catch {
-        if ($_.Exception.Data['ExitCode'] -eq 130) { throw }
-        throw "Migration of the old local WIQD plugin 'wiqd@wiqd' stopped in $($Current.cli).`nCurrent plugin state: unknown.`n$($_.Exception.Message)`nThe installer has not removed the old marketplace.`nCheck the current setup:`n  $($Current.cli) plugin list --json`n  $($Current.cli) plugin marketplace list --json`nResolve the reported error, then rerun this installer."
-    }
-    $owned = @($Current.marketplaces | Where-Object { $_.name -ceq 'wiqd' })
-    $consumers = @($remaining | Where-Object { $_.id -clike '*@wiqd' })
-    $retainedLivePlugin = $Current.cli -ceq 'copilot' -and $consumers.Count -eq 1 -and $consumers[0].id -ceq 'wiqd@wiqd' -and $consumers[0].localMarketplace -eq $true -and $consumers[0].enabled -eq $false
-    $reasons = @()
-    if ($consumers.Count -gt 0 -and -not $retainedLivePlugin) { $reasons += "Plugins still reference marketplace 'wiqd'." }
-    if ((ConvertTo-Json -InputObject $sources -Depth 20 -Compress) -cne (ConvertTo-Json -InputObject $Current.marketplaces -Depth 20 -Compress)) { $reasons += 'Marketplace registrations changed during setup.' }
-    if (-not (Test-WiqdOwnedPluginSource $owned[0].source)) { $reasons += 'The old local source can no longer be verified as WIQD-owned.' }
-    if ($reasons.Count) {
-        $targets = @($remaining | Where-Object { $_.id -ceq 'wiqd@wiqd' })
-        $state = if ($targets.Count -eq 0) { 'uninstalled' } elseif ($targets.Count -eq 1 -and $targets[0].enabled -eq $false) { 'disabled' } else { 'still installed' }
-        $currentState = [pscustomobject]@{ cli = $Current.cli; plugins = $remaining; marketplaces = $sources }
-        throw "Migration of the old local WIQD plugin 'wiqd@wiqd' stopped in $($Current.cli).`nCurrent plugin state: $state.`nReason: $($reasons -join ' ')`nThe installer has not removed the old marketplace.`n$(Get-WiqdPluginRecovery $currentState -AfterUninstall)"
+    if ($Internal) {
+        try {
+            $remaining = @(Get-WiqdNativePluginList $Current.cli -RequireNative)
+            $sources = @(Get-WiqdNativeMarketplaceList $Current.cli)
+        } catch {
+            if ($_.Exception.Data['ExitCode'] -eq 130) { throw }
+            throw "Migration of the old local WIQD plugin 'wiqd@wiqd' stopped in $($Current.cli).`nCurrent plugin state: unknown.`n$($_.Exception.Message)`nThe installer has not removed the old marketplace.`nCheck the current setup:`n  $($Current.cli) plugin list --json`n  $($Current.cli) plugin marketplace list --json`nResolve the reported error, then rerun this installer."
+        }
+        $owned = @($Current.marketplaces | Where-Object { $_.name -ceq 'wiqd' })
+        $consumers = @($remaining | Where-Object { $_.id -clike '*@wiqd' })
+        $retainedLivePlugin = $Current.cli -ceq 'copilot' -and $consumers.Count -eq 1 -and $consumers[0].id -ceq 'wiqd@wiqd' -and $consumers[0].localMarketplace -eq $true -and $consumers[0].enabled -eq $false
+        $reasons = @()
+        if ($consumers.Count -gt 0 -and -not $retainedLivePlugin) { $reasons += "Plugins still reference marketplace 'wiqd'." }
+        if ((ConvertTo-Json -InputObject $sources -Depth 20 -Compress) -cne (ConvertTo-Json -InputObject $Current.marketplaces -Depth 20 -Compress)) { $reasons += 'Marketplace registrations changed during setup.' }
+        if (-not (Test-WiqdOwnedPluginSource $owned[0].source)) { $reasons += 'The old local source can no longer be verified as WIQD-owned.' }
+        if ($reasons.Count) {
+            $targets = @($remaining | Where-Object { $_.id -ceq 'wiqd@wiqd' })
+            $state = if ($targets.Count -eq 0) { 'uninstalled' } elseif ($targets.Count -eq 1 -and $targets[0].enabled -eq $false) { 'disabled' } else { 'still installed' }
+            $currentState = [pscustomobject]@{ cli = $Current.cli; plugins = $remaining; marketplaces = $sources }
+            throw "Migration of the old local WIQD plugin 'wiqd@wiqd' stopped in $($Current.cli).`nCurrent plugin state: $state.`nReason: $($reasons -join ' ')`nThe installer has not removed the old marketplace.`n$(Get-WiqdPluginRecovery $currentState -AfterUninstall)"
+        }
     }
     [Console]::Error.WriteLine("Removing the old local marketplace 'wiqd' in $($Current.cli)...")
     $result = Invoke-WiqdPluginHost $Current.cli @('plugin', 'marketplace', 'remove', 'wiqd')
     Assert-WiqdPluginHostSuccess $result
 }
 
+function Invoke-WiqdPublicInventoryFallback {
+    param([string]$Cli, $Current)
+    $destination = Get-WiqdPluginTarget $Cli
+    $warning = 'Warning: Could not inspect existing WIQD plugins. Legacy migration was skipped. Attempting installation from the selected marketplace; duplicate active plugins may exist. Inspect host plugin settings before use.'
+    if ($Cli -eq 'claude' -and $Current -and -not $Current.inventoryUnknown) {
+        $warning = 'Warning: Existing Claude WIQD setup was not migrated. Attempting native marketplace registration from microsoft/wiqd and plugin installation. If a command fails, fix the reported cause and rerun this installer.'
+    }
+    $targets = @($Current.plugins | Where-Object { $_.id -ceq $destination.id })
+    if ($targets.Count -gt 1) { throw 'Requested WIQD plugin identity is duplicated.' }
+    if ($Cli -eq 'claude' -and @($targets | Where-Object { $_.scope -and $_.scope -cne 'user' }).Count -gt 0) { throw 'Claude WIQD scope is not user. Existing state was not replaced.' }
+    [Console]::Error.WriteLine($warning)
+    if ($Cli -eq 'claude') { Invoke-WiqdPluginMutation $Cli @('plugin', 'marketplace', 'add', $destination.repository) }
+    $verb = if ($Cli -eq 'copilot' -and $targets.Count -eq 1) { 'update' } else { 'install' }
+    Invoke-WiqdPluginMutation $Cli @('plugin', $verb, $destination.id)
+    $hostLabel = if ($Cli -eq 'copilot') { 'Copilot' } else { 'Claude' }
+    $result = if ($verb -eq 'update') { 'updated' } else { 'installed' }
+    [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @("WIQD plugin $result (${Cli}): $($destination.id). Check $hostLabel plugin settings for duplicate WIQD plugins.", $warning) }
+}
+
 function Invoke-WiqdPluginHelper {
     param([string[]]$Arguments)
+    $warnings = @()
+    $allowMigrationSkip = $false
+    $migrationStarted = $false
     try {
         if (-not $Arguments -or $Arguments.Count -eq 0) {
             return [pscustomobject]@{ ExitCode = 2; Failed = $true; Combined = @('Expected install [--cli copilot|claude], check, or migrate.') }
         }
         $operation = $Arguments[0]
         $cli = 'copilot'
-        if ($operation -notin @('install', 'check', 'migrate') -or ($Arguments.Count -ne 1 -and -not ($operation -eq 'install' -and $Arguments.Count -eq 3 -and $Arguments[1] -ceq '--cli' -and $Arguments[2] -cin @('copilot', 'claude')))) {
+        $allowMigrationSkip = $operation -cin @('check', 'migrate') -and $Arguments.Count -eq 2 -and $Arguments[1] -ceq '--allow-migration-skip'
+        if ($operation -notin @('install', 'check', 'migrate') -or ($Arguments.Count -ne 1 -and -not $allowMigrationSkip -and -not ($operation -eq 'install' -and $Arguments.Count -eq 3 -and $Arguments[1] -ceq '--cli' -and $Arguments[2] -cin @('copilot', 'claude')))) {
             return [pscustomobject]@{ ExitCode = 2; Failed = $true; Combined = @('Expected install [--cli copilot|claude], check, or migrate.') }
         }
         if ($Arguments.Count -eq 3) { $cli = $Arguments[2] }
@@ -562,7 +863,22 @@ function Invoke-WiqdPluginHelper {
                 Assert-WiqdPluginHostSuccess $result
             }
         }
-        $inventory = @(Get-WiqdPluginInventory)
+        $installCli = if ($operation -eq 'install') { $cli } else { '' }
+        try { $inventory = @(Get-WiqdPluginInventory -AllowUnknown:($operation -eq 'install') -InstallCli $installCli) } catch {
+            if ($operation -ne 'install' -or $_.Exception.Data['ExitCode'] -eq 130 -or $_.Exception.Data['TimedOut']) { throw }
+            [Console]::Error.WriteLine($_.Exception.Message)
+            return Invoke-WiqdPublicInventoryFallback $cli
+        }
+        if ($operation -eq 'install') {
+            $current = @($inventory | Where-Object { $_.cli -eq $cli }) | Select-Object -First 1
+            $selected = @($current.plugins | Where-Object { $_.id -ceq (Get-WiqdPluginTarget $cli).id })
+            if ($selected.Count -gt 1) { throw 'Requested WIQD plugin identity is duplicated.' }
+            if ($cli -eq 'claude' -and @($selected | Where-Object { $_.scope -and $_.scope -cne 'user' }).Count -gt 0) { throw 'Claude WIQD scope is not user. Existing state was not replaced.' }
+            if ($current.inventoryUnknown) { return Invoke-WiqdPublicInventoryFallback $cli $current }
+            if ($cli -eq 'claude' -and $selected.Count -eq 1 -and $current.state -ne 'local' -and $current.publicState -ne 'preserve' -and ($current.state -ne 'selected' -or $current.publicError)) {
+                return Invoke-WiqdPublicInventoryFallback $cli $current
+            }
+        }
         $internal = $operation -ne 'install'
         Assert-WiqdPluginInventory $inventory $internal $cli
         $targets = @($inventory | Where-Object { $_.state -eq 'local' -and ($internal -or $_.cli -eq $cli) })
@@ -571,29 +887,42 @@ function Invoke-WiqdPluginHelper {
             Assert-WiqdPluginHostSuccess $result
         }
         if ($operation -ne 'check') {
-            foreach ($current in $targets) { Move-WiqdLegacyPlugin $current $internal }
+            foreach ($current in $targets) { Move-WiqdLegacyPlugin $current $internal ([ref]$migrationStarted) }
         }
         if ($operation -eq 'install') {
-            if ($targets.Count -gt 0) {
-                $inventory = @(Get-WiqdPluginInventory)
-                Assert-WiqdPluginInventory $inventory $false $cli
-            }
             $destination = Get-WiqdPluginTarget $cli
             $current = @($inventory | Where-Object { $_.cli -eq $cli }) | Select-Object -First 1
-            if (-not $current -or $current.state -ne 'selected') {
-                $result = Invoke-WiqdPluginHost $cli @('plugin', 'marketplace', 'add', $destination.repository)
-                Assert-WiqdPluginHostSuccess $result
+            if ($current.publicState -eq 'preserve' -or ($cli -eq 'claude' -and $current.state -eq 'selected' -and -not $current.publicError -and @($current.plugins | Where-Object { $_.id -ceq 'wiqd@wiqd' }).Count -eq 1)) {
+                if ($cli -eq 'copilot') {
+                    [Console]::Error.WriteLine('Updating WIQD from microsoft/wiqd in copilot...')
+                    Invoke-WiqdPluginMutation $cli @('plugin', 'update', 'wiqd@wiqd')
+                    return [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @('WIQD plugin ready (copilot): wiqd@wiqd from microsoft/wiqd.') }
+                }
+                [Console]::Error.WriteLine('Updating WIQD from microsoft/wiqd in claude...')
+                Invoke-WiqdPluginMutation $cli @('plugin', 'update', 'wiqd@wiqd')
+                return [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @('WIQD plugin ready (claude): wiqd@wiqd from microsoft/wiqd.') }
             }
-            $verb = if ($current -and $current.state -eq 'selected' -and @($current.plugins | Where-Object { $_.id -ceq $destination.id }).Count -gt 0) { 'update' } else { 'install' }
+            $warnings = @()
+            if ($cli -eq 'copilot' -and @($current.plugins | Where-Object { $_.id -ceq 'wiqd@wiqd' }).Count -eq 1 -and @($current.plugins | Where-Object { $_.id -ceq 'wiqd@awesome-copilot' }).Count -eq 1) {
+                [Console]::Error.WriteLine('Warning: Both wiqd@wiqd and wiqd@awesome-copilot are installed in Copilot; duplicate active plugins may coexist. Check Copilot plugin settings.')
+            } elseif ($current.warnCoexistence) {
+                $warnings += "Warning: Other WIQD plugins in $cli are left untouched; duplicate active plugins may coexist. Inspect host plugin settings."
+            }
+            foreach ($warning in $warnings) { [Console]::Error.WriteLine($warning) }
+            if ($cli -eq 'claude') {
+                Invoke-WiqdPluginMutation $cli @('plugin', 'marketplace', 'add', $destination.repository)
+            }
+            $verb = if ($targets.Count -eq 0 -and @($current.plugins | Where-Object { $_.id -ceq $destination.id }).Count -gt 0) { 'update' } else { 'install' }
             $progress = if ($verb -eq 'update') { 'Updating' } else { 'Installing' }
             [Console]::Error.WriteLine("$progress WIQD from $($destination.repository) in ${cli}...")
             Invoke-WiqdPluginMutation $cli @('plugin', $verb, $destination.id)
-            return [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @("WIQD plugin ready ($cli): $($destination.id) from $($destination.repository).") }
+            return [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @("WIQD plugin ready ($cli): $($destination.id) from $($destination.repository).") + $warnings }
         }
         return [pscustomobject]@{ ExitCode = 0; Failed = $false; Combined = @(); Inventory = $inventory }
     } catch {
         $code = if ($_.Exception.Data['ExitCode'] -eq 130) { 130 } else { 1 }
-        return [pscustomobject]@{ ExitCode = $code; Failed = $true; Combined = @($_.Exception.Message) }
+        if ($allowMigrationSkip -and -not $migrationStarted -and $code -ne 130 -and -not $_.Exception.Data['TimedOut']) { $code = 3 }
+        return [pscustomobject]@{ ExitCode = $code; Failed = $true; Combined = @($_.Exception.Message) + $warnings }
     }
 }
 # native-plugin:end
@@ -625,6 +954,38 @@ function Protect-NpmDiagnostic {
     $safe = $safe -replace '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ''
     if ($safe.Length -gt 8192) { return $safe.Substring($safe.Length - 8192) }
     return $safe
+}
+
+function Protect-InstallerDiagnostic {
+    param([string]$Text)
+
+    if ([string]::IsNullOrEmpty($Text)) { return $Text }
+    $safe = $Text -replace '(?i)(https?://)[^/@\s]+@', '$1'
+    $safe = $safe -replace '(?i)([?&](?:access_token|token|auth|password|passwd|apikey|api_key)=)[^&\s]+', '$1[REDACTED]'
+    $safe = $safe -replace "$([char]27)\[[0-9;?]*[ -/]*[@-~]", ''
+    $safe = $safe -replace '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ''
+    $safe = $safe -replace '(?i)\b(Authorization\s*[:=]\s*(?:Bearer|Basic)\s+)\S+', '$1<REDACTED>'
+    $safe = $safe -replace '(?i)\b(access[_-]?token|token|auth|password|passwd|secret|apikey|api_key)\s*[:=]\s*(?:"[^"]*"|''[^'']*''|[^\s,;]+)', '$1=<REDACTED>'
+    $safe = $safe -replace '(?i)\bhttps?://[^\s<>"'']+', '<URL>'
+    $safe = $safe -replace '\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', '[EMAIL]'
+    $safe = $safe -replace '\b[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\b', '[GUID]'
+    $safe = $safe -replace '(?i)\b[A-Z]:\\(?:[^\\<>:"|?*\r\n\s]+\\?)+', '<PATH>'
+    $safe = $safe -replace '(?<![:/\w])/(?:home|Users|root|var|tmp|etc)/[^\s:;"]+', '<PATH>'
+    if ($safe.Length -gt 4096) { return "…" + $safe.Substring($safe.Length - 4095) }
+    return $safe
+}
+
+function ConvertTo-SafePowerShellLiteral {
+    param([string]$Value)
+
+    # CR/LF is literal inside single quotes, but printing it would forge extra
+    # recovery-log lines. Returning no command avoids changing the target path.
+    if ($Value -match "[`r`n]") { return $null }
+
+    $safe = $Value -replace "$([char]27)\][^$([char]7)]*(?:$([char]7)|$([char]27)\\)", ''
+    $safe = $safe -replace "$([char]27)\[[0-9;?]*[ -/]*[@-~]", ''
+    $safe = $safe -replace '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ''
+    return "'" + $safe.Replace("'", "''") + "'"
 }
 
 # Runs a `wiqd --version` / `wiqd doctor` install-time smoke-test through
@@ -1281,6 +1642,7 @@ function Write-WiqdQuickstart {
     Write-Host "   wiqd plugin validate                          Validate your plugin" -ForegroundColor White
     Write-Host "   wiqd plugin provision --env local              Provision to your tenant (local env)" -ForegroundColor White
     Write-Host ""
+    foreach ($notice in $script:PluginNotices) { Write-Host $notice -ForegroundColor Yellow }
     if ($pluginReady -and ($copilotPresent -or $claudePresent)) {
         Write-Host " Start a new host session to use the WIQD plugin." -ForegroundColor Cyan
         if ($copilotPresent) {
@@ -1326,7 +1688,12 @@ function Save-WiqdInstallProvenance {
         $directory = Join-Path $HomeDirectory '.wiqd'
         [System.IO.Directory]::CreateDirectory($directory) | Out-Null
         $temporaryPath = Join-Path $directory ('.install-method.' + [guid]::NewGuid().ToString('N') + '.tmp')
-        $marker = @{ version = 1; method = 'bootstrap'; installer = @{ url = $url; args = $arguments } }
+        $marker = @{
+            version = 1
+            method = 'bootstrap'
+            vscodeEdition = if ($Insiders) { 'insiders' } else { 'stable' }
+            installer = @{ url = $url; args = $arguments }
+        }
         [System.IO.File]::WriteAllText($temporaryPath, ($marker | ConvertTo-Json -Depth 3), [System.Text.UTF8Encoding]::new($false))
         [System.IO.File]::Move($temporaryPath, (Join-Path $directory 'install-method.json'), $true)
         return $true
@@ -1337,6 +1704,65 @@ function Save-WiqdInstallProvenance {
         if ($temporaryPath -and [System.IO.File]::Exists($temporaryPath)) {
             [System.IO.File]::Delete($temporaryPath)
         }
+    }
+}
+
+function Test-WiqdUpdateResultPath {
+    param(
+        [string]$Path = $UpdateResultPath,
+        [string]$HomeDirectory = $HOME
+    )
+
+    if ([string]::IsNullOrEmpty($Path)) { return $false }
+    try {
+        $expectedDirectory = [System.IO.Path]::GetFullPath((Join-Path $HomeDirectory '.wiqd')).TrimEnd('\', '/')
+        $fullPath = [System.IO.Path]::GetFullPath($Path)
+        if (-not [string]::Equals([System.IO.Path]::GetDirectoryName($fullPath).TrimEnd('\', '/'), $expectedDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+        if ([System.IO.Path]::GetFileName($fullPath) -notmatch '^\.update-result\.[0-9a-f]{32}\.json$') {
+            return $false
+        }
+        return -not (Test-Path -LiteralPath $fullPath)
+    } catch {
+        return $false
+    }
+}
+
+function Set-WiqdUpdateResult {
+    param(
+        [ValidateSet('success', 'failed', 'skipped', 'not-available')]
+        [string]$Status,
+        [ValidateSet('installed', 'already-installed', 'bundled-vsix-not-found', 'install-failed', 'requested', 'cli-not-found')]
+        [string]$Reason,
+        [string]$Path = $UpdateResultPath,
+        [string]$HomeDirectory = $HOME
+    )
+
+    if (-not (Test-WiqdUpdateResultPath -Path $Path -HomeDirectory $HomeDirectory)) {
+        Write-Err 'The wiqd update result path is invalid or untrusted.'
+        return $false
+    }
+    try {
+        $payload = @{
+            version = 1
+            extension = @{
+                status = $Status
+                edition = if ($Insiders) { 'insiders' } else { 'stable' }
+                reason = $Reason
+            }
+        } | ConvertTo-Json -Depth 3 -Compress
+        $stream = [System.IO.File]::Open($Path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        try {
+            $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes($payload)
+            $stream.Write($bytes, 0, $bytes.Length)
+        } finally {
+            $stream.Dispose()
+        }
+        return $true
+    } catch {
+        Write-Err "Could not save the wiqd update result: $_"
+        return $false
     }
 }
 
@@ -1355,6 +1781,11 @@ if ($env:WIQD_INSTALLER_TEST_MODE -and $MyInvocation.InvocationName -eq '.') { r
 # terminal call site (at the very end of this file) is the only place that
 # ever calls `exit`, and only when this is a real on-disk invocation.
 function Invoke-WiqdInstall {
+    if ($UpdateResultPath -and -not (Test-WiqdUpdateResultPath)) {
+        Write-Err 'The wiqd update result path is invalid or untrusted.'
+        return 1
+    }
+
 
 # ─────────────────────────────────────────────
 # Banner — Witch hat + gradient WIQD block letters
@@ -1736,10 +2167,6 @@ if (-not (Show-DependencyStatus)) {
     return 1
 }
 
-if (-not (Save-WiqdInstallProvenance)) {
-    return 1
-}
-
 # Persist EULA acceptance now that the wiqd CLI is verified on PATH — BEFORE the
 # host-integration steps (VS Code, plugin) that themselves invoke EULA-gated
 # wiqd commands. The human already accepted at the installer's own interactive
@@ -1753,12 +2180,18 @@ if ($eulaChoice -eq 'accepted') {
     }
 }
 
+if (-not (Save-WiqdInstallProvenance)) {
+    return 1
+}
+
 # ─────────────────────────────────────────────
 # Step 4: VS Code Extension (optional)
 # ─────────────────────────────────────────────
 
 if (-not $SkipVSCode) {
     $stepNum = 4
+    $vscodePartialFailure = $false
+    $legacyUpdaterInvocation = Test-LegacyWiqdUpdaterInvocation
 
     $codeCmd = if ($Insiders) { "code-insiders" } else { "code" }
     $codeName = if ($Insiders) { "VS Code Insiders" } else { "VS Code" }
@@ -1766,29 +2199,92 @@ if (-not $SkipVSCode) {
     Write-Step $stepNum $totalSteps "Installing $codeName extension..."
 
     if (Test-CommandExists $codeCmd) {
-        # Check if already installed (skip the short-circuit when -Force is set:
-        # devs explicitly asked for a full reinstall, so re-run --install-extension
-        # which itself already passes --force and idempotently overwrites).
-        $listResult = Invoke-Native { & $codeCmd --list-extensions }
-        $extensions = $listResult.StdOut
-        if (($extensions -match $VSCodeExtensionId) -and -not $Force) {
-            Write-Ok "Work IQ extension already installed in $codeName"
+        $rootResult = Invoke-Native { & $script:NpmExe root -g --loglevel=error }
+        $npmRoot = if ($rootResult -and -not $rootResult.Failed) {
+            ($rootResult.StdOut -join "`n").Trim()
         } else {
-            try {
+            $null
+        }
+        $vsixPath = if ($npmRoot) {
+            Join-Path $npmRoot (Join-Path $WiqdPackage 'vsix/wiqd.vsix')
+        } else {
+            $null
+        }
+
+        if (-not $vsixPath -or -not (Test-Path -LiteralPath $vsixPath -PathType Leaf)) {
+            if ($UpdateResultPath) {
+                if (-not (Set-WiqdUpdateResult -Status 'failed' -Reason 'bundled-vsix-not-found')) { return 1 }
+                $vscodePartialFailure = $true
+                Write-Warn "Could not find the bundled VS Code extension."
+            } elseif ($legacyUpdaterInvocation) {
+                $vscodePartialFailure = $true
+                Write-Warn "Could not find the bundled VS Code extension."
+            } else {
+                Write-Err "Could not find the bundled VS Code extension."
+            }
+            $rootDiagnostic = Protect-InstallerDiagnostic ($rootResult.Combined -join "`n")
+            if ($rootDiagnostic) {
+                foreach ($line in ($rootDiagnostic -split "`r?`n")) {
+                    Write-Warn "  $line"
+                }
+            }
+            Write-Hint "Reinstall $WiqdPackage, then re-run this installer."
+            if (-not $UpdateResultPath -and -not $legacyUpdaterInvocation) { return 1 }
+        } else {
+            # Check if already installed (skip the short-circuit when -Force is
+            # set so the bundled VSIX is re-applied).
+            $listResult = Invoke-Native { & $codeCmd --list-extensions }
+            $extensions = $listResult.StdOut
+            if (($extensions -match $VSCodeExtensionId) -and -not $Force) {
+                Write-Ok "Work IQ extension already installed in $codeName"
+                if ($UpdateResultPath -and -not (Set-WiqdUpdateResult -Status 'success' -Reason 'already-installed')) { return 1 }
+            } else {
                 if (($extensions -match $VSCodeExtensionId) -and $Force) {
                     Write-Info "Reinstalling Work IQ extension in $codeName (-Force)..."
                 }
-                & $codeCmd --install-extension $VSCodeExtensionId --force 2>&1 | Out-Null
-                Write-Ok "Work IQ extension installed in $codeName"
-            } catch {
-                Write-Warn "Could not install extension: $_"
-                Write-Hint "Install manually: $codeCmd --install-extension $VSCodeExtensionId"
+                $installResult = Invoke-Native {
+                    & $codeCmd --install-extension $vsixPath --force
+                }
+                if (-not $installResult.Failed) {
+                    Write-Ok "Work IQ extension installed in $codeName"
+                    if ($UpdateResultPath -and -not (Set-WiqdUpdateResult -Status 'success' -Reason 'installed')) { return 1 }
+                } else {
+                    if ($installResult.ExitCode -in @(130, -1073741510)) {
+                        return 130
+                    }
+                    if ($UpdateResultPath) {
+                        if (-not (Set-WiqdUpdateResult -Status 'failed' -Reason 'install-failed')) { return 1 }
+                        $vscodePartialFailure = $true
+                        Write-Warn "Could not install extension."
+                    } elseif ($legacyUpdaterInvocation) {
+                        $vscodePartialFailure = $true
+                        Write-Warn "Could not install extension."
+                    } else {
+                        Write-Err "Could not install extension."
+                    }
+                    $installDiagnostic = Protect-InstallerDiagnostic ($installResult.Combined -join "`n")
+                    if ($installDiagnostic) {
+                        foreach ($line in ($installDiagnostic -split "`r?`n")) {
+                            Write-Warn "  $line"
+                        }
+                    }
+                    $quotedVsixPath = ConvertTo-SafePowerShellLiteral $vsixPath
+                    if ($null -eq $quotedVsixPath) {
+                        Write-Hint "Manual install command unavailable because the bundled VSIX path contains a line break. Reinstall @microsoft/wiqd in a path without line breaks, then retry."
+                    } else {
+                        Write-Hint "Install manually: $codeCmd --install-extension $quotedVsixPath --force"
+                    }
+                    if (-not $UpdateResultPath -and -not $legacyUpdaterInvocation) { return 1 }
+                }
             }
         }
     } else {
         Write-Warn "$codeName not found — skipping extension install"
         Write-Hint "Install $codeName from https://code.visualstudio.com/"
+        if ($UpdateResultPath -and -not (Set-WiqdUpdateResult -Status 'not-available' -Reason 'cli-not-found')) { return 1 }
     }
+} elseif ($UpdateResultPath -and -not (Set-WiqdUpdateResult -Status 'skipped' -Reason 'requested')) {
+    return 1
 }
 
 # ─────────────────────────────────────────────
@@ -1829,8 +2325,9 @@ if (-not $SkipPlugin) {
                         $pluginResult = Invoke-WiqdPluginHelper -Arguments $pluginInstallArgs
                     $pluginOutput = $pluginResult.Combined
                     $pluginExitCode = $pluginResult.ExitCode
+                    $script:PluginNotices += @($pluginOutput | Where-Object { $_ -match 'duplicate active plugins may coexist' })
                     if ($pluginExitCode -eq 0) {
-                        Write-Ok "wiqd plugin installed for $pluginHost"
+                        if (-not $pluginResult.Preserved) { Write-Ok "wiqd plugin setup completed for $pluginHost" }
                         $script:PluginInstallSucceeded = $true
                         $pluginDetail = ($pluginOutput | Out-String).Trim()
                         if ($pluginDetail) {

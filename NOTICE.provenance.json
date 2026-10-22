@@ -2,8 +2,8 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "cebf0df3e2971b357b7e919c9bacc0d9700ba9bb5e7a145cc530e0c8a54ff70e",
-  "componentCount": 519,
+  "inputDigest": "836a47e10f91587eb6f7c108ba9bb6bd81a15cb95ba35ff9210b5a910a123e4a",
+  "componentCount": 537,
   "components": [
     {
       "type": "npm",
@@ -490,6 +490,13 @@
     },
     {
       "type": "npm",
+      "name": "@github/copilot-sdk",
+      "version": "1.0.11",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "@griffel/core",
       "version": "1.21.2",
       "license": "MIT",
@@ -553,6 +560,20 @@
     },
     {
       "type": "npm",
+      "name": "@microsoft/app-manifest",
+      "version": "1.1.4-alpha.36e30da2f6.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/app-manifest",
+      "version": "1.1.4-beta.2026101507.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "@microsoft/dev-tunnels-contracts",
       "version": "1.1.9",
       "license": "MIT",
@@ -568,7 +589,7 @@
     {
       "type": "npm",
       "name": "@microsoft/kiota",
-      "version": "1.31.1",
+      "version": "1.35.0",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -582,7 +603,7 @@
     {
       "type": "npm",
       "name": "@microsoft/m365-spec-parser",
-      "version": "0.3.3",
+      "version": "0.3.4-beta.2026101507.0",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -595,8 +616,15 @@
     },
     {
       "type": "npm",
+      "name": "@microsoft/teamsfx-api",
+      "version": "0.24.4-alpha.36e30da2f6.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "@microsoft/teamsfx-core",
-      "version": "3.1.4",
+      "version": "3.1.5-alpha.36e30da2f6.0",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -610,7 +638,7 @@
     {
       "type": "npm",
       "name": "@modelcontextprotocol/sdk",
-      "version": "1.31.0",
+      "version": "1.32.1",
       "license": "MIT",
       "origin": "both"
     },
@@ -626,6 +654,13 @@
       "name": "@monaco-editor/react",
       "version": "4.7.0",
       "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@open-policy-agent/opa-wasm",
+      "version": "1.10.0",
+      "license": "Apache-2.0",
       "origin": "bundled"
     },
     {
@@ -1189,6 +1224,13 @@
     },
     {
       "type": "npm",
+      "name": "character-entities",
+      "version": "2.0.2",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "chownr",
       "version": "1.1.4",
       "license": "ISC",
@@ -1540,6 +1582,13 @@
     {
       "type": "npm",
       "name": "entities",
+      "version": "6.0.1",
+      "license": "BSD-2-Clause",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "entities",
       "version": "7.0.1",
       "license": "BSD-2-Clause",
       "origin": "bundled"
@@ -1715,7 +1764,7 @@
     {
       "type": "npm",
       "name": "follow-redirects",
-      "version": "1.16.0",
+      "version": "1.16.1",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -2538,6 +2587,13 @@
     },
     {
       "type": "npm",
+      "name": "micromark-util-encode",
+      "version": "2.0.1",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "micromark-util-html-tag-name",
       "version": "2.0.1",
       "license": "MIT",
@@ -2685,6 +2741,13 @@
     },
     {
       "type": "npm",
+      "name": "nanoid",
+      "version": "3.3.18",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "napi-build-utils",
       "version": "2.0.0",
       "license": "MIT",
@@ -2817,14 +2880,14 @@
     {
       "type": "npm",
       "name": "office-addin-project",
-      "version": "1.0.10",
+      "version": "2.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
     {
       "type": "npm",
       "name": "office-addin-usage-data",
-      "version": "2.1.1",
+      "version": "3.0.1",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -2848,6 +2911,13 @@
       "version": "8.4.2",
       "license": "MIT",
       "origin": "both"
+    },
+    {
+      "type": "npm",
+      "name": "parse5",
+      "version": "7.3.0",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -2879,10 +2949,38 @@
     },
     {
       "type": "npm",
+      "name": "pend",
+      "version": "1.2.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "picocolors",
+      "version": "1.1.1",
+      "license": "ISC",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "pkce-challenge",
       "version": "5.0.1",
       "license": "MIT",
       "origin": "both"
+    },
+    {
+      "type": "npm",
+      "name": "pngjs",
+      "version": "7.0.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "postcss",
+      "version": "8.5.21",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -3229,6 +3327,13 @@
     },
     {
       "type": "npm",
+      "name": "sprintf-js",
+      "version": "1.1.3",
+      "license": "BSD-3-Clause",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "state-local",
       "version": "1.0.7",
       "license": "MIT",
@@ -3345,6 +3450,13 @@
       "version": "2.2.0",
       "license": "MIT",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "tldts",
+      "version": "7.0.17",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
@@ -3558,6 +3670,13 @@
     },
     {
       "type": "npm",
+      "name": "vscode-jsonrpc",
+      "version": "9.0.2",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
       "name": "web-streams-polyfill",
       "version": "3.3.3",
       "license": "MIT",
@@ -3639,6 +3758,13 @@
       "version": "21.1.1",
       "license": "ISC",
       "origin": "runtime"
+    },
+    {
+      "type": "npm",
+      "name": "yauzl",
+      "version": "3.4.0",
+      "license": "MIT",
+      "origin": "bundled"
     },
     {
       "type": "npm",
