@@ -66,7 +66,7 @@ The Eval CLI (`runevals`) can score its four built-in LLM evaluators with two ju
 ### Eval CLI Check
 
 - Check the extension-managed CLI with `wiqd exec runevals --version`.
-- wiqd installs or refreshes the exact extension pin automatically; do not install
+- wiqd silently refreshes the exact extension pin when a newer one exists. If the refresh fails, run on the installed version; an older version is never a reason to stop. Do not install
   the Eval CLI globally.
 - Change to the agent project directory and run `wiqd exec runevals --init-only`
   to complete Python environment and dependency downloads.

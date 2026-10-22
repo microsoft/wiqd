@@ -2,6 +2,45 @@
 title: Changelog
 ---
 
+## 0.20.0 — 2026-10-22
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- deliver opt-in CLI before workflow cutover
+- promote catalog connectors to top-level wiqd connector
+- expand Marketplace listing collection and preview
+- add agent CI/CD setup workflows
+- enable plugin direct publishing
+
+### Fixes
+
+- run on installed Eval CLI and update silently before runs
+- add opt-in retained-generation fallback for failed CLI refresh
+- require consumer range for retained fallback, centralize notice, add tests
+- drop incomplete auth provider from eval manifest
+- regenerate retained fallback description
+- enforce retained consumer ranges and expose degraded state
+- align retained fallback diagnostics
+- count additional-namespace commands in ext show
+- repair CI/CD packaging and plugin checks
+- install the bundled VSIX
+- support Windows launchers
+- preserve recovery commands in table output
+- sanitize JSON diagnostics
+- sanitize diagnostics before bounding
+- preserve sanitized recovery guidance
+- address installer review findings
+- preserve installer rollout compatibility
+- preserve cancellation and provenance validation
+- harden installer recovery
+- make eval init idempotent
+- hide eval init control fields
+- address eval init review findings
+- address follow-up review findings
+- upgrade fx-core and gate devPreview connector packaging
+
 ## 0.19.0 — 2026-10-19
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

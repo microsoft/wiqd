@@ -12,7 +12,7 @@ The domain-neutral WIQD host delegates `auth login`, `auth logout`, and `auth st
 
 After a provider's login subprocess succeeds, Work IQ Dev Tools **verify** that an identity was actually acquired before showing a `✔` and the authenticated account — a successful exit code alone is never treated as proof of a session. Verification reads the identity out of the login output first and falls back to re-probing the provider's status only when the login output shows none; a broker-backed account can be process-local and vanish before a separate status subprocess starts, so preferring the login output avoids reporting a real sign-in as a failure.
 
-Runtime-backed providers return a structured signed-in / signed-out / error state directly, so no separate status subprocess or output pattern is used for them. The host reports the provider's result; it does not own that provider's client ID or token cache.
+Runtime-backed providers return a structured signed-in / signed-out / skipped / error state directly, so no separate status subprocess or output pattern is used for them. An optional project-scoped provider that has not been configured can skip ordinary aggregate login without making the other providers fail; WIQD shows that provider as skipped rather than signed in. The host reports the provider's result; it does not own that provider's client ID or token cache.
 
 Commands that interact with your tenant—including agent and plugin provisioning and sharing, plus agent info, uninstall, and publish—check the provider's status first. When the provider definitively reports that you are signed out, the command exits with code `2` and instructions to run `wiqd auth login --interactive` instead of waiting on an invisible upstream sign-in prompt. An unavailable or inconclusive status check does not block the command.
 
@@ -59,14 +59,25 @@ Resolve sessions for all active providers using each provider's default mode:
 wiqd auth login
 ```
 
+An optional provider that requires project setup may be reported as skipped in
+this default mode. The command still succeeds when at least one other provider
+signs in and none fail. If every provider is skipped, login fails closed because
+no usable session was established.
+
 Allow each active provider to use its interactive path:
 
 ```bash
 wiqd auth login --interactive
 ```
 
+When Marketplace publishing is unconfigured, generic `--interactive` login
+offers **Skip Marketplace setup** as the default choice. Skipping reports that
+optional provider as not applicable and continues signing in to later
+providers. Choose directory discovery or another directory to start publisher
+setup; Cancel still cancels the aggregate login.
+
 When Marketplace publishing is enabled and you already know the seller tenant
-GUID, select that tenant without entering the first-run directory menu:
+GUID, explicitly target setup without entering the Skip/directory menu:
 
 ```bash
 wiqd auth login --interactive --tenant d795438c-7449-40e1-a515-a6a01862a861

@@ -123,6 +123,7 @@ Determine which flow to follow based on user intent:
 
 | User intent | Action |
 |-------------|--------|
+| Prepare WIQD CI/CD authentication or unattended lifecycle operations | Read `workflows/agent-ci-cd.md` before normal interactive auth steps; use its WIQD auth/command snippets, delegate broader platform setup to the related platform skill, and do not deploy during setup. |
 | **Standalone / reusable plugin** — "create a plugin", "a plugin project", "a plugin with a skill/connector", "package/publish/validate my plugin" | **Stop — this is not the agent workflow.** Read `workflows/plugin.md` (the `plugin` workflow authors a standalone plugin app package). |
 | Create/new/scaffold an agent **with an Azure-hosted OpenAPI server**, including requests phrased as an Azure backend or API, whether or not authentication was specified | Immediately read `references/wiqd-core/azure-openapi-server.md`. Resolve the required authentication shape, verify the required Azure capability and, for Generic OAuth, the Entra skill prerequisite before running **Create**. After creation passes the **Existing-Project Lifecycle Gate**, continue the same journey through the reference; do not stop and ask the user to request the server separately. |
 | Create/new/scaffold an agent **with a skill** | Run the **Create** workflow, then **Adding Agent Skills**. |

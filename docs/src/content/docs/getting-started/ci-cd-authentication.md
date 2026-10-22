@@ -1,10 +1,16 @@
 ---
-title: CI/CD Authentication
+title: Pipeline authentication
+description: Configure delegated credentials, token renewal and permissions for trusted agent and plugin lifecycle pipelines.
 ---
 
-# CI/CD Authentication
+# Pipeline authentication
 
-Username/password and refresh-token authentication are for **trusted CI/CD pipeline
+This reference covers credential configuration, local token bootstrap, renewal,
+consent and authentication failures for trusted agent and plugin lifecycle
+pipelines. For WIQD prerequisites, lifecycle commands and GitHub/Azure step snippets, start with
+[Pipeline setup](/getting-started/ci-cd-pipelines/).
+
+WIQD supports both username/password and refresh-token authentication for **trusted CI/CD pipeline
 runs using the core/fx-core backend**, not general WIQD sign-in. For local development,
 use [interactive authentication](/getting-started/authentication/). The local refresh-token
 bootstrap command is an exception only in where it runs: it prepares a pipeline

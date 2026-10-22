@@ -14,6 +14,8 @@ The Eval extension contributes two commands under `wiqd agent eval`:
 
 `wiqd agent eval init` requires an ATK project and emits a fixed seven-item bootstrap for the default ATK declarative-agent template. It is not the manifest-aware generator and has no prompt-count option. When the wiqd eval skill recommends or the user selects a count, the skill writes and verifies exactly that many generated items without substituting `eval init`.
 
+Newly scaffolded projects may already contain `evals/prompts.json`. In that case, `wiqd agent eval init` validates and preserves the existing eval document, reports that evaluations are already initialized, and still merges available evaluator settings into `env/.env.<env>.user`. Supported legacy prompt arrays are also preserved. Empty, malformed, or schema-invalid prompts files are never overwritten, and output paths that resolve outside the project through a symlink or junction are rejected before either project file is changed.
+
 `wiqd agent eval` does **not** require `m365agents.yml` or a provisioned ATK project. It needs only (1) a prompts file and (2) a resolvable agent title ID — sourced from `env/.env.<env>` (`M365_TITLE_ID`) or from `--agent-id`.
 
 ## Running against an evals-only folder

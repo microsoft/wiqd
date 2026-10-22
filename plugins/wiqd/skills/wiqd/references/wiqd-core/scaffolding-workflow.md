@@ -105,7 +105,7 @@ cd <project-name>
 
 ### Step 4: Add Agent Context Files
 
-**Action:** Ensure the project has context files that tell coding agents which skills are available and how to invoke them. This is critical for future sessions — without these files, agents won't know to use the `declarative-agent-developer` skill.
+**Action:** Ensure the project has context files that direct coding agents to invoke the `wiqd` skill for declarative-agent lifecycle tasks.
 
 **Detection logic — check for existing files in this order:**
 
@@ -123,19 +123,9 @@ cd <project-name>
 
 This is an M365 Copilot declarative agent project managed by the wiqd CLI.
 
-## Available Skills
+## Agent Lifecycle Workflow
 
-When working on this project, you MUST use the appropriate skill for the task. **Do NOT work directly on files without invoking a skill first.**
-
-| Skill                           | When to Use                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **declarative-agent-developer** | Any task involving this agent (see scenarios below). **This is the primary skill for this project.**                   |
-| **ui-widget-developer**         | Only when adding an MCP server that renders rich interactive widgets (HTML) in Copilot Chat using the OpenAI Apps SDK. |
-| **install-wiqd**                | Only when the wiqd CLI is not installed or needs updating.                                                             |
-
-## ⛔ MANDATORY: Invoke `declarative-agent-developer` Skill First
-
-**This is a declarative agent project. For ANY task in this workspace — regardless of what it is — you MUST invoke the `declarative-agent-developer` skill BEFORE doing any work.** This is not optional. Do not attempt to handle any task yourself. Always delegate to the skill.
+For declarative-agent lifecycle tasks, invoke the `wiqd` skill before editing agent manifests or running lifecycle commands. Tasks unrelated to the agent lifecycle do not require this skill.
 
 ### Scenarios handled by this skill
 
@@ -156,7 +146,7 @@ When working on this project, you MUST use the appropriate skill for the task. *
 
 - Edit `declarativeAgent.json` or other manifest files directly without the skill
 - Run `wiqd agent` commands without the skill
-- "Help" by manually making changes — always delegate to the skill
+- Bypass the skill's workflow when changing agent manifests or running lifecycle commands
 ```
 
 **Rules:**

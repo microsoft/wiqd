@@ -141,6 +141,14 @@ per-command tables below.
 | [`wiqd config reset`](#wiqd-config-reset) | wiqd (core) | Reset all configuration to defaults |
 | [`wiqd config set`](#wiqd-config-set) | wiqd (core) | Set configuration values |
 
+**wiqd connector**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd connector`](#wiqd-connector) | wiqd (core) | Discover and inspect Microsoft 365 catalog connectors |
+| [`wiqd connector list`](#wiqd-connector-list) | wiqd Core | Discover remote MCP and preview OpenAPI connectors from the Microsoft 365 catalog. |
+| [`wiqd connector show`](#wiqd-connector-show) | wiqd Core | Show a canonical catalog agentConnector node. |
+
 **wiqd devui**
 
 | Command | Extension | Description |
@@ -196,12 +204,8 @@ per-command tables below.
 | [`wiqd plugin`](#wiqd-plugin) | wiqd (core) | Build, validate, package, and publish standalone plugins (agent + skills + connector) |
 | [`wiqd plugin add`](#wiqd-plugin-add) | wiqd Core | add |
 | [`wiqd plugin add agent`](#wiqd-plugin-add-agent) | wiqd Core | Add a declarative agent component to a plugin. |
-| [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | wiqd Core | Add a remote MCP or OpenAPI custom connector to the plugin manifest. |
+| [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | wiqd Core | Add a catalog connector (--selector), a remote MCP connector, or an OpenAPI custom connector to the plugin manifest. |
 | [`wiqd plugin add skill`](#wiqd-plugin-add-skill) | wiqd Core | Scaffold a SKILL.md skill folder and register it in the plugin manifest. |
-| [`wiqd plugin connector`](#wiqd-plugin-connector) | wiqd Core | connector |
-| [`wiqd plugin connector list`](#wiqd-plugin-connector-list) | wiqd Core | Discover remote MCP and preview OpenAPI connectors from the Microsoft 365 catalog. |
-| [`wiqd plugin connector show`](#wiqd-plugin-connector-show) | wiqd Core | Show a canonical catalog agentConnector node. |
-| [`wiqd plugin connector use`](#wiqd-plugin-connector-use) | wiqd Core | Use an exact remote MCP catalog node in a plugin. |
 | [`wiqd plugin create`](#wiqd-plugin-create) | wiqd Core | Scaffold a new, empty standalone plugin project from the built-in blank app template. |
 | [`wiqd plugin delete`](#wiqd-plugin-delete) | wiqd Core | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin export`](#wiqd-plugin-export) | wiqd Core | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
@@ -1416,6 +1420,74 @@ wiqd config set
 wiqd config set [pairs...]
 ```
 
+## wiqd connector
+
+Discover and inspect Microsoft 365 catalog connectors
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd connector <command>
+```
+
+**Examples**
+
+```bash
+wiqd connector
+wiqd connector list
+wiqd connector show
+wiqd connector --help
+```
+
+### wiqd connector list
+
+Discover remote MCP and preview OpenAPI connectors from the Microsoft 365 catalog.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd connector list [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--search <value>` | Filter title, connector, description, ID, or reference ID |
+| `--auth-type <value>` | Filter by exact connector authorization type |
+| `--top <value>` | Maximum number of connectors to return |
+
+**Examples**
+
+```bash
+wiqd connector list
+wiqd connector list --search <value> --auth-type <value>
+wiqd connector list --json
+```
+
+### wiqd connector show
+
+Show a canonical catalog agentConnector node.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd connector show selector
+```
+
+**Arguments**
+
+| Argument | Description |
+| --- | --- |
+| `selector` | Selector emitted by 'connector list' |
+
+**Examples**
+
+```bash
+wiqd connector show
+wiqd connector show [selector]
+```
+
 ## wiqd devui
 
 Launch the local Work IQ DevUI web experience
@@ -1891,7 +1963,7 @@ wiqd plugin add agent --json
 
 ### wiqd plugin add connector
 
-Add a remote MCP or OpenAPI custom connector to the plugin manifest.
+Add a catalog connector (--selector), a remote MCP connector, or an OpenAPI custom connector to the plugin manifest.
 
 **Extension:** wiqd Core
 
@@ -1903,8 +1975,9 @@ wiqd plugin add connector [options]
 
 | Option | Description |
 | --- | --- |
-| `-n, --name <value>` | Connector display name |
-| `--description <value>` | Connector description |
+| `--selector <value>` | Catalog connector selector emitted by 'wiqd connector list' (replaces the manual connector options) |
+| `-n, --name <value>` | Connector display name (required unless --selector) |
+| `--description <value>` | Connector description (required unless --selector) |
 | `--kind <value>` | Connector kind (choices: "remote-mcp", "openapi", default: "remote-mcp") |
 | `--url <value>` | Remote MCP server https:// URL (required for remote-mcp) |
 | `--tool-description <value>` | Existing tool-description file, relative to appPackage/ |
@@ -1944,105 +2017,6 @@ wiqd plugin add skill [options]
 wiqd plugin add skill
 wiqd plugin add skill --name <value> --folder <value>
 wiqd plugin add skill --json
-```
-
-### wiqd plugin connector
-
-connector
-
-**Extension:** wiqd Core
-
-```bash
-wiqd plugin connector <command>
-```
-
-**Examples**
-
-```bash
-wiqd plugin connector
-wiqd plugin connector list
-wiqd plugin connector show
-wiqd plugin connector use
-wiqd plugin connector --help
-```
-
-### wiqd plugin connector list
-
-Discover remote MCP and preview OpenAPI connectors from the Microsoft 365 catalog.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd plugin connector list [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--search <value>` | Filter title, connector, description, ID, or reference ID |
-| `--auth-type <value>` | Filter by exact connector authorization type |
-| `--top <value>` | Maximum number of connectors to return |
-
-**Examples**
-
-```bash
-wiqd plugin connector list
-wiqd plugin connector list --search <value> --auth-type <value>
-wiqd plugin connector list --json
-```
-
-### wiqd plugin connector show
-
-Show a canonical catalog agentConnector node.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd plugin connector show selector
-```
-
-**Arguments**
-
-| Argument | Description |
-| --- | --- |
-| `selector` | Selector emitted by 'plugin connector list' |
-
-**Examples**
-
-```bash
-wiqd plugin connector show
-wiqd plugin connector show [selector]
-```
-
-### wiqd plugin connector use
-
-Use an exact remote MCP catalog node in a plugin.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd plugin connector use selector [options]
-```
-
-**Arguments**
-
-| Argument | Description |
-| --- | --- |
-| `selector` | Selector emitted by 'plugin connector list' |
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
-
-**Examples**
-
-```bash
-wiqd plugin connector use
-wiqd plugin connector use --folder <value>
-wiqd plugin connector use [selector]
 ```
 
 ### wiqd plugin create
@@ -2401,6 +2375,7 @@ Flag changes do not trigger a plugin reinstall.
 | `frontier` | `boolean` | `false` | `alpha` | wiqd-core | 0.14.0 | Enables preview capabilities across wiqd and participating extensions. |
 | `agent-skills` | `boolean` | `false` | `beta` | microsoft.wiqd.core | 0.12.2 | Enables `wiqd agent add skill` and fx-core inclusion of DA-only `agent_skills` folders during agent/plugin package, provision, and publish. The DA manifest schema for skills is not yet worldwide (WW); off by default until the schema is generally available. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
+| `validation-next` | `boolean` | `false` | `alpha` | microsoft.validate.next | 0.12.2 | Enables experimental Validate Next validation modes. |
 | `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `agent ask` and `agent list` are always available. |
 <!-- END: generated-flag-table -->
 
@@ -2412,5 +2387,6 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 | `frontier` | `WIQD_FLAG_FRONTIER` |
 | `agent-skills` | `WIQD_FLAG_AGENT_SKILLS` |
 | `devui` | `WIQD_FLAG_DEVUI` |
+| `validation-next` | `WIQD_FLAG_VALIDATION_NEXT` |
 | `workiq-monitor` | `WIQD_FLAG_WORKIQ_MONITOR` |
 <!-- END: generated-env-table -->

@@ -49,7 +49,7 @@ A plugin can carry one or more of these, declared as top-level components in the
 | ---------------- | ---------------------------------------------- | -------------------------------------------- |
 | An **agent**     | `copilotAgents.declarativeAgents` (→ `declarativeAgent.json`) | [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) |
 | **Skills**       | `agentSkills[]` (each a `SKILL.md` folder)     | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) |
-| **Connectors**   | `agentConnectors[]` (remote MCP or existing OpenAPI custom connectors) | [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) |
+| **Connectors**   | `agentConnectors[]` (remote MCP or existing OpenAPI custom connectors) | [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) — or reuse a published catalog connector found with [`wiqd connector`](/cli/connector/) |
 
 A declarative agent brings its own API plugins (`actions[]`) and MCP references along with it —
 those live inside the agent's own manifest, not as separate top-level plugin components.
@@ -78,9 +78,10 @@ This writes only a `ConnectionVault` logical-name pointer and updates both app-m
 fields to `devPreview`. It does not create the custom connector, invent an endpoint, or treat a
 tentative numbered manifest version as supported.
 
-Preview authoring does not guarantee that the build loop below can complete. The pinned fx-core
-schema can reject `agentConnectors[].toolSource.openApiConnector` during packaging before a ZIP
-exists. That is a local packaging limitation, not evidence of missing server-side AVL support.
+The bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of
+`agentConnectors[].toolSource.openApiConnector` and remote MCP connectors using `ConnectionVault`,
+preserving their fields without changing the source manifest. Local packaging success does not
+guarantee server-side acceptance.
 Deep validation needs a built ZIP, including one supplied through `--package-file`. Preserve the
 connector and inspect the actual deep-validation verdict; do not rewrite or drop it to bypass
 the local schema. See the

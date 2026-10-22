@@ -45,9 +45,8 @@ routing-requires:
     plugin import,
     plugin add skill,
     plugin add connector,
-    plugin connector list,
-    plugin connector show,
-    plugin connector use,
+    connector list,
+    connector show,
     plugin add agent,
     plugin validate,
     plugin show,
@@ -154,10 +153,11 @@ Then `cd` into the produced project and continue from step 2 exactly as if it ha
 Add whatever the request calls for, in any combination:
 
 ```bash
-# Discover an existing connector and preserve its canonical catalog node.
-wiqd plugin connector list --search "<name>"
-wiqd plugin connector show <selector>
-wiqd plugin connector use <selector> [--folder <dir>]
+# Discover an existing catalog connector (a top-level `wiqd connector` command; no plugin needed),
+# then add its exact canonical node to the plugin by the selector printed by `connector list`.
+wiqd connector list --search "<name>"
+wiqd connector show <selector>
+wiqd plugin add connector --selector <selector> [--folder <dir>]
 
 # A skill (a SKILL.md folder under appPackage/skills/<slug>/, registered in agentSkills[])
 wiqd plugin add skill --name "<Skill Name>" [--folder <dir>]
@@ -199,15 +199,17 @@ wiqd plugin add agent [--folder <dir>]
 
 Each `add …` updates `wiqd.plugin.json`'s `capabilities` array after its artifacts are written.
 
-Prefer `plugin connector list/show/use` when the requested connector already exists in the catalog. The catalog
+Prefer catalog discovery (`wiqd connector list/show`) plus `plugin add connector --selector` when the
+requested connector already exists in the catalog. The catalog
 title ID, connector element ID, display name, and vault reference ID are distinct; never substitute
 one for another in the persisted node. Copy the selector printed by `connector list`; duplicate
 display names for equivalent MCP definitions are deduplicated, while materially different
-same-named connectors receive composite selectors automatically. `connector use` copies the exact
+same-named connectors receive composite selectors automatically. `--selector` copies the exact
 retained `agentConnectors` node and is limited to
-`remoteMcpServer` nodes using the supported catalog authorization types. Catalog discovery surfaces
-`openApiConnector` nodes for inspection, but they route to the explicit preview path only after user
-confirmation.
+`remoteMcpServer` nodes using the supported catalog authorization types; it cannot be combined with
+`--name`, `--url`, `--kind`, or any other manual connector option. Catalog discovery
+surfaces `openApiConnector` nodes for inspection, but they route to the explicit preview path only
+after user confirmation.
 
 #### Conversational connector catalog flow
 
@@ -217,13 +219,13 @@ DevOps connector to my plugin"**:
 1. Do **not** ask for an MCP URL, title ID, environment, or vault reference.
 2. Run:
    ```bash
-   wiqd plugin connector list --search "<user's connector name>" --json --skill wiqd --workflow plugin
+   wiqd connector list --search "<user's connector name>" --json --skill wiqd --workflow plugin
    ```
 3. If exactly one `remoteMcpServer` result matches, copy its `selector` into:
    ```bash
-   wiqd plugin connector use "<selector>" --folder <plugin-dir> --json --skill wiqd --workflow plugin
+   wiqd plugin add connector --selector "<selector>" --folder <plugin-dir> --json --skill wiqd --workflow plugin
    ```
-   If `use` reports an inline or unavailable tool-description asset, follow its manual
+   If the command reports an inline or unavailable tool-description asset, follow its manual
    `plugin add connector --tool-description <file>` guidance instead of retrying the catalog path.
 4. If exactly one `openApiConnector` result matches, explain that it is preview-only and that broad
    runtime support is not established. Ask the user to confirm this preview choice. After
@@ -233,7 +235,7 @@ DevOps connector to my plugin"**:
      --description "<description>" --auth-reference-id "<referenceId>" \
      --dev-preview --folder <plugin-dir> --json --skill wiqd --workflow plugin
    ```
-   Do **not** call `plugin connector use` for an OpenAPI result.
+   Do **not** pass an OpenAPI result's selector to `plugin add connector --selector`.
 5. If several results remain, show only their title, connector name, kind, authorization type, and
    selector, then ask the user to choose one. Never choose by response order.
 6. If no result matches, report that the catalog did not return the named connector. Only then offer the
@@ -297,10 +299,10 @@ approved, immediately tenant-wide, shared, or public-store published.
 
 For an OpenAPI custom connector, static validation does not inspect the top-level connector.
 Package first, then run `wiqd plugin validate --mode deep`. Local packaging and server-side AVL
-support are separate: the pinned fx-core package schema can reject `agentConnectors` before a ZIP
-is produced even when AVL supports the devPreview shape. Report the local failure accurately and
-keep the source manifest unchanged; do not infer a server rollout problem. An existing built ZIP
-can be supplied with `--package-file` for deep validation. Report its actual server verdict;
+support are separate: the bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview
+packaging of OpenAPI and remote MCP connectors using `ConnectionVault`, preserving their fields
+in the ZIP and leaving the source manifest unchanged. Do not infer server acceptance from local
+packaging success. Supply a built ZIP with `--package-file` for deep validation and report its actual server verdict;
 validation alone does not prove connector invocation or publication acceptance. `wiqd plugin export`
 intentionally fails for this connector kind because Open Plugin has no verified
 `ConnectionVault` representation.
