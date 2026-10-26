@@ -2,20 +2,6 @@
 title: Changelog
 ---
 
-## 0.21.0 — 2026-10-26
-
-> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
-
-### Features
-
-- publish daily alpha builds with a dev channel
-
-### Fixes
-
-- report optional setup failures as warnings
-- prepare shared environments before sharing
-- retain default provisioning environment path
-
 ## 0.20.0 — 2026-10-22
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
