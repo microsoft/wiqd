@@ -46,6 +46,13 @@ my-agent/
 
 ### 2. Provisioning
 
+Explain the scaffold defaults up front: `local` is personal testing; `dev` is
+shared deployment. Inspect the selected project's effective lifecycle scope
+and environment configuration rather than assuming the environment name
+determines scope. Use its configured `environmentFolderPath` (default `./env`).
+Missing or conflicting settings require actionable guidance, not silent edits.
+For a standalone plugin, use `wiqd plugin` instead of `wiqd agent` below.
+
 Provisioning generates M365 Title ID on first time and makes the updated agent available to the developer on Microsoft 365 Copilot.
 
 ```bash
@@ -126,11 +133,16 @@ Share agents with specific users or entire tenant.
 
 **IMPORTANT:** Only for agents with `AGENT_SCOPE=shared`
 
-**Check before sharing:**
-
-```bash
-grep "AGENT_SCOPE=shared" env/.env.dev
-```
+Follow **Shared deployment readiness** in [share.md](share.md) before direct
+sharing. A personal deployment cannot be shared. If a shared environment needs
+preparation, explain why, obtain confirmation for the additional cloud mutation
+unless already authorized, validate, then provision it before sharing.
+Stop on failure or cancellation. An already-ready shared deployment does not
+need re-provisioning. Preserve the same project path and explicit shared
+environment throughout, including custom shared environments instead of blindly
+switching to `dev`. Help and read-only access-list requests never provision.
+Deployment scope is not share audience `--scope users|tenant`, and there is no
+`provision --scope shared` flag.
 
 If the developer isn't clear on the sharing scope, ask follow-up questions to clarify.
 
@@ -145,8 +157,7 @@ wiqd agent share \
   --json \
   --scope users \
   --email 'user1@contoso.com,user2@contoso.com' \
-  --env dev \
-  -i false
+  --env dev
 ```
 
 **Share with entire tenant (after validation with specific users):**
@@ -155,8 +166,7 @@ wiqd agent share \
 wiqd agent share \
   --json \
   --scope tenant \
-  --env dev \
-  -i false
+  --env dev
 ```
 
 **Grant collaborator access (can edit and deploy):**

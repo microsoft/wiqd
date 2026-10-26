@@ -588,7 +588,7 @@ SOFTWARE
 
 ------------------------------------------------------------------------------
 
-Package:    @azure/msal-common@16.14.1
+Package:    @azure/msal-common@16.14.2
 License:    MIT
 Repository: https://github.com/AzureAD/microsoft-authentication-library-for-js
 Publisher:  Microsoft
@@ -617,7 +617,7 @@ SOFTWARE
 
 ------------------------------------------------------------------------------
 
-Package:    @azure/msal-node@6.0.1
+Package:    @azure/msal-node@7.1.0
 License:    MIT
 Repository: https://github.com/AzureAD/microsoft-authentication-library-for-js
 Publisher:  Microsoft
@@ -10608,6 +10608,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 Package:    body-parser@1.20.5
 License:    MIT
 Repository: expressjs/body-parser
+Modification: locally modified by pnpm patch
+Patch:      patches/body-parser@1.20.5.patch
+Patch SHA-256: fa67bd364f757204ced259312ced2695abd2d2e6099ca3406f456448b27dea01
+pnpm patch hash: soztiwp4vrp33wq6w5m2hty2fe
 
 (The MIT License)
 
@@ -10638,6 +10642,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 Package:    body-parser@2.2.2
 License:    MIT
 Repository: expressjs/body-parser
+Modification: locally modified by pnpm patch
+Patch:      patches/body-parser@2.2.2.patch
+Patch SHA-256: 7a78bddf77cc3c3bcbf983dfad2531df057944c9959be859639934407c7d3508
+pnpm patch hash: 2sfckfz5jjye7rgtvqe7wz3ijm
 
 (The MIT License)
 
@@ -22245,7 +22253,7 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    zod@4.4.3
+Package:    zod@4.6.7
 License:    MIT
 Repository: https://github.com/colinhacks/zod
 Publisher:  Colin McDonnell

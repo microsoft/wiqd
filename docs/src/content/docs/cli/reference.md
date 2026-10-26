@@ -2337,7 +2337,7 @@ wiqd update [options]
 | --- | --- |
 | `--version <version>` | Install specific version |
 | `--check` | Check for updates without installing |
-| `--channel <channel>` | npm dist-tag channel |
+| `--channel <channel>` | Release channel: latest, preview, dev (npm alpha) |
 | `--force` | Deprecated: update always reinstalls; kept for compatibility |
 | `--dry-run` | Show what would be done without doing it |
 | `--skip-extension` | Skip VS Code extension update |
@@ -2352,6 +2352,21 @@ wiqd update --json
 ```
 
 <!-- END: command-reference -->
+
+### Update outcomes
+
+The CLI can update successfully even if an optional VS Code extension or
+Copilot/Claude plugin could not be set up. In that case, you can keep using
+`wiqd`, but the affected integration may not be ready.
+
+If you see `Some optional setup did not complete.`, read the details below the
+warning and rerun the displayed installer command to retry setup. You do not
+need a special flag to continue using the CLI.
+
+Use `--skip-plugin` to skip plugin setup, or `--skip-extension` to skip the
+VS Code extension. Errors that prevent the CLI itself from being installed
+still fail the update. With `--json`, any setup warnings and retry commands
+are included in `data.warnings`.
 
 ## Feature flags
 

@@ -112,10 +112,22 @@ that merges a whole plugin into an existing agent. For an OpenAPI custom connect
 deployment readiness.
 
 **You say:** "Provision it, then package and share it with my team."
-**wiqd does:** runs `wiqd plugin provision`, then `wiqd plugin package` now that the environment
-file it needs exists, then `wiqd plugin share --scope users --email <you supply>`. Each step's
+**wiqd does:** explains that standard projects use `local` for personal testing and `dev`
+for shared deployment, checks the project's actual scope configuration, and selects the
+shared environment. It validates, runs `wiqd plugin provision --env dev`, then
+`wiqd plugin package --env dev`, then
+`wiqd plugin share --env dev --scope users --email <you supply>`. Each step's
 report tells you what ran and what's next, so a multi-step request like this one still gives you a
 checkpoint after every command.
+
+If you already provisioned in personal `local`, asking to share does not make
+that deployment shareable. Copilot explains the restriction and asks permission
+for any additional cloud provisioning not already authorized, then validates and
+prepares the shared environment before sharing. A ready shared deployment is
+reused without redundant provisioning. Custom environment names and scope settings
+are respected; missing or conflicting configuration is reported rather than
+silently replaced. Help and read-only requests do not deploy anything, and
+tenant-wide sharing requires explicit audience confirmation.
 
 This mirrors the same `create → add → validate → provision → package → share` lifecycle you'd run
 by hand — the orchestrator just chooses and sequences the commands for you, one reported step at a
@@ -127,6 +139,14 @@ Reach for the CLI directly instead of the conversational path when you're script
 pipeline, need fully deterministic and reproducible non-interactive automation, or you simply
 prefer typing commands yourself. Every command below is the same one the conversational path runs
 under the hood — nothing here is a different surface, just a different way to drive it.
+
+**Choose the deployment scope first.** The example below uses the standard shared
+`dev` environment because it ends in sharing. Use `local` for personal testing,
+not sharing. These are scaffold defaults: check the effective lifecycle
+configuration and `AGENT_SCOPE` in the selected environment under
+`environmentFolderPath` (default `./env`); an environment name alone does not prove
+it is shared. `--scope users|tenant` selects the sharing audience, not deployment
+scope. There is no `wiqd plugin provision --scope shared` option.
 
 ```bash
 # 1. Scaffold the plugin container
@@ -151,28 +171,28 @@ wiqd plugin add connector --kind openapi --name "Contoso Kusto" \
   --auth-reference-id shared_kusto --dev-preview
 
 # 3. Validate offline before you provision or package
-wiqd plugin validate
+wiqd plugin validate --env dev
 
 # 4. Provision first — it writes the env file package/share both depend on
-wiqd plugin provision
+wiqd plugin provision --env dev
 
 # 5. Build the deployable .zip
-wiqd plugin package
+wiqd plugin package --env dev
 
 # 6. Run the full package-first deep validation against AVL
-wiqd plugin validate --mode deep
+wiqd plugin validate --env dev --mode deep
 
 # 7. Share it
-wiqd plugin share --scope users --email you@contoso.com
+wiqd plugin share --env dev --scope users --email you@contoso.com
 # …or share with your whole tenant:
-wiqd plugin share --scope tenant
+wiqd plugin share --env dev --scope tenant
 
 # Inspect at any point
 wiqd plugin show
 wiqd plugin list --root .
 
 # Tear down what provision created (--yes skips the confirmation prompt for non-interactive use)
-wiqd plugin delete --env local --yes
+wiqd plugin delete --env dev --yes
 ```
 
 :::note

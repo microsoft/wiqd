@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "836a47e10f91587eb6f7c108ba9bb6bd81a15cb95ba35ff9210b5a910a123e4a",
+  "inputDigest": "ba0c8d2d6f0bbcb405456d8de9d45d4daf2a4460f6b5cc42324d23c700efda44",
   "componentCount": 537,
   "components": [
     {
@@ -148,14 +148,14 @@
     {
       "type": "npm",
       "name": "@azure/msal-common",
-      "version": "16.14.1",
+      "version": "16.14.2",
       "license": "MIT",
       "origin": "runtime"
     },
     {
       "type": "npm",
       "name": "@azure/msal-node",
-      "version": "6.0.1",
+      "version": "7.1.0",
       "license": "MIT",
       "origin": "both"
     },
@@ -1157,14 +1157,24 @@
       "name": "body-parser",
       "version": "1.20.5",
       "license": "MIT",
-      "origin": "bundled"
+      "origin": "bundled",
+      "patch": {
+        "path": "patches/body-parser@1.20.5.patch",
+        "sha256": "fa67bd364f757204ced259312ced2695abd2d2e6099ca3406f456448b27dea01",
+        "pnpmHash": "soztiwp4vrp33wq6w5m2hty2fe"
+      }
     },
     {
       "type": "npm",
       "name": "body-parser",
       "version": "2.2.2",
       "license": "MIT",
-      "origin": "runtime"
+      "origin": "runtime",
+      "patch": {
+        "path": "patches/body-parser@2.2.2.patch",
+        "sha256": "7a78bddf77cc3c3bcbf983dfad2531df057944c9959be859639934407c7d3508",
+        "pnpmHash": "2sfckfz5jjye7rgtvqe7wz3ijm"
+      }
     },
     {
       "type": "npm",
@@ -3769,7 +3779,7 @@
     {
       "type": "npm",
       "name": "zod",
-      "version": "4.4.3",
+      "version": "4.6.7",
       "license": "MIT",
       "origin": "both"
     },

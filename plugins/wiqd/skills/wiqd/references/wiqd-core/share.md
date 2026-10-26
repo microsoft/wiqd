@@ -38,6 +38,46 @@ This reference is the active owner for the three standard share targets. The opt
 first-party overlay may extend the guided menu, but all standard branches continue through the
 core-backed `wiqd agent share` commands below.
 
+## Shared deployment readiness
+
+This checkpoint applies to **direct sharing**, not command-help or read-only
+collaborator-list requests. For a standalone plugin, use the same checks with
+`wiqd plugin validate`, `wiqd plugin provision`, and `wiqd plugin share`; do not
+substitute agent commands or invent plugin collaborator/list subcommands.
+
+1. Resolve the existing project path and intended environment. Explain the
+   standard scaffold defaults before any provisioning: `local` is personal
+   testing; `dev` is shared deployment. Inspect the effective lifecycle scope
+   and selected environment's `AGENT_SCOPE`, using the configured
+   `environmentFolderPath` (default `./env`). Names alone do not establish scope.
+   Missing, malformed, unresolved, or conflicting configuration is a blocker:
+   explain the exact file/setting to correct, without dumping secrets or silently
+   overwriting it.
+2. If the selected deployment is personal, explain that it cannot be shared.
+   Respect an explicitly selected shared environment; otherwise propose the
+   scaffold's shared `dev` environment after checking its configuration.
+   Do not change a personal deployment's scope in place or copy its provisioned
+   IDs into another environment. Additional cloud provisioning requires
+   confirmation unless the user already explicitly authorized that preparation.
+   Declining or cancellation means no provisioning or sharing.
+3. Establish readiness for the shared environment: its scope configuration must
+   be shared and its provisioning evidence must include non-empty, resolved
+   `TEAMS_APP_ID` and `M365_TITLE_ID`. If readiness is already established and no
+   deployment update is needed, share without re-provisioning. If provisioning
+   is needed and authorized, read `references/wiqd-core/provision.md`, apply
+   shared-version handling when applicable, validate, and provision. A successful
+   validation is required before provision; a successful provision result and
+   populated IDs are required before share. An env file alone is not proof.
+4. Pass the **same explicit `--path` and shared `--env`** to preparation and
+   share commands. Stop on validation/provisioning errors or cancellation.
+   `--scope users|tenant` selects who receives access; it does not configure
+   deployment scope. Never invent `provision --scope shared`.
+
+Tenant-wide audience confirmation remains mandatory and separate from permission
+to prepare a shared environment. For help-only requests, explain this flow
+without running it. For read-only access requests, follow the listing section
+below without provisioning.
+
 ## Commands
 
 ### Share with specific users (recommended starting point)
@@ -130,8 +170,9 @@ wiqd agent share remove --json --skill wiqd --owners "dev@org.com" --env <env> #
 
 ## Critical Rules
 
-- Agent must be provisioned (`TEAMS_APP_ID` in env file). If not → run provision workflow first.
-- `M365_TITLE_ID` must exist in env file. If missing → run provision workflow first.
+- Establish shared deployment readiness above before direct sharing. Missing
+  provisioning IDs require the confirmed provision workflow, not automatic
+  cloud recovery.
 - Do NOT share with tenant without explicit user confirmation — this gives access to everyone.
 - Collect email addresses for `users` scope — do not invent emails.
 - Share with a group by passing the group's mail address to `--email`; do NOT invent a `--scope group` flag or the group's address.
