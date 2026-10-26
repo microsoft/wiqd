@@ -2,6 +2,16 @@
 
 Run this check before any `wiqd` command to detect missing or broken installations.
 
+**Windows installation prerequisite:** Before running any install or repair
+command below (including uninstalling a broken CLI), follow the
+[PowerShell 7+ prerequisite](install-update.md#windows-prerequisite-powershell-7).
+The installer requires PowerShell 7+ (`pwsh.exe`), not Windows PowerShell 5.1.
+Find and reuse an existing 7+ host, including installations not on PATH, rather
+than unnecessarily installing or upgrading PowerShell. If none is available,
+report the prerequisite blocker and determine the setup path with the user;
+use step 5's file-based fallback while CLI installation is blocked.
+An otherwise working CLI does not require a PowerShell upgrade.
+
 ## Procedure
 
 1. Run `wiqd --version` using the powershell tool and observe **both stdout/stderr and exit code**.

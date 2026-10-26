@@ -4,13 +4,33 @@
 
 Provision a declarative agent to an environment (deploy to M365).
 
+## Choose personal testing or shared deployment
+
+Explain the standard scaffold defaults **before provisioning**: `local` is
+personal testing (`AGENT_SCOPE=personal`); `dev` is shared deployment
+(`AGENT_SCOPE=shared`). Resolve the project path and selected environment from
+the user's intent, asking only if the intended outcome is unclear.
+Inspect the effective lifecycle configuration and selected env file under the
+configured `environmentFolderPath` (default `./env`). Custom projects can use
+different names or scope settings; never infer scope from the name, silently
+replace configuration, or invent a `--scope shared` provision option.
+
+For a share request, first follow **Shared deployment readiness** in
+`references/wiqd-core/share.md`: confirm additional cloud preparation when
+needed and do not re-provision an already-ready shared deployment.
+For standalone plugins, retain these environment/confirmation rules and
+applicable version handling, but use `wiqd plugin validate` and
+`wiqd plugin provision` throughout. Keep the same explicit `--path` and `--env`.
+
 ## Validation Gate — MANDATORY
 
-Provisioning is **blocked** until the manifest validates clean. Before running the provision command:
+Provisioning is **blocked** until the manifest validates clean. Complete any
+authorized shared-version preparation below before this validation:
 
 1. Run `wiqd agent validate --json --skill wiqd --env <environment> [--path <path>]` as a precondition, using the same environment and project path that will be provisioned.
 2. **PASS** → proceed. **FAIL** → stop, surface diagnostics, do NOT provision.
-3. Do not re-run validation or interpret diagnostics from this context.
+3. On failure, report the diagnostics and stop this provisioning flow. Route
+   repairs through agent-validate rather than editing or retrying here.
 
 ## Command
 
@@ -28,11 +48,15 @@ wiqd agent provision --json --skill wiqd --env <environment> [--path <path>]
 
 ## Workflow
 
-1. Check if the agent has `AGENT_SCOPE=shared` in the target env file (`env/.env.<env>`).
-   If **shared**, run the [Shared Agent Version Bump](#shared-agent-version-bump) flow first.
-2. Run `wiqd agent provision --json --skill wiqd --env <env> [--path <path>]`
-3. Read `M365_TITLE_ID` from `<path>/env/.env.<env>` (or `env/.env.<env>` when `--path` is omitted)
-4. Present the test link: `https://m365.cloud.microsoft/chat?titleId={M365_TITLE_ID}`
+1. Check the effective deployment scope and provisioning IDs in the target env
+   file under the configured environment folder. If **shared** and already
+   provisioned, run the [Shared Agent Version Bump](#shared-agent-version-bump)
+   flow before validation. Do not bump a new environment merely to share it.
+2. Complete the validation gate above against the resulting files.
+3. Run `wiqd agent provision --json --skill wiqd --env <env> [--path <path>]`
+4. Read `M365_TITLE_ID` from `.env.<env>` under the project's configured
+   environment folder (`env/.env.<env>` with the default `./env` folder).
+5. Present the test link: `https://m365.cloud.microsoft/chat?titleId={M365_TITLE_ID}`
 
 ## Bundled Reference Preflight
 
@@ -53,7 +77,9 @@ registration merely to bypass the flag check.
 
 ## Shared Agent Version Bump
 
-When provisioning a **shared** agent (`AGENT_SCOPE=shared`), bump the manifest version:
+When re-provisioning an already-provisioned **shared** agent
+(`AGENT_SCOPE=shared` and a populated `M365_TITLE_ID`), prepare its version before
+validation:
 
 1. Check all env files for `TEAMS_APP_VERSION`. If missing:
    - Read current version from `appPackage/manifest.json`
@@ -66,20 +92,22 @@ When provisioning a **shared** agent (`AGENT_SCOPE=shared`), bump the manifest v
 
 | Environment | Purpose                   |
 | ----------- | ------------------------- |
-| `local`     | Development and testing   |
-| `dev`       | Shared development        |
+| `local`     | Personal testing (default) |
+| `dev`       | Shared deployment (default) |
 | `staging`   | Pre-production validation |
 
 ## Critical Rules
 
 - **NEVER** provision when validation returned FAIL
-- **NEVER** edit project files from this context — routing fixes is agent-validate's responsibility
+- Only the explicitly authorized shared-version preparation above may edit
+  version fields here; route validation fixes through agent-validate.
 - **NEVER** create missing config files (`m365agents.yml`) without explicit consent
 - **ALWAYS** show the test link after successful provisioning
 - When returning to an explicitly requested or confirmed provisioning flow after
   files in `appPackage/` changed, revalidate before provisioning. This rule does
   not authorize provisioning after an ordinary edit.
-- **ALWAYS** run shared agent version bump when `AGENT_SCOPE=shared`
+- Apply shared-version preparation when re-provisioning an existing shared
+  deployment, then validate the resulting files before provisioning.
 - **NEVER** set placeholder values for environment variables — leave empty, provisioning fills them
 
 **Preflight:** Requires `appPackage/manifest.json` and `m365agents.yml` or `teamsApp.yml`;

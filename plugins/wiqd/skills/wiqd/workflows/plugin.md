@@ -267,19 +267,61 @@ Validates the descriptor and component artifacts. Fix any reported errors and re
 
 Inspection is available at any point; the deploy lifecycle runs in this order:
 
+**Choose the deployment environment before provisioning.** Explain the standard
+scaffold defaults: `local` is personal testing; `dev` is shared deployment.
+Ask which outcome the user needs only when their intent does not already settle
+it. These are defaults, not scope guarantees: inspect the selected project's
+effective lifecycle/environment configuration and `AGENT_SCOPE`, using its
+configured `environmentFolderPath` (default `./env`). Respect an explicitly
+selected shared environment. If configuration is missing, malformed, or conflicts
+with the intended scope, explain what needs correcting and stop; never silently
+overwrite it. There is no `provision --scope shared` flag; share's
+`--scope users|tenant` selects the audience, not deployment scope.
+
 ```bash
 wiqd plugin show [--path <dir>]                # summary of one plugin
 wiqd plugin list [--root <dir>]                # plugins under a directory
 
-wiqd plugin provision [--env local]            # 1. register with M365, writes env/.env.<env>
-wiqd plugin package                            # 2. build a deployable .zip
-wiqd plugin publish [--env local]              # 3a. submit to the org catalog for admin approval
-wiqd plugin share [--email <e>]                # 3b. share directly with users/tenant
+wiqd plugin provision --env <env> [--path <dir>] # 1. provision the chosen personal/shared environment
+wiqd plugin package --env <env> [--path <dir>]   # 2. package that same deployment
+wiqd plugin publish --env <env> [--path <dir>]   # 3a. submit to the org catalog for admin approval
+wiqd plugin share --env <shared-env> --scope users --email <e> [--path <dir>] # 3b. shared deployments only
 
 wiqd plugin delete [--env local]               # 4. tear down what provision created
 ```
 
 > **`provision` comes before `package`, `publish`, and `share`.** `provision` is the only command that writes the selected `.env.<env>` under the configured `environmentFolderPath`. `package` needs it to resolve manifest variables; `publish` and `share` require it as provisioning evidence.
+
+#### Before sharing — prepare a shared deployment
+
+Read **Shared deployment readiness** in `references/wiqd-core/share.md` before
+executing a share request. Apply that checkpoint with **`wiqd plugin` commands**,
+not `wiqd agent` commands.
+
+If the current deployment is personal, explain: "This deployment is for personal
+testing and cannot be shared. We need to prepare a shared deployment first
+(normally `dev`)." Confirm additional cloud provisioning unless the user already
+authorized it. Keep the same project path and selected shared environment
+through validation, provisioning, packaging if needed, and sharing. Reuse
+`references/wiqd-core/provision.md` for applicable shared-version handling, using
+plugin validation/provision commands. Never treat the mere existence of an env
+file as successful provisioning.
+
+For a standard project whose `dev` configuration is confirmed shared, the
+authorized preparation sequence is:
+
+```bash
+wiqd plugin validate --path <dir> --env dev --json --skill wiqd --workflow plugin
+wiqd plugin provision --path <dir> --env dev --json --skill wiqd --workflow plugin
+wiqd plugin share --path <dir> --env dev --scope users --email <recipient> --json --skill wiqd --workflow plugin
+```
+
+Stop on failed validation, failed provisioning, or cancellation; do not run the
+next command or claim success. If a selected shared deployment is already ready,
+share it without unnecessary re-provisioning. A custom shared environment stays
+selected instead of being replaced with `dev`. Do not provision for help-only or
+inspection requests. Tenant-wide sharing requires separate explicit audience
+confirmation even if shared provisioning was approved.
 
 Before catalog submission, use the no-submit readiness path when the user asks
 for a check rather than an actual tenant change:
@@ -413,7 +455,10 @@ After each step, report the outcome and suggest the logical next action:
 - After `create` **or `import`** → "Add a skill", "Add a connector", "Add a declarative agent".
 - After `add …` → "Add another capability", or "Validate the plugin".
 - After a clean `validate` → "Provision the plugin" or "Export it for Claude/Cursor". If the manifest contains `openApiConnector`, omit the export suggestion and explain that Open Plugin cannot represent its `ConnectionVault` reference; static validation does not establish packaging or deployment readiness.
-- After `provision` → "Package the plugin", then "Share it".
+- After personal `provision` → "Test the plugin yourself"; explain that sharing
+  needs a shared deployment and offer preparation without starting it.
+- After shared `provision` → "Package the plugin", then "Share it" using the same
+  project path and shared environment, subject to the readiness checkpoint above.
 - After `export` → tell the user **where** the output landed and that the whole directory must travel together for a lossless round trip.
 
 ## Anti-patterns

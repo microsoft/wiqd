@@ -49,18 +49,32 @@ separate [installation-script path](#path-2-use-the-installation-script).
 
 ### Migrating from a CLI-composed plugin
 
-Rerun the installation script to replace an older CLI-composed plugin with the
-marketplace version. Your local source files are preserved. Avoid running other
-plugin-management commands during migration.
+The WIQD CLI no longer exposes host-plugin management commands. The installer
+can migrate a proven WIQD-owned local marketplace to the public source, but
+stops on unverified local ownership or a conflicting requested marketplace
+binding. Other remote registrations stay untouched and do not block installation.
+It never deletes your plugin source directories. Extension activation does not
+change host plugins.
 
-If setup warns that it could not clean up an older installation, check your
-host's plugin settings for duplicates before starting a new session. If setup
-stops, follow the displayed instructions and retry.
+Copilot may report that uninstall disabled a local live plugin without removing
+its files. The installer handles that specific WIQD state by unregistering the
+owned local marketplace without force, then installing the public plugin. Other
+plugins that reference the marketplace still block migration, even if disabled.
 
-Claude plugins installed only for a project need manual handling. You can skip
-plugin setup with `-SkipPlugin`
-(PowerShell) or `--skip-plugin` (Bash) and use the marketplace commands above.
-Do not delete configuration directories or run a blanket cleanup.
+The installer reads native JSON inventories first and may use its bounded
+compatibility readers when a host rejects `--json`. Use a host version that
+supports native JSON for canonical-source adoption; text or stored configuration
+cannot prove that a `wiqd@wiqd` deployment is the public Microsoft plugin.
+Unreadable or ambiguous inventory stops public changes when a canonical
+candidate is observed.
+
+Before switching an existing installation, inspect your chosen host's native
+plugin and marketplace inventory to identify the actual source. An old local
+deployment may share the WIQD plugin name with a public marketplace plugin; the
+name alone does not prove the source is correct. Use the host's native uninstall
+flow for that old deployment, remove or rebind its old local marketplace entry,
+then follow the marketplace commands above. Start a new host session. Do not
+delete configuration directories or run a blanket cleanup.
 
 The `wiqd component plugin` subtree, `wiqd install plugin`,
 `wiqd uninstall plugin`, and `wiqd install --status` have been removed.
@@ -127,9 +141,15 @@ The installer will:
   Copilot and Claude hosts. It does not install either host. Use `-SkipPlugin`
   (PowerShell) or `--skip-plugin` (Bash) to skip this step.
 
-Plugin setup is managed by the installation script. Conflicting plugin sources
-require manual resolution; forcing a CLI reinstall does not bypass those checks.
-A plugin setup failure leaves the CLI installed but reports an installation error.
+The installer manages plugins with native PowerShell or bash functions,
+independent of the installed CLI version. Bash reuses the Node.js runtime
+verified earlier in the installation for plugin inventory and migration checks.
+The parser is embedded in the downloaded script; no `jq` or separate helper
+download is needed. PowerShell uses its built-in JSON parser. Skipping plugin
+installation, including when no hosts are detected, does not require a parser.
+Conflicting plugin sources require manual resolution; forcing a CLI reinstall
+does not bypass plugin ownership checks. A plugin failure leaves the verified
+CLI installed and reports a setup warning with recovery guidance.
 
 Successful bootstrap installs record their hosted installer in
 `~/.wiqd/install-method.json`. `wiqd update` reuses that installer to upgrade,
@@ -156,16 +176,29 @@ Sign in with `wiqd auth login --interactive` before provisioning. The `local`
 environment is provisioned to your Microsoft 365 tenant; it is not an offline
 deployment.
 
-If host-plugin installation succeeded, start a new host session; no reinstall is needed.
-If skipped or no host was detected, install the marketplace plugin manually.
-New Copilot installations use `wiqd@awesome-copilot`; Claude uses `wiqd@wiqd`
-from `microsoft/wiqd`. Existing verified Microsoft plugins are updated in place.
-If both Copilot variants are installed, setup updates the Awesome Copilot
-variant and warns about duplicates. Choose which WIQD plugin to enable in your
-host's settings before starting a new session.
-Setup runs only for detected hosts; each stage inspects and changes only its own host.
-For older local installations or setup warnings, see
-[Migrating from a CLI-composed plugin](#migrating-from-a-cli-composed-plugin).
+If host-plugin installation succeeded, start a new host session; no reinstall is
+needed. If skipped or no host was detected, install the marketplace plugin
+manually. For a fresh Copilot installation, the installer uses
+`wiqd@awesome-copilot`. Copilot resolves its built-in Awesome Copilot marketplace;
+the installer does not inspect, add, or rebind it. If native inventory verifies one enabled,
+installed `wiqd@wiqd` deployment from `microsoft/wiqd`, bootstrap and
+`wiqd update` update that identity in place without adding the Awesome Copilot
+copy. An uncertain, disabled, duplicate, or non-installed canonical deployment
+stops public plugin work before changes; inspect the host's plugin and
+marketplace settings with `copilot plugin list --json` and
+`copilot plugin marketplace list --json`, resolve the state yourself, and retry.
+Use `-SkipPlugin` (PowerShell) or `--skip-plugin` (Bash) for CLI-only installation.
+The installer does not switch, enable, or remove public deployments for you.
+
+Claude continues to use `wiqd@wiqd` from `microsoft/wiqd`. WIQD does not manually
+remove or rewrite remote plugins or marketplaces. Unverified Claude bindings
+are handed to Claude's native marketplace-add command with a warning; if it
+fails, plugin installation stops. Plugin detection uses the host's native
+inventory, not a fixed manifest-file layout. If a host is unavailable but a
+WIQD cache directory remains, restore that host and inspect its plugin inventory
+before retrying the installer. If installation failed, follow the reported
+remediation and retry. Success confirms the native install command completed,
+not that individual skills were tested.
 See [Build a Plugin](/getting-started/build-a-plugin/) for the complete workflow.
 
 ## Pass parameters to the bootstrap installer
@@ -182,11 +215,49 @@ The script-block-wrapped form `iex "& { $(irm 'URL') } -Flag"` is what makes it 
 |-----------------|-----------------|-------------|
 | `-SkipVSCode` | `--skip-vscode` | Skip the VS Code extension install step |
 | `-SkipPlugin` | `--skip-plugin` | Skip all host-plugin installation, update, and migration work |
-| `-PluginNonFatal` | `--plugin-non-fatal` | Return exit `76` instead of `1` when plugin installation fails after CLI verification. Cancellation remains `130` |
 | `-Insiders` | `--insiders` | Install the extension in VS Code Insiders |
 | `-Force` | `--force` | Reinstall even if components are already present |
 | `-NodeVersion 24` | `--node-version 24` | Specify the Node.js major version (default: `24`) |
 | `-Version <version>` | `--version <version>` | Specific wiqd version to install. With no override, the installer pins the exact version stamped into it at release time — never a floating `latest`/`preview` tag. Accepts a concrete version or an npm dist-tag such as `preview` or `latest`. |
+| `-Channel <channel>` | `--channel <channel>` | Select `latest`, `preview`, or `dev`. The `dev` channel uses npm's `alpha` tag; `alpha` is accepted as a compatibility alias. Cannot be combined with the version flag. With no override, the stamped installer default is unchanged. |
+
+### Daily development builds
+
+The `dev` channel installs experimental snapshots of validated `main`, published
+daily under the npm `alpha` tag. The name `dev` is a WIQD alias, not another
+npm dist-tag.
+For example, stable `0.19.0` is followed by
+`0.20.0-alpha.20261022.123456`; the corresponding stable `0.20.0` sorts after
+that alpha. Installing alpha never changes what other users receive from
+`latest`.
+
+```powershell
+iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -Channel dev"
+```
+
+```bash
+curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --channel dev
+```
+
+Alternatively, use `npm install -g @microsoft/wiqd@alpha`, or update an existing
+installation with `wiqd update --channel dev`. Check availability with
+`wiqd update --channel dev --check --json`.
+
+The installer maps `dev` to npm `alpha` and resolves it to one exact version.
+The older `--channel alpha` / `-Channel alpha` spelling continues to work.
+If the tag cannot be
+resolved, it stops with an error rather than silently installing stable.
+No-argument updates still select `latest`; select `dev` explicitly each time.
+To return to stable, run `wiqd update --channel latest`, or pin a specific
+stable version with `wiqd update --version <version>`.
+
+If the CLI installs successfully but a plugin or VS Code extension cannot be set
+up, the installer shows a warning and continues the remaining optional setup.
+This includes a missing bundled VS Code extension file or a failed extension
+installation. You can keep using `wiqd`; follow the displayed
+guidance and rerun the installer to retry the optional setup. Use `-SkipPlugin`
+or `-SkipVSCode` (Bash: `--skip-plugin` or `--skip-vscode`) if you do not need
+those integrations.
 
 ### Examples
 

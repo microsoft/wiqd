@@ -23,6 +23,30 @@ updates, not to an explicit request to install the VS Code extension.
 
 Install only the CLI prerequisite. Keep the marketplace-installed plugin and VS Code extension unchanged.
 
+### Windows prerequisite: PowerShell 7+
+
+The Windows installer requires **PowerShell 7 or later** (`pwsh.exe`), not
+Windows PowerShell 5.1 (`powershell.exe`). Before installing, repairing, or
+rerunning the installer for an update:
+
+1. Check the executing host with `$PSVersionTable.PSVersion`. If it is already
+   7+, use that host.
+2. Otherwise, locate an existing `pwsh.exe` with `Get-Command pwsh -ErrorAction SilentlyContinue`.
+   If it is not on PATH, check installed locations such as
+   `C:\Program Files\PowerShell\7\pwsh.exe` before concluding it is missing.
+   Verify the discovered executable with
+   `& '<resolved path to pwsh.exe>' -NoProfile -Command '$PSVersionTable.PSVersion'`.
+3. Run the Windows installer command below inside the verified PowerShell 7+
+   host, not the original 5.1 session. Do not install or upgrade PowerShell
+   when a usable 7+ host already exists.
+4. If no usable PowerShell 7+ host is found, report the missing prerequisite
+   and determine an appropriate setup path with the user before continuing.
+   Do not run the CLI installer under 5.1 or treat CLI installation/update
+   as authorization to upgrade PowerShell.
+
+This prerequisite applies to Windows installer execution, not to an otherwise
+working `wiqd --version` probe or ordinary CLI commands.
+
 
 ### Windows
 
@@ -43,6 +67,8 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --skip-plugin --skip-vsco
 ## Update wiqd CLI
 
 Keep marketplace-managed components unchanged during updates.
+For Windows updates that rerun the installer, follow the
+[PowerShell 7+ prerequisite](#windows-prerequisite-powershell-7) first.
 
 
 ```bash
