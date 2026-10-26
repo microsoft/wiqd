@@ -8,7 +8,7 @@
       "name": "wiqd",
       "source": "./plugins/wiqd",
       "description": "Developer toolkit for building, validating, provisioning, and publishing Microsoft 365 Copilot plugins, including extensibility capabilities such as declarative agents, skills, and connectors.",
-      "version": "0.21.0"
+      "version": "0.20.1"
     }
   ]
 }
