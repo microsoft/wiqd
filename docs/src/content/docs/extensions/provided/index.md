@@ -13,9 +13,9 @@ Run `wiqd ext list` at any time to see what's loaded in your environment.
 
 | Extension | What it gives you | Commands contributed under |
 |-----------|-------------------|----------------------------|
-| [wiqd Core](/extensions/provided/core/) | The full agent lifecycle: scaffold, edit, validate, package, provision, publish, share, delete | `wiqd agent` |
+| [wiqd Core](/extensions/provided/core/) | Plugin composition and lifecycle, plus agent-component authoring and existing agent projects | `wiqd plugin`, `wiqd agent` |
 | [Eval](/extensions/provided/eval/) | Quality evaluations of deployed agents (LLM-as-judge scoring) | `wiqd agent eval` |
-| [Validate](/extensions/provided/validate/) | Offline MVL static validation and the VS Code LSP server | `wiqd agent validate`, `wiqd agent lsp` |
+| [Validate](/extensions/provided/validate/) | Offline MVL static validation, package-first deep validation delegation, and the VS Code LSP server | `wiqd plugin validate`, `wiqd agent validate`, `wiqd agent lsp` |
 | [Work IQ](/extensions/provided/workiq/) | Monitor, ask, and list deployed agents in your tenant | `wiqd agent monitor`, `ask`, `list` |
 | [Work IQ DevUI](/extensions/provided/devui/) | Launch the local Work IQ DevUI web experience for interactively testing/debugging agents | `wiqd devui` |
 

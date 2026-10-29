@@ -7,7 +7,33 @@ description: Commands contributed by the native wiqd Core extension
 
 The commands below are backed by the in-process fx-core adapter contributed by `microsoft.wiqd.core`.
 
-## Authoring
+## Plugin authoring and lifecycle
+
+Start with the plugin, then compose the components it needs. The command tree is
+alpha and enabled by default.
+
+| Command | What it does |
+| --- | --- |
+| [`wiqd plugin create`](/cli/reference/#wiqd-plugin-create) | Scaffold the plugin app package. |
+| [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) | Compose a declarative-agent component. |
+| [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Compose a root plugin skill. |
+| [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) | Compose a connector or reuse one from the catalog. |
+| [`wiqd plugin show`](/cli/reference/#wiqd-plugin-show), [`list`](/cli/reference/#wiqd-plugin-list) | Inspect a plugin or discover local projects. |
+| [`wiqd plugin provision`](/cli/reference/#wiqd-plugin-provision) | Register the plugin and write its environment before packaging or sharing. |
+| [`wiqd plugin package`](/cli/reference/#wiqd-plugin-package) | Build the distributable ZIP. |
+| [`wiqd plugin publish`](/cli/reference/#wiqd-plugin-publish) | Submit to the tenant catalog for administrator approval. |
+| [`wiqd plugin share`](/cli/reference/#wiqd-plugin-share) | Grant direct access to users or the tenant. |
+| [`wiqd plugin import`](/cli/reference/#wiqd-plugin-import), [`export`](/cli/reference/#wiqd-plugin-export) | Convert supported plugin formats, subject to format limitations. |
+| [`wiqd plugin delete`](/cli/reference/#wiqd-plugin-delete) | Remove provisioned cloud resources. |
+
+[`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) is contributed by
+the Validate extension. Static mode checks the declarative-agent surface; deep
+mode delegates to Core to validate an already-built app package.
+
+## Agent-component authoring
+
+Existing `wiqd agent` projects remain supported. Use these commands for their
+agent-specific workflow, not as a prerequisite for every plugin.
 
 | Command | What it does |
 | --- | --- |
@@ -18,7 +44,7 @@ The commands below are backed by the in-process fx-core adapter contributed by `
 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Add a skill to the agent. |
 | [`wiqd agent add auth`](/cli/reference/#wiqd-agent-add-auth) | Add an auth configuration to a plugin manifest. |
 
-## Lifecycle
+## Existing agent-project lifecycle
 
 | Command | What it does |
 | --- | --- |

@@ -53,14 +53,14 @@ generated/TypeSpec identity check applies to package and normal publish, where t
 ## Examples
 
 ```bash
-# Default local package
-wiqd agent package
+# Package the documentation's example environment
+wiqd agent package --env dev
 
 # Named environment and output
-wiqd agent package --env staging --output ./dist/claims-agent.zip
+wiqd agent package --env dev --output ./dist/claims-agent.zip
 
 # CI output
-wiqd agent package --env prod --json
+wiqd agent package --env dev --json
 ```
 
 ## Output
@@ -75,10 +75,10 @@ envelope with:
   "command": "agent-package",
   "correlationId": "550e8400-e29b-41d4-a716-446655440000",
   "data": {
-    "outputPath": "C:\\src\\agent\\appPackage\\build\\appPackage.local.zip",
+    "outputPath": "C:\\src\\agent\\appPackage\\build\\appPackage.dev.zip",
     "sizeBytes": 12697,
     "sizeDisplay": "12.4 KB",
-    "environment": "local"
+    "environment": "dev"
   }
 }
 ```

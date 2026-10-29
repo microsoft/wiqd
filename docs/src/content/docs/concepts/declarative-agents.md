@@ -1,11 +1,21 @@
 ---
 title: Declarative agents
-description: What declarative agents are and why Work IQ Dev Tools are built around them
+description: Declarative agents are optional conversational components of the Microsoft 365 Copilot plugins you build with WIQD.
 ---
 
 # Declarative agents
 
 A **declarative agent** is a Microsoft 365 Copilot agent you build by *describing* what it should do — its name, instructions, knowledge sources, actions, and conversation starters — rather than by writing code. Copilot itself provides the language model, the orchestrator, and the runtime. You provide the configuration.
+
+In WIQD, the **[plugin](/concepts/plugins/) is the app package you build and
+ship**. A declarative agent is one component you can compose into that package,
+alongside skills and connectors. It adds a conversational experience; it is
+not required for skill-only or connector-only plugins.
+
+For a new project, start with `wiqd plugin create`, then use
+`wiqd plugin add agent` when you need this component. Existing `wiqd agent`
+projects and commands remain supported; they represent the agent-focused
+app-package workflow, not a requirement to start every plugin with an agent.
 
 That configuration lives in a small set of JSON files inside an "app package":
 
@@ -23,7 +33,10 @@ Editing JSON by hand works, but you quickly hit friction:
 - Validation runs against the *current* shipping schema, not last week's.
 - You want the same workflow on your laptop, in CI, and inside VS Code.
 
-Work IQ Dev Tools give you one command surface for the entire lifecycle — scaffold, edit, validate, package, provision, publish, monitor, share, evaluate — so you can move from idea to deployed agent without learning four different tools.
+Work IQ Dev Tools guide the whole plugin lifecycle — compose, validate,
+provision, package, share, and submit to your tenant catalog — through natural
+language or the CLI. Agent-specific commands let you evaluate a deployed
+declarative-agent component; they do not evaluate all plugin capabilities.
 
 ## What Work IQ Dev Tools don't change
 
@@ -31,8 +44,10 @@ Work IQ Dev Tools do **not** replace Copilot or the M365 platform. Under the hoo
 
 ## Go deeper
 
-- [Agent lifecycle](/concepts/agent-lifecycle/) — the end-to-end flow `wiqd` automates
+- [Build a Plugin](/getting-started/build-a-plugin/) — the end-to-end plugin lifecycle
+- [Agent component lifecycle](/concepts/agent-lifecycle/) — the agent-specific flow and existing projects
 - [Host vs extensions](/concepts/host-vs-extensions/) — how Work IQ Dev Tools route each command
-- [`wiqd agent create`](/cli/reference/#wiqd-agent-create) — scaffold your first agent
+- [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) — compose an agent into your plugin
+- [`wiqd agent create`](/cli/reference/#wiqd-agent-create) — the supported agent-focused project workflow
 - [`wiqd agent show`](/cli/reference/#wiqd-agent-show) — see what's in a project
 - [wiqd Core extension](/extensions/provided/core/) — the upstream tool that owns the manifest format

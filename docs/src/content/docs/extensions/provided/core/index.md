@@ -1,6 +1,6 @@
 ---
 title: wiqd Core
-description: Native fx-core declarative-agent lifecycle backend
+description: Plugin composition and lifecycle, with declarative-agent components, powered by the native fx-core backend.
 ---
 
 # wiqd Core
@@ -9,18 +9,30 @@ description: Native fx-core declarative-agent lifecycle backend
 
 ## What it does
 
-The wiqd Core extension owns the declarative-agent and standalone-plugin lifecycle: scaffold, add actions/skills/auth, validate deeply, provision, package, share, publish, inspect, and delete. It is the only default lifecycle provider. The retired ATK subprocess extension is removed during upgrade and cannot be selected with a flag or environment variable.
+The wiqd Core extension powers the **plugin lifecycle**: scaffold a plugin,
+compose skills, connectors, and optional declarative agents, then provision,
+package, share, publish, inspect, and delete. It also owns agent-component
+authoring and the supported `wiqd agent` project workflow. It is the only
+default lifecycle provider. The retired ATK subprocess extension is removed
+during upgrade and cannot be selected with a flag or environment variable.
 
 ## Workflow walkthrough
 
 ```bash
-wiqd agent create --name MyAgent
-cd MyAgent
-wiqd agent validate
-wiqd agent provision --env local
-wiqd agent package
-wiqd agent share --scope users --email dev@example.com
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add skill --name "Triage Issues"
+wiqd plugin add agent
+wiqd plugin validate --env dev
+wiqd plugin provision --env dev
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
+wiqd plugin share --scope users --email dev@example.com --env dev
 ```
+
+Static validation checks the declarative-agent surface, not the entire plugin.
+Deep validation checks the built package. For publishing and tenant
+administrator approval, follow [Build a Plugin](/getting-started/build-a-plugin/).
 
 ## Where to look in the codebase
 

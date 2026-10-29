@@ -588,7 +588,7 @@ SOFTWARE
 
 ------------------------------------------------------------------------------
 
-Package:    @azure/msal-common@16.14.2
+Package:    @azure/msal-common@16.14.3
 License:    MIT
 Repository: https://github.com/AzureAD/microsoft-authentication-library-for-js
 Publisher:  Microsoft
@@ -617,7 +617,7 @@ SOFTWARE
 
 ------------------------------------------------------------------------------
 
-Package:    @azure/msal-node@7.1.0
+Package:    @azure/msal-node@7.1.1
 License:    MIT
 Repository: https://github.com/AzureAD/microsoft-authentication-library-for-js
 Publisher:  Microsoft

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.22.0] — 2026-10-29
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- add ten evidence-bound functional policy checks
+
+### Fixes
+
+- bind StoreOps evidence in host
+- recover missing CLI before falling back
+- require shared scope before sharing
+
 ## [0.21.0] — 2026-10-26
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

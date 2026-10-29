@@ -1,13 +1,19 @@
 ---
 title: Cookbooks
-description: End-to-end recipes for building useful agents with Work IQ Dev Tools
+description: Outcome-focused recipes for plugin components, with a complete WIQD plugin walkthrough.
 ---
 
 # Cookbooks
 
-wiqd cookbooks are short, end-to-end recipes built around one clear outcome. Follow them to create a declarative agent today, with plugin and connector recipes coming soon, make it useful, validate it, improve its quality, and connect it with actions.
+Start with [Build a Plugin](/getting-started/build-a-plugin/) for WIQD's
+end-to-end plugin lifecycle: compose skills, connectors, and an optional
+declarative agent, validate and improve the package, then provision, share,
+and submit it to your tenant catalog.
 
-Recipes range from creating your first declarative agent to building specialized agents with tools such as MCP servers.
+The external cookbook collection contains outcome-focused declarative-agent
+recipes, including agents that use MCP tools. Use those recipes for a plugin's
+conversational component; they do not imply that every plugin needs an agent
+or that an agent recipe covers the entire plugin lifecycle.
 
 ## Explore the Cookbooks
 

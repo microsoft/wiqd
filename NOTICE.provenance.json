@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "ba0c8d2d6f0bbcb405456d8de9d45d4daf2a4460f6b5cc42324d23c700efda44",
+  "inputDigest": "35ec242307aa8da2c79eef2a4f89b07b5772fe65059ff8619885bf540adefdde",
   "componentCount": 537,
   "components": [
     {
@@ -148,14 +148,14 @@
     {
       "type": "npm",
       "name": "@azure/msal-common",
-      "version": "16.14.2",
+      "version": "16.14.3",
       "license": "MIT",
       "origin": "runtime"
     },
     {
       "type": "npm",
       "name": "@azure/msal-node",
-      "version": "7.1.0",
+      "version": "7.1.1",
       "license": "MIT",
       "origin": "both"
     },

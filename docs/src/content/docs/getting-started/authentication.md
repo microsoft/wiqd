@@ -74,7 +74,8 @@ When Marketplace publishing is unconfigured, generic `--interactive` login
 offers **Skip Marketplace setup** as the default choice. Skipping reports that
 optional provider as not applicable and continues signing in to later
 providers. Choose directory discovery or another directory to start publisher
-setup; Cancel still cancels the aggregate login.
+setup; Cancel still cancels the aggregate login. On Windows, Marketplace setup
+prefers WAM when it is available.
 
 When Marketplace publishing is enabled and you already know the seller tenant
 GUID, explicitly target setup without entering the Skip/directory menu:
@@ -217,10 +218,10 @@ provider states.
 
 ## Brokered authentication
 
-Extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. Core Microsoft 365 authentication uses WAM on Windows. macOS and Linux currently use the system browser; macOS native broker activation is temporarily disabled until the shared app registration includes its broker redirect URI. Browser authentication may be rejected when your organization requires Token Protection.
+Extension auth providers use brokered authentication via MSAL (Microsoft Authentication Library) when available. Core Microsoft 365 and private Marketplace authentication use WAM on Windows. macOS and Linux currently use the system browser; macOS native broker activation is temporarily disabled until the shared app registration includes its broker redirect URI. Browser authentication may be rejected when your organization requires Token Protection.
 
 :::note
-If brokered authentication causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`. Core Microsoft 365 authentication and other providers that honor this setting use the system browser for their next interactive sign-in.
+If brokered authentication causes issues, you can disable it with `wiqd config set disableBrokeredAuth=true`. Providers that honor this setting use the system browser for their next interactive sign-in.
 :::
 
 ## Redirected Local Commands

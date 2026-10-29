@@ -1,11 +1,20 @@
 ---
-title: Agent lifecycle
-description: The path from creating an agent to shipping it
+title: Agent component lifecycle
+description: Agent-specific authoring and iteration within WIQD's plugin-first lifecycle, including existing wiqd agent projects.
 ---
 
-# Agent lifecycle
+# Agent component lifecycle
 
-Every declarative agent moves through the same set of phases. Work IQ Dev Tools give you one command per phase, and the phases compose into a predictable pipeline you can run locally or in CI.
+**Start with the [plugin lifecycle](/getting-started/build-a-plugin/)** when
+building a new Microsoft 365 Copilot experience. The plugin is the app package;
+a declarative agent is an optional component alongside skills and connectors.
+Compose it with `wiqd plugin add agent`, and use `wiqd plugin` lifecycle
+commands to deliver the plugin as a unit.
+
+This page covers agent-specific authoring and iteration, including existing
+`wiqd agent` projects. Those commands remain supported. They are not evidence
+that every plugin requires an agent or that the two command trees are already
+interchangeable.
 
 ## The phases
 
@@ -53,8 +62,8 @@ not implicitly provision.
 Catch problems before deploying.
 
 ```bash
-wiqd agent validate              # fast static checks
-wiqd agent validate --mode deep  # full Microsoft 365 project validation
+wiqd agent validate --env dev              # fast static checks
+wiqd agent validate --mode deep --env dev  # full Microsoft 365 project validation
 ```
 
 Static mode runs the Microsoft Validation Layer (MVL) engine offline — no network, no auth, sub-second. Deep mode adds semantic project checks through the validation/core extension boundary. See [Validation & MVL](/concepts/validation-mvl/).
@@ -64,7 +73,7 @@ Static mode runs the Microsoft Validation Layer (MVL) engine offline — no netw
 Deploy the agent to an [environment](/concepts/environments/). The first run creates the M365 app registration; subsequent runs update it.
 
 ```bash
-wiqd agent provision --env local
+wiqd agent provision --env dev
 ```
 
 Provision validates the package references it is about to upload. DA-only
@@ -78,7 +87,7 @@ favor of published `worker_agents[].id` references. WIQD follows the DA file pat
 Build the distributable `.zip` for sideloading or upload.
 
 ```bash
-wiqd agent package
+wiqd agent package --env dev
 ```
 
 Package applies the same fail-fast reference checks before fx-core starts. Top-level
@@ -90,10 +99,11 @@ the manifest WIQD validated.
 
 ### 6. Publish
 
-Push the package to the org catalog so other users can install it.
+Submit the package to the org catalog for tenant administrator approval.
+Other users can discover it only after approval; submission is not approval.
 
 ```bash
-wiqd agent publish --env prod
+wiqd agent publish --env dev
 ```
 
 Publish applies the same package-reference checks because fx-core builds the
@@ -109,9 +119,9 @@ the same generated/TypeSpec fail-closed rule as package.
 Once the agent is live, query its usage and health, then loop back to step 2.
 
 ```bash
-wiqd agent monitor               # ask the Insights Agent
+wiqd agent monitor --env dev     # ask the Insights Agent
 wiqd agent ask -q "..."  # send a test prompt
-wiqd agent eval                  # run quality evaluations
+wiqd agent eval --env dev        # run quality evaluations
 ```
 
 ## Side branches

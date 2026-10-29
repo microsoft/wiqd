@@ -23,7 +23,7 @@ Newly scaffolded projects may already contain `evals/prompts.json`. In that case
 You can run `wiqd agent eval` from a folder that holds only `evals/prompts.json` plus `env/.env.<env>` carrying `M365_TITLE_ID` — no `m365agents.yml` required. The title ID is read from the env file automatically, so no `--agent-id` is needed:
 
 ```bash
-wiqd agent eval --path <folder> --env <env>
+wiqd agent eval --path <folder> --env dev
 ```
 
 ## Evaluating a deployed agent directly
@@ -31,7 +31,7 @@ wiqd agent eval --path <folder> --env <env>
 Pass `--agent-id <id>` to run evals against an already-deployed agent from any folder that holds only a prompts file — no `m365agents.yml` or `env/.env.<env>` required:
 
 ```bash
-wiqd agent eval --path <folder> --agent-id <id> -c prompts.json
+wiqd agent eval --path <folder> --agent-id <id> -c prompts.json --env dev
 ```
 
 When `--agent-id` is set, the title ID is sourced from the option rather than from `env/.env.<env>`.
@@ -57,7 +57,7 @@ The wiqd eval skill runs with the GitHub Copilot judge and requests a new timest
 
 ```powershell
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss")
-wiqd agent eval --judge-backend github-copilot --log-level debug `
+wiqd agent eval --env dev --judge-backend github-copilot --log-level debug `
   --output ".evals\scorecard-$timestamp.html"
 ```
 
@@ -162,11 +162,11 @@ With GitHub Copilot, GPT-4.x and GPT-5.x use the same setup. Pin an exact model 
 ```powershell
 # GPT-4.x through GitHub Copilot
 $env:GITHUB_COPILOT_JUDGE_MODEL = "gpt-4.1"
-wiqd agent eval --judge-backend github-copilot
+wiqd agent eval --env dev --judge-backend github-copilot
 
 # GPT-5.x through GitHub Copilot, when available to the account
 $env:GITHUB_COPILOT_JUDGE_MODEL = "gpt-5-mini"
-wiqd agent eval --judge-backend github-copilot
+wiqd agent eval --env dev --judge-backend github-copilot
 ```
 
 If the account cannot access a pinned model, the Eval CLI fails fast and lists the available models.

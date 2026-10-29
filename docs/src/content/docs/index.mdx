@@ -1,10 +1,10 @@
 ---
 title: Work IQ Dev Tools
-description: The agentic experience for developers building, debugging, validating, publishing and monitoring declarative agents for Work IQ
+description: WIQD is the agentic experience for the end-to-end Microsoft 365 Copilot plugin lifecycle — compose skills, connectors, and declarative agents, then validate, improve, preview, and publish.
 template: splash
 editUrl: false
 hero:
-  tagline: The agentic experience for developers building, debugging, validating, publishing and monitoring declarative agents for Work IQ
+  tagline: The agentic experience for the end-to-end Microsoft 365 Copilot plugin lifecycle. Build, improve, preview, and publish plugins that compose skills, connectors, and declarative agents.
   image:
     html: '<img class="wiqd-banner" src="/wiqd/banner.svg" alt="Work IQ Dev Tools banner" />'
   actions:
@@ -12,8 +12,8 @@ hero:
     # base: the splash page is always served at the site root, so
     # `cli/reference/` → `<base>/cli/reference/`. A leading-slash path would
     # ignore the mirror's /wiqd/ base.
-    - text: Get Started
-      link: getting-started/
+    - text: Build Your First Plugin
+      link: getting-started/quickstart/
       icon: right-arrow
     - text: CLI Reference
       link: cli/reference/
@@ -23,26 +23,40 @@ hero:
 
 import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
 
+## One plugin. The whole lifecycle.
+
+**WIQD (Work IQ Dev Tools) is the agentic experience for building Microsoft 365 Copilot plugins
+end to end.** Describe what you want to build, compose the capabilities you need, and let WIQD
+guide you from an idea to a validated, provisioned, packaged, and shared or published plugin.
+Use the same CLI commands directly when you need scripts or CI.
+
+A **plugin** is the app package you ship. **Skills**, **connectors**, and **declarative agents**
+are components you can compose into it; a declarative agent adds a conversational experience,
+but a plugin does not need an agent to be useful.
+
+The WIQD marketplace plugin installed in your coding assistant guides this work. It is a
+different artifact from the Microsoft 365 plugin you are building.
+
 ## Key Highlights
 
 <CardGrid>
-  <Card title="Full Agent Lifecycle" icon="rocket">
-    Create, validate, package, provision, publish, and share agents from a single CLI. Manage templates, environments, and collaborators without leaving the terminal.
+  <Card title="Full Plugin Lifecycle" icon="rocket">
+    Build, improve, preview, and publish from one agentic experience. Create a plugin, compose capabilities, validate, provision, package, and share or submit it to your tenant catalog.
   </Card>
   <Card title="LSP Validation" icon="approve-check-circle">
-    Built-in Language Server Protocol support powers real-time manifest validation in your editor with static and deep validation modes.
+    Get real-time manifest diagnostics for declarative-agent components in your editor. Use CLI static checks and package-first deep validation as you iterate on the plugin.
   </Card>
-  <Card title="Copilot Skills" icon="star">
-    Purpose-built Copilot skills guide you through installation, authoring, validation, provisioning, onboarding, review, and publishing workflows.
+  <Card title="Guided Authoring" icon="star">
+    Describe your plugin in GitHub Copilot CLI or Claude Code. WIQD guides composition, validation, troubleshooting, and delivery; CLI commands remain available for automation.
   </Card>
   <Card title="npm Distribution" icon="seti:npm">
     Install fast with a one-liner or run instantly with <code>npx</code> when you want to explore without a full setup.
   </Card>
   <Card title="Extensible Architecture" icon="puzzle">
-    Extend Work IQ Dev Tools with npm-based extensions that add commands, declarative-agent.validate.deep validators, and health checks. Built-in extensions cover wiqd Core, Work IQ, and evals.
+    Extend Work IQ Dev Tools with npm-based extensions that add commands, validation providers, and health checks. Extensions power plugin composition, delivery, and component evaluation.
   </Card>
-  <Card title="Agent Evaluation" icon="list-format">
-    Run quality evaluations against deployed agents with <code>wiqd agent eval</code>. Define expected behaviors in YAML configs and enforce pass/fail quality thresholds.
+  <Card title="Improve Agent Components" icon="list-format">
+    When your plugin includes a declarative agent, evaluate that deployed component with <code>wiqd agent eval</code>. Agent evaluations do not validate an entire plugin's skills or connectors.
   </Card>
 </CardGrid>
 
@@ -52,23 +66,42 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components'
 # One-liner install
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
 
-# Create and deploy an agent
-wiqd agent create --name my-agent
-wiqd agent validate --path my-agent
-wiqd agent provision --path my-agent
+# Create a plugin and compose its capabilities
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add skill --name "Triage Issues"
+wiqd plugin add agent
+
+# Validate, provision, and package
+wiqd plugin validate --env dev
+wiqd auth login --interactive
+wiqd plugin provision --env dev
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
 ```
+
+For guided authoring, install the [WIQD marketplace plugin](/getting-started/installation/#path-1-install-from-the-marketplace),
+start a new session, and ask: **"Create a plugin with an issue-triage skill and a declarative agent."**
+Follow the [Quickstart](/getting-started/quickstart/) for authentication and sharing, or
+[Build a Plugin](/getting-started/build-a-plugin/) for connectors, publishing, and interoperability.
+
+:::caution[Preview]
+The `wiqd plugin` commands are alpha and enabled by default. Static validation checks the
+declarative-agent surface; use package-first deep validation for the full app package.
+Tenant catalog submission requires administrator approval before discovery.
+:::
 
 ## Explore the Docs
 
 <CardGrid>
   <LinkCard
     title="Getting Started"
-    description="Installation, quickstart, and authentication setup."
+    description="Install WIQD, authenticate, and build your first plugin."
     href="getting-started/"
   />
   <LinkCard
     title="Cookbooks"
-    description="Outcome-focused recipes for building useful agents from start to finish."
+    description="Outcome-focused recipes and guidance for plugin components."
     href="cookbooks/"
   />
   <LinkCard
@@ -78,7 +111,7 @@ wiqd agent provision --path my-agent
   />
   <LinkCard
     title="Concepts"
-    description="Declarative agents, host vs extensions, environments, validation, and exit codes."
+    description="Plugins and their skills, connectors, and declarative-agent components."
     href="concepts/"
   />
   <LinkCard

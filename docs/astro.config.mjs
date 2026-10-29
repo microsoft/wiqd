@@ -138,7 +138,7 @@ export default defineConfig({
             { label: 'Overview', slug: 'concepts' },
             { label: 'Plugins', slug: 'concepts/plugins' },
             { label: 'Declarative agents', slug: 'concepts/declarative-agents' },
-            { label: 'Agent lifecycle', slug: 'concepts/agent-lifecycle' },
+            { label: 'Agent component lifecycle', slug: 'concepts/agent-lifecycle' },
             { label: 'Azure OpenAPI servers', slug: 'concepts/azure-openapi-servers' },
             { label: 'Host vs extensions', slug: 'concepts/host-vs-extensions' },
             { label: 'Environments', slug: 'concepts/environments' },
