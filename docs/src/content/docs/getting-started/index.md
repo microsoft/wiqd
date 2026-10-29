@@ -6,26 +6,30 @@ title: Getting Started
 
 Welcome to Work IQ Dev Tools. This section walks you through installing the
 WIQD agentic experience or CLI, authenticating, and creating your first
-Microsoft 365 Copilot declarative agent.
+Microsoft 365 Copilot plugin.
 
 ## What are Work IQ Dev Tools?
 
-Work IQ Dev Tools provide agentic workflows and a developer CLI for building,
-validating, and publishing Microsoft 365 Copilot declarative agents.
+**WIQD is the agentic experience for the end-to-end Microsoft 365 Copilot plugin
+lifecycle:** build, improve, preview, and publish. A plugin is the app package
+you ship; skills, connectors, and declarative agents are components you compose
+into it. A declarative agent supplies a conversational experience when your
+plugin needs one, rather than defining the whole product.
 
 ## Where to Start
 
 1. **[Installation](/getting-started/installation/)** — Choose marketplace-first agentic setup or the existing installation script.
-2. **[Quickstart](/getting-started/quickstart/)** — Create your first agent in 5 minutes.
+2. **[Quickstart](/getting-started/quickstart/)** — Create, validate, provision, and share your first plugin.
 3. **[Authentication](/getting-started/authentication/)** — Sign in to your Microsoft 365 account.
-4. **[Cookbooks](/cookbooks/)** — Build useful agents with end-to-end, outcome-focused recipes.
+4. **[Build a Plugin](/getting-started/build-a-plugin/)** — Compose skills, connectors, and an optional declarative agent, then package and publish.
+5. **[Cookbooks](/cookbooks/)** — Explore outcome-focused recipes for plugin components.
 
 ## Prerequisites
 
 - **GitHub Copilot CLI or Claude Code** for marketplace-first setup
 - **Node.js 24+** for the installation-script path
 - **A Microsoft 365 account** with access to Copilot
-- **An Azure subscription** (for provisioning agents)
+- **An Azure subscription** only when your plugin's backing services require Azure resources
 
 ## Choose an installation path
 
@@ -51,8 +55,9 @@ claude plugin marketplace add microsoft/wiqd
 claude plugin install wiqd@wiqd
 ```
 
-Start a new host session and begin agentic authoring. This path does not install
-the `wiqd` CLI.
+Start a new host session and begin agentic authoring. This installs WIQD's
+coding-assistant plugin, not the Microsoft 365 plugin you will create, and does
+not install the `wiqd` CLI.
 
 ### Option 2: Use the installation script
 
@@ -74,10 +79,13 @@ See [Installation](/getting-started/installation/) for all options.
 
 ## Guided Experiences with `--agent wiqd:wiqd`
 
-Work IQ Dev Tools also ship a Copilot CLI agent. Once installed, you can drive the agent lifecycle conversationally in interactive mode by passing `--agent wiqd:wiqd`, which routes your request to the wiqd orchestrator for skill routing, lifecycle orchestration, and next-step suggestions:
+Work IQ Dev Tools also ship a Copilot CLI guide agent. Once the WIQD marketplace
+plugin is installed, drive your plugin lifecycle conversationally with
+`--agent wiqd:wiqd`. The guide routes workflows and helps you compose, validate,
+improve, and deliver your plugin:
 
 ```bash
-copilot -i "create a new declarative agent" --agent wiqd:wiqd
+copilot -i "create a plugin with a triage skill and a declarative agent" --agent wiqd:wiqd
 ```
 
 Always include `--agent wiqd:wiqd` so Copilot CLI targets the wiqd orchestrator rather than generic behavior.

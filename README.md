@@ -1,4 +1,4 @@
-# Work IQ Dev Tools - The agentic experience for Microsoft 365 Copilot extensibility
+# Work IQ Dev Tools - The agentic experience for Microsoft 365 Copilot plugins
 
 [![npm version](https://img.shields.io/npm/v/@microsoft/wiqd)](https://www.npmjs.com/package/@microsoft/wiqd)
 
@@ -10,64 +10,78 @@
   <strong>⚠️ Pre-release preview.</strong> Work IQ Dev Tools are experimental software shared for experimentation purposes only. They are not production-ready and are not officially supported. Expect breaking changes.
 </p>
 
-Work IQ Dev Tools are the agentic experience for Microsoft 365 Copilot extensibility that takes any plugin (skills, connectors, declarative agents) from an empty folder to a published, monitored product. One install. One mental model. The whole lifecycle in a single flow that you, or the Copilot building alongside you, can run end to end.
+**WIQD (Work IQ Dev Tools) is the agentic experience for the end-to-end Microsoft 365
+Copilot plugin lifecycle: build, improve, preview, and publish.** A plugin is the
+app package you ship. Skills, connectors, and declarative agents are components
+you compose into it; a declarative agent adds a conversational experience when
+you need one, but is not required for every plugin. Work conversationally with
+WIQD or run the same lifecycle commands directly in your terminal and CI.
 
 > This repository hosts Work IQ Dev Tools' documentation, downloads, and project meta-files. The `wiqd` CLI itself is publicly available via npm — see the [Quick start](#quick-start) below to install it — while its source remains private to Microsoft during this preview.
 
 ## What you can do with Work IQ Dev Tools
 
-- **Scaffold and edit agents** — start from a template, then add capabilities, API actions, instructions, and translations through guided workflows.
+- **Create and compose plugins** — start with a plugin, then add skills, connectors, and an optional declarative agent.
 - **Validate before you ship** — catch manifest and reference errors in your editor or from the terminal, with both static and deep validation modes.
-- **Fix and improve agents with guided help** — ask Copilot to diagnose what's wrong and walk you through repairs, instead of grepping through schemas.
+- **Improve with guided help** — ask WIQD to explain validation findings and help repair plugin components.
 - **Package and provision** — produce a distributable app package and deploy it to a Microsoft 365 environment with a single command.
-- **Share with your team or tenant** — distribute agents to specific users or across your Microsoft 365 tenant.
-- **Evaluate and monitor** — run quality evals against deployed agents and inspect usage telemetry once they're live.
+- **Share or publish** — grant users or your tenant access, or submit the plugin to your organization app catalog for administrator approval.
+- **Evaluate agent components** — run quality evals when your plugin includes a deployed declarative agent; this is not whole-plugin validation.
 
 ## The primary experience: plugin, workflows, and guided journeys
 
-Work IQ Dev Tools' main surface for developers is a **Copilot plugin** that loads twenty purpose-built **workflows** into GitHub Copilot CLI and the VS Code Copilot Chat experience. Each workflow encapsulates deep knowledge about a specific stage of the agent lifecycle — it enforces prerequisites, suggests the right next step, and refuses to proceed when something is off.
+WIQD's primary experience is a **coding-assistant plugin** for GitHub Copilot CLI
+or Claude Code. Its guided workflows help you compose, validate, improve, preview,
+and deliver your Microsoft 365 plugin. The WIQD marketplace plugin is the guide;
+the Microsoft 365 app package it helps you build is the deliverable. These are
+different artifacts, not two names for the same plugin.
 
 You talk to the experience in natural language:
 
 ```text
-"create a new declarative agent with web search"
-"validate my agent and help me fix the errors"
-"package and share my agent with my team"
+"create a plugin with a triage skill and a declarative agent"
+"add an MCP connector to my plugin"
+"validate my plugin and help me fix the findings"
+"provision, package, and share my plugin with my team"
 ```
 
-A few of the workflows available within the plugin:
-
-- **`agent-journey`** — the orientation workflow that meets you wherever you are and points you to the right next workflow.
-- **`agent-create`**, **`agent-edit`**, **`agent-validate`**, **`agent-package`**, **`agent-provision`**, **`agent-share`** — drive each stage in a guided way.
-- **The fix-and-improve loop** — `agent-edit` updates the manifest, `agent-validate` explains and helps repair issues, `agent-provision` deploys your changes, and `agent-debug` lets you try the result interactively. Copilot walks you through the cycle in plain language instead of leaving you alone with raw errors.
-- **`agent-eval`** and **`agent-monitor`** — keep an agent healthy once it's live.
+WIQD routes these requests to the plugin-authoring and lifecycle workflows.
+Agent-specific workflows remain available for conversational components and
+existing `wiqd agent` projects; they are not prerequisites for skill-only or
+connector-only plugins.
 
 Browse the full command surface in the [CLI Reference](https://aka.ms/wiqd/docs?id=cli/reference).
 
 ## Key highlights
 
-| Highlight                    | What it gives you                                                                              |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Full agent lifecycle**     | Create, validate, package, provision, publish, share, and monitor agents end-to-end.           |
-| **Guided Copilot workflows** | Twenty workflows cover scaffolding, authoring, validation, debugging, sharing, and evaluation. |
-| **Editor-grade validation**  | Built-in Language Server Protocol support gives real-time manifest validation in VS Code.      |
-| **Extensible**               | Add commands, validation providers, and health checks via npm-based extensions.                |
-| **Automation-ready**         | Every guided workflow has an equivalent CLI command for scripts and CI.                        |
-| **Quality evaluation**       | Run YAML-defined eval suites against your agents and enforce pass/fail thresholds.             |
+| Highlight                   | What it gives you                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Full plugin lifecycle**   | Create, compose, validate, provision, package, share, and submit plugins to your tenant catalog. |
+| **Guided workflows**        | Natural-language authoring, validation, troubleshooting, preview, and delivery.                  |
+| **Editor-grade validation** | Built-in Language Server Protocol support gives real-time manifest validation in VS Code.        |
+| **Extensible**              | Add commands, validation providers, and health checks via npm-based extensions.                  |
+| **Automation-ready**        | Run lifecycle commands directly in scripts and CI.                                               |
+| **Quality evaluation**      | Run YAML-defined eval suites against deployed declarative-agent components.                      |
 
 ## The CLI
 
-The `wiqd` CLI powers all of the above. It also doubles as an automation surface — every guided workflow has an equivalent command you can call directly from scripts or CI.
+The `wiqd` CLI powers the plugin lifecycle and doubles as an automation surface
+for scripts and CI. Guided file editing and platform approval steps are not
+promises of an equivalent CLI command.
 
 A pocket-sized command set:
 
 ```powershell
-wiqd auth login            # sign in to Microsoft 365
-wiqd agent create          # scaffold a new agent
-wiqd agent validate        # check the manifest
-wiqd agent provision       # deploy to your dev environment
-wiqd agent share           # share with users or your tenant
-wiqd doctor                # diagnose your environment
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add skill --name "Triage Issues"
+wiqd plugin add agent
+wiqd plugin validate --env dev
+wiqd auth login --interactive
+wiqd plugin provision --env dev
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
+wiqd plugin share --scope users --email teammate@contoso.com --env dev
 ```
 
 The full command tree — every option, exit code, and JSON output schema — lives in the [CLI Reference](https://aka.ms/wiqd/docs?id=cli/reference).
@@ -84,75 +98,94 @@ iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
 curl -fsSL https://aka.ms/wiqd/install.sh | bash
 ```
 
-This installs the `wiqd` CLI from npm (with the supporting Microsoft 365 Agents Toolkit pulled in as a dependency), the Work IQ VS Code extension, and the Copilot CLI plugin. Node.js is a prerequisite: if a supported version isn't already on your machine the installer stops and points you to the download — it does **not** install Node for you. Then create your first agent:
+The installer sets up the `wiqd` CLI with its bundled lifecycle backend and
+optional editor/host integrations. See
+[Installation](https://aka.ms/wiqd/docs?id=getting-started/installation/) for
+prerequisites and platform-specific setup.
 
-```powershell
-wiqd auth login
-wiqd agent create --name my-first-agent
-cd my-first-agent
-wiqd agent validate
-wiqd agent provision
-wiqd agent share --scope users --email teammate@contoso.com
+For marketplace-first guided authoring in GitHub Copilot CLI:
+
+```text
+copilot plugin install wiqd@awesome-copilot
 ```
 
-Or drive the whole lifecycle conversationally with Copilot CLI (interactive mode). The `--agent wiqd:wiqd` flag routes your request to the Work IQ Dev Tools orchestrator, which handles workflow routing, lifecycle orchestration, and next-step suggestions:
+Or in Claude Code:
+
+```text
+claude plugin marketplace add microsoft/wiqd
+claude plugin install wiqd@wiqd
+```
+
+Start a new host session. Marketplace installation supplies the guide, not the
+`wiqd` CLI; install the CLI separately before running direct validation or
+tenant lifecycle commands. In GitHub Copilot CLI:
 
 ```bash
-copilot -i "create a new declarative agent" --agent wiqd:wiqd
-copilot -i "validate my agent" --agent wiqd:wiqd
-copilot -i "deploy my agent locally" --agent wiqd:wiqd
+copilot -i "create a plugin with a triage skill and a declarative agent" --agent wiqd:wiqd
+copilot -i "validate my plugin in dev and help me fix the findings" --agent wiqd:wiqd
+copilot -i "provision and share my plugin with my team using dev" --agent wiqd:wiqd
 ```
 
 Follow the [Quickstart](https://aka.ms/wiqd/docs?id=getting-started/quickstart/) for the step-by-step walkthrough, or see [Installation](https://aka.ms/wiqd/docs?id=getting-started/installation/) for options and troubleshooting.
 
 ## Common workflows
 
-### Create and configure an agent
+### Compose your plugin
 
 ```powershell
-wiqd agent create --name my-agent
-cd my-agent
-wiqd agent add action --openapi-spec ./api/openapi.yaml --operations "GET /weather"
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add skill --name "Triage Issues"
+wiqd plugin add agent
 ```
 
-To add a knowledge-source capability (web search, SharePoint, Graph connector), ask Copilot in natural language and let the `agent-edit` workflow update your manifest:
+Add a connector, or configure the optional agent component, conversationally:
 
 ```text
-"add web search to my agent"
+"add an MCP connector to my plugin"
+"add web search to the declarative agent in my plugin"
 ```
 
-See [agent-create](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-create) and [agent-edit](https://aka.ms/wiqd/docs?id=cli/reference).
+See [Build a Plugin](https://aka.ms/wiqd/docs?id=getting-started/build-a-plugin/).
 
 ### Validate, fix, and package
 
 ```powershell
-wiqd agent validate       # static + deep validation
-wiqd agent package        # build a distributable zip
+wiqd plugin validate --env dev
+wiqd plugin provision --env dev
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
 ```
 
-See [agent-validate](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-validate) and [agent-package](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-package).
+Static validation checks the declarative-agent surface, not the entire plugin.
+Provision before packaging; deep validation needs the built ZIP. The plugin
+command tree is alpha and enabled by default.
 
 ### Share with users or your tenant
 
 ```powershell
-wiqd agent share --scope users --email teammate@contoso.com
-wiqd agent share --scope tenant
+wiqd plugin share --scope users --email teammate@contoso.com --env dev
+wiqd plugin share --scope tenant --env dev
 ```
 
-See [agent-share](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-share).
+Sharing grants direct access. For organization-catalog discovery, run
+`wiqd plugin publish --env dev` and obtain tenant administrator approval. Public-store
+submission and certification remain separate Partner Center steps.
 
-### Evaluate and monitor
+### Improve a declarative-agent component
 
 ```powershell
-wiqd agent eval                           # run quality evals
-wiqd agent monitor                        # inspect usage telemetry
+wiqd agent eval --env dev                 # run quality evals
 ```
 
-See [agent-eval](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-eval) and [agent-monitor](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-monitor).
+Follow [agent evaluation](https://aka.ms/wiqd/docs?id=cli/reference#wiqd-agent-eval)
+to target the deployed agent. Agent evaluation is not whole-plugin validation;
+monitoring availability depends on your installed extensions and access.
 
 ## Where to go next
 
-- [Getting Started](https://aka.ms/wiqd/docs?id=getting-started/) — installation, authentication, and your first agent in five minutes.
+- [Getting Started](https://aka.ms/wiqd/docs?id=getting-started/) — installation, authentication, and your first plugin.
+- [Build a Plugin](https://aka.ms/wiqd/docs?id=getting-started/build-a-plugin/) — the full composition and delivery walkthrough.
 - [CLI Reference](https://aka.ms/wiqd/docs?id=cli/reference) — every command, option, and exit code.
 - [Copilot workflows](https://aka.ms/wiqd/docs?id=cli/reference) — the guided workflows available through the plugin, mapped to their CLI commands.
 - [Installation & troubleshooting](https://aka.ms/wiqd/docs?id=getting-started/installation/) — install options, custom flags, and common fixes.

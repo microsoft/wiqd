@@ -19,8 +19,8 @@ the interface may change without notice.
 
 ## Prerequisites
 
-1. **Install wiqd** (the CLI, the VS Code extension, and the GitHub Copilot CLI plugin, all in one
-   step):
+1. **Install wiqd** (the CLI, optional VS Code extension, and public WIQD plugin
+   for detected native coding-assistant hosts):
 
    **Windows (PowerShell):**
 
@@ -36,8 +36,9 @@ the interface may change without notice.
 
    See [Installation](/getting-started/installation/) for flags, troubleshooting, and manual steps.
 
-2. **Install the Copilot CLI plugin from its marketplace** if you want guided authoring.
-   The WIQD installer does not manage host plugins:
+2. **Install the WIQD coding-assistant plugin from its marketplace** if you want
+   guided authoring and did not install it in Step 1. This guide plugin is distinct
+   from the Microsoft 365 plugin you will create:
 
    ```bash
    copilot plugin install wiqd@awesome-copilot
@@ -78,7 +79,7 @@ scripting, CI, or exact reproducibility.
 Once the wiqd plugin is installed, GitHub Copilot CLI carries a plugin-authoring orchestrator: you
 describe what you want in natural language, and it drives the `wiqd` CLI on your behalf —
 including the full `wiqd plugin ...` surface — while orienting you on the underlying
-Build → Improve → Preview → Publish agent lifecycle. You never have to remember a flag; you just
+Build → Improve → Preview → Publish plugin lifecycle. You never have to remember a flag; you just
 say what you want next.
 
 ### What to say
@@ -104,14 +105,14 @@ declarative agent.
 `appPackage/skills/triage-issues/SKILL.md` and registering it in the manifest. It then suggests
 adding another capability, or validating what you have so far.
 
-**You say:** "Validate my plugin."
-**wiqd does:** runs `wiqd plugin validate` (the offline static check). On a clean result, it
+**You say:** "Validate my plugin in dev."
+**wiqd does:** runs `wiqd plugin validate --env dev` (the offline static check). On a clean result, it
 suggests provisioning the plugin or exporting it for another tool. There is no shipped command
 that merges a whole plugin into an existing agent. For an OpenAPI custom connector, it omits export because that format cannot represent the
 `ConnectionVault` reference, and explains that static validation does not establish packaging or
 deployment readiness.
 
-**You say:** "Provision it, then package and share it with my team."
+**You say:** "Provision it in dev, then package and share it with my team using dev."
 **wiqd does:** explains that standard projects use `local` for personal testing and `dev`
 for shared deployment, checks the project's actual scope configuration, and selects the
 shared environment. It validates, runs `wiqd plugin provision --env dev`, then
@@ -147,6 +148,13 @@ configuration and `AGENT_SCOPE` in the selected environment under
 `environmentFolderPath` (default `./env`); an environment name alone does not prove
 it is shared. `--scope users|tenant` selects the sharing audience, not deployment
 scope. There is no `wiqd plugin provision --scope shared` option.
+
+Direct `wiqd plugin share` (and `wiqd agent share`) checks the selected environment
+file for `AGENT_SCOPE=shared` before sharing. Missing, invalid, duplicate, or
+non-shared scope fails with `INVALID_AGENT_SCOPE` (exit `1`); the CLI does not
+provision automatically. Correct the shared deployment configuration, validate,
+and provision using the same explicit `--path` and `--env`, then retry sharing.
+Do not relabel a personal deployment or copy its IDs to bypass this check.
 
 ```bash
 # 1. Scaffold the plugin container
@@ -311,7 +319,7 @@ Before catalog submission, you can run a no-submit readiness check:
 
 ```bash
 # Fully offline: project/path checks plus the applicable static DA phase
-wiqd plugin publish --dry-run --no-runtime --no-network
+wiqd plugin publish --dry-run --no-runtime --no-network --env dev
 
 # Full applicable validation for a plugin that contains a declarative agent
 wiqd plugin publish --dry-run --env dev
@@ -330,4 +338,5 @@ publication also remain outside wiqd.
 - [`wiqd plugin`](/cli/reference/#wiqd-plugin) — the full command reference
 - [Plugin authoring reference](/getting-started/plugin-reference/) — package anatomy, `SKILL.md` rules, connector
   requirements, validation codes, and the section-by-section Learn parity table
-- [Quickstart](/getting-started/quickstart/) — the equivalent 5-minute walkthrough for a plain `wiqd agent` project
+- [Quickstart](/getting-started/quickstart/) — a shorter walkthrough for your first plugin
+- [Agent component lifecycle](/concepts/agent-lifecycle/) — agent-specific workflows and existing `wiqd agent` projects

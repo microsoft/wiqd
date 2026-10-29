@@ -86,7 +86,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.21.0"
+WIQD_INSTALLER_VERSION="0.22.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -2009,8 +2009,11 @@ write_update_result() {
     if ! (
         umask 077
         set -o noclobber
+        exec 3>"$path" || exit 1
+        # Default directory ACLs can bypass umask; restrict access before writing.
+        chmod 600 "$path" || exit 1
         printf '{"version":1,"extension":{"status":"%s","edition":"%s","reason":"%s"}}\n' \
-            "$status" "$vscode_edition" "$reason" >"$path"
+            "$status" "$vscode_edition" "$reason" >&3
     ); then
         write_err 'Could not save the wiqd update result.'
         return 1

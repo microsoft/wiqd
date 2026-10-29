@@ -54,7 +54,7 @@ wiqd agent ask --agent-id "T_b6bd...declarativeAgent" -q "Hello, summarize the l
 wiqd agent ask --agent-name "Sales Copilot Assistant" -q "..."
 
 # 5. Ask the Insights Agent how a specific agent is doing
-wiqd agent monitor --path ./my-agent --env staging --query "How often was this agent askd last week?"
+wiqd agent monitor --path ./my-agent --env dev --query "How often was this agent askd last week?"
 ```
 
 `wiqd agent monitor` is the most useful command in this extension day-to-day — it lets you ask natural-language questions about an agent's metrics rather than digging through a dashboard.

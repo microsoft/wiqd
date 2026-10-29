@@ -4,6 +4,12 @@ title: Installation
 
 # Installation
 
+WIQD is the agentic experience for building Microsoft 365 Copilot plugins end
+to end. The **WIQD coding-assistant plugin** installed below supplies guided
+workflows; the **Microsoft 365 plugin you create** is a separate app package
+that composes skills, connectors, and optional declarative agents. See
+[Quickstart](/getting-started/quickstart/) to build your first one.
+
 WIQD supports two alternative installation paths:
 
 | Path                     | Start here when                                                              | Installs                                                                                 |
@@ -46,6 +52,14 @@ Start a new host session after installation. Marketplace installation does not
 install the `wiqd` CLI, and you do not need the CLI to begin agentic or
 file-based authoring. If you later need direct lifecycle commands, use the
 separate [installation-script path](#path-2-use-the-installation-script).
+
+When a skill workflow needs the CLI and cannot find it, WIQD asks for approval to
+install the CLI prerequisite (or repair a broken installation). This CLI-only
+recovery leaves your marketplace plugin and VS Code extension unchanged. After
+installation, the skill verifies the CLI and resumes your original request in the
+same session. Authentication and EULA acceptance remain separate consent steps.
+If you decline or installation is blocked, local file-based work may continue,
+but online operations such as Work IQ feedback queries remain blocked.
 
 ### Migrating from a CLI-composed plugin
 
@@ -163,16 +177,18 @@ than silently switching sources.
 
 ## After installation
 
-The installer's Quick Start begins with a standalone plugin:
+After installation, start with a standalone plugin. These documentation examples
+explicitly select `dev`; the installer's printed Quick Start still selects `local`,
+and actual CLI defaults are unchanged.
 
 ```text
 wiqd plugin create --name my-plugin
 cd my-plugin
-wiqd plugin validate
-wiqd plugin provision --env local
+wiqd plugin validate --env dev
+wiqd plugin provision --env dev
 ```
 
-Sign in with `wiqd auth login --interactive` before provisioning. The `local`
+Sign in with `wiqd auth login --interactive` before provisioning. The `dev`
 environment is provisioned to your Microsoft 365 tenant; it is not an offline
 deployment.
 
@@ -489,5 +505,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\install-wiqd.ps1
 
 ## Next Steps
 
-- [Quickstart](/getting-started/quickstart/) — Create your first agent in 5 minutes
+- [Quickstart](/getting-started/quickstart/) — Create, validate, and share your first plugin
 - [Authentication](/getting-started/authentication/) — Sign in to your Microsoft 365 account

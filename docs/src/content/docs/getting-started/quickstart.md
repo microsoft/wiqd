@@ -1,16 +1,30 @@
 ---
 title: Quickstart
+description: Create your first Microsoft 365 Copilot plugin with WIQD, compose its capabilities, and validate, provision, package, and share it.
 ---
 
-# Quickstart: Create Your First Agent in 5 Minutes
+# Quickstart: Create Your First Plugin
 
-This guide walks you through creating a declarative agent for Microsoft 365
-Copilot. Choose the marketplace-first agentic path or the existing
-installation-script path.
+WIQD is the agentic experience for the end-to-end Microsoft 365 Copilot plugin
+lifecycle. Start with a **plugin**, the app package you ship, then compose
+**skills**, **connectors**, and an optional **declarative agent** into it.
+This walkthrough builds a plugin with a skill and a declarative-agent component.
+
+Lifecycle examples explicitly use `--env dev` throughout. This is the
+documentation's example environment, not a change to CLI defaults; keep the
+same environment across validation, provisioning, packaging, sharing, and publishing.
+
+:::caution[Alpha]
+The `wiqd plugin` commands are enabled by default, but their interface is still
+alpha and may change without notice.
+:::
 
 ## Step 1: Choose an installation path
 
 ### Path 1: Marketplace-first agentic setup
+
+Install WIQD's coding-assistant plugin for your preferred host. This is the
+guide that helps you build Microsoft 365 plugins, not the app package you ship.
 
 **GitHub Copilot CLI:**
 
@@ -32,121 +46,136 @@ claude plugin marketplace add microsoft/wiqd
 claude plugin install wiqd@wiqd
 ```
 
-Start a new host session and ask WIQD to create the project files. For example,
-in GitHub Copilot CLI:
+Start a new host session. In GitHub Copilot CLI:
 
 ```bash
-copilot -i "create a new declarative agent" --agent wiqd:wiqd
+copilot -i "create a plugin called Triage Helper with a triage skill and a declarative agent" --agent wiqd:wiqd
 ```
 
+In Claude Code, ask for the same outcome in your new session.
+
 Marketplace installation does not install the `wiqd` CLI. You can begin
-agentic and file-based authoring immediately; use the separate
-[installation-script path](/getting-started/installation/#path-2-use-the-installation-script)
-if you need direct authentication, validation, provisioning, or sharing
-commands.
+file-based authoring immediately; install the CLI separately before running
+the validation and tenant lifecycle commands below.
 
 ### Path 2: Installation script
 
-Install the CLI and the components managed by the existing installer:
+Install the CLI and optional editor/host integrations:
 
 ```powershell
 iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') }"
 ```
 
-This installs Node.js (if needed), the `wiqd` CLI, the core lifecycle backend,
-and the VS Code extension.
+On macOS / Linux:
 
-:::tip
-See [Installation](/getting-started/installation/) for all options.
-:::
+```bash
+curl -fsSL https://aka.ms/wiqd/install.sh | bash
+```
 
-## Step 2: Continue with direct CLI lifecycle commands
+See [Installation](/getting-started/installation/) for prerequisites, options,
+and troubleshooting.
 
-The remaining steps apply to the installation-script path.
+## Step 2: Create and compose your plugin
 
-### Authenticate
+For a direct CLI walkthrough:
 
-Sign in to your Microsoft 365 account:
+```bash
+wiqd plugin create --name my-first-plugin
+cd my-first-plugin
+wiqd plugin add skill --name "Triage Issues"
+wiqd plugin add agent
+```
+
+The project contains `wiqd.plugin.json`, `m365agents.yml`, and an
+`appPackage/` directory. The app manifest registers the skill and declarative
+agent as components of the same plugin.
+
+Edit the skill's `SKILL.md` and the agent's instructions to describe the behavior
+you want. The agent component is optional: a plugin can contain only skills or
+connectors. See [Build a Plugin](/getting-started/build-a-plugin/) to add an
+MCP connector or reuse a catalog connector.
+
+If WIQD already created the project conversationally, continue in that project
+instead of scaffolding a second one.
+
+## Step 3: Validate and improve
+
+```bash
+wiqd plugin validate --env dev
+```
+
+Static validation is offline and checks the declarative-agent surface and its
+references. It does not establish that root skills, connectors, or the entire
+app package are valid. Ask WIQD to explain findings and help you repair them,
+then validate again.
+
+## Step 4: Authenticate and provision
+
+Sign in to the Microsoft 365 tenant where you will preview the plugin:
 
 ```bash
 wiqd auth login --interactive
-```
-
-Verify your session:
-
-```bash
 wiqd auth status
+wiqd plugin provision --env dev
 ```
 
-### Create an Agent
+Provisioning registers the plugin and writes the selected environment file.
+Run it before packaging or sharing, which depend on that environment.
 
-Scaffold a new agent project from a template:
+## Step 5: Package and validate deeply
 
 ```bash
-wiqd agent create --name my-first-agent
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
 ```
 
-This creates a new directory `my-first-agent/` with the agent manifest and supporting files.
+Packaging produces the distributable `.zip`. Deep validation checks the built
+app package through Microsoft 365's validation service; it requires that ZIP
+and is not a substitute for trying the plugin's behavior.
 
-:::note
-Run `wiqd agent create list` to see all available templates.
-:::
+Inspect the returned findings before continuing. In JSON automation, also check
+`data.valid`: deep validation can complete with exit code `0` while reporting
+`data.valid: false`. See [Validation & MVL](/concepts/validation-mvl/).
 
-### Validate
+## Step 6: Share for preview, then publish
 
-Validate the agent manifests to catch errors before deployment:
+Grant a teammate access:
 
 ```bash
-wiqd agent validate --path my-first-agent
+wiqd plugin share --scope users --email colleague@contoso.com --env dev
 ```
 
-A clean validation returns exit code `0` with no errors.
-
-:::note
-Use `--mode deep` for enhanced validation that checks external references and API plugin schemas.
-:::
-
-### Provision
-
-Deploy the agent to your development environment:
+Try the plugin in its target Microsoft 365 experience and iterate on its
+components. When it is ready for organization-wide discovery, submit it to
+your tenant catalog:
 
 ```bash
-wiqd agent provision --path my-first-agent
+wiqd plugin publish --env dev
 ```
 
-This packages and uploads your agent to Microsoft 365.
+Submission is not approval: a tenant administrator must approve the plugin
+before users can discover it in the catalog. Sharing and catalog submission
+are separate operations. Public-store submission and certification remain
+Partner Center steps, not `wiqd plugin publish`.
 
-### Share
+## Continue conversationally
 
-Share the agent with specific users:
+With the WIQD marketplace plugin installed, you can ask for the same lifecycle
+steps instead of typing each CLI command:
 
 ```bash
-wiqd agent share --scope users --email colleague@contoso.com --path my-first-agent
+copilot -i "validate my plugin in dev and help me fix the findings" --agent wiqd:wiqd
+copilot -i "provision my plugin in dev, package it, and share it with my teammate using dev" --agent wiqd:wiqd
 ```
 
-Or share across the entire tenant:
-
-```bash
-wiqd agent share --scope tenant --path my-first-agent
-```
-
-## Prefer a Conversational Workflow?
-
-Instead of running each command yourself, you can drive the entire lifecycle through Copilot CLI in interactive mode. The `--agent wiqd:wiqd` flag routes your request to the wiqd orchestrator, which handles skill routing, lifecycle orchestration, and next-step suggestions end-to-end:
-
-```bash
-copilot -i "create a new declarative agent" --agent wiqd:wiqd
-copilot -i "validate my agent" --agent wiqd:wiqd
-copilot -i "deploy my agent locally" --agent wiqd:wiqd
-```
-
-:::tip
-Always include `--agent wiqd:wiqd` so Copilot CLI targets the wiqd orchestrator rather than falling back to generic behavior.
-:::
+If your plugin includes a declarative agent, use agent-specific evaluation
+guidance for that deployed component. Do not interpret an agent evaluation as
+validation of every plugin capability.
 
 ## What's Next?
 
-- [CLI Reference](/cli/reference/) — Explore the full command set
-- [Validation & MVL](/concepts/validation-mvl/) — Learn about validation architecture
-- [Environments](/concepts/environments/) — Manage multiple deployment targets
-- [VS Code Extension](/concepts/vscode-extension/) — Get real-time validation in your editor
+- [Build a Plugin](/getting-started/build-a-plugin/) - Full composition, import/export, and publishing walkthrough
+- [What is a plugin?](/concepts/plugins/) - The package and its components
+- [Plugin authoring reference](/getting-started/plugin-reference/) - Manifests, skills, connectors, and validation codes
+- [CLI Reference](/cli/reference/#wiqd-plugin) - Script the same plugin lifecycle
+- [Declarative agents](/concepts/declarative-agents/) - Add or maintain a conversational component; existing `wiqd agent` projects remain supported

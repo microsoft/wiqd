@@ -44,7 +44,7 @@ Work IQ Dev Tools ship with six extensions out of the box (see [Provided Extensi
 
 ## How a command flows
 
-Take `wiqd agent provision --env local`:
+Take `wiqd agent provision --env dev`:
 
 1. The host parses the flags and looks up `agent.provision` in its command tree.
 2. It finds that the command belongs to the wiqd Core extension.

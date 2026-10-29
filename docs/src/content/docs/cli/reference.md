@@ -385,6 +385,7 @@ wiqd agent ask [options]
 | `--env <value>` | Target environment (default: "local") |
 | `--path <value>` | Project path |
 | `--devui` | Proxy the ask through the local Work IQ DevUI (A2A) so the call is captured and inspectable there; falls back to a direct ask if DevUI isn't running. |
+| `--developer` | Include Work IQ developer execution metadata; may contain sensitive diagnostics |
 
 **Examples**
 

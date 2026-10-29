@@ -19,13 +19,13 @@ This is the only extension that ships a .NET binary. The MVL engine depends on `
 
 ```bash
 # 1. Fast static validation — run before every commit
-wiqd agent validate
+wiqd agent validate --env dev
 
 # 2. Deep validation including semantic checks
-wiqd agent validate --mode deep
+wiqd agent validate --mode deep --env dev
 
 # 3. CI gate: machine-readable output
-wiqd agent validate --json | jq '.data.diagnostics'
+wiqd agent validate --env dev --json | jq '.data.diagnostics'
 
 # 4. Editor integration — install the VS Code extension
 wiqd install --vscode

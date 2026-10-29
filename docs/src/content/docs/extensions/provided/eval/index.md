@@ -31,22 +31,22 @@ the package. Doctor never removes global packages automatically.
 
 ```bash
 # 1. Copy the bundled starter suite to evals/prompts.json
-wiqd agent eval init
+wiqd agent eval init --env dev
 
 # 2. Edit the prompts and evaluators for your agent
 $EDITOR evals/prompts.json
 
 # 3. Provision the agent (eval needs a deployed target)
-wiqd agent provision --env local
+wiqd agent provision --env dev
 
 # 4. Run the full suite
-wiqd agent eval
+wiqd agent eval --env dev
 
 # 5. Increase concurrency, up to the supported maximum of 5
-wiqd agent eval --concurrency 5
+wiqd agent eval --concurrency 5 --env dev
 
 # 6. Enforce an 85% quality bar in CI
-wiqd agent eval --threshold 0.85 --json | tee eval-results.json
+wiqd agent eval --threshold 0.85 --env dev --json | tee eval-results.json
 ```
 
 A completed run exits `0` when any configured threshold is met. Failures exit `1`; in JSON mode, `error.code` distinguishes a threshold miss (`EXIT_CONDITION_MET`) from an upstream failure (`UPSTREAM_ERROR`). wiqd preflight or validation errors exit `2`, required EULA acceptance exits `3`, and cancellation exits `130`.

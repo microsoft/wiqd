@@ -100,12 +100,12 @@ wiqd plugin add agent                               # add a declarative agent co
 wiqd plugin add skill --name "Triage Issues"        # add a SKILL.md skill
 wiqd plugin add connector --name "Tools" \
   --description "Toolbelt over MCP" --url https://tools.contoso.com/mcp
-wiqd plugin validate                                # static MVL check of the DA surface
-wiqd plugin provision                               # register with Microsoft 365 (writes env/.env.<env>)
-wiqd plugin package                                 # build a deployable .zip
-wiqd plugin validate --mode deep                    # full app-package validation via MVL/deep validation
-wiqd plugin publish                                 # submit to the org catalog for tenant admin approval
-wiqd plugin share --scope users --email you@contoso.com
+wiqd plugin validate --env dev                      # static MVL check of the DA surface
+wiqd plugin provision --env dev                     # register with Microsoft 365 (writes env/.env.dev)
+wiqd plugin package --env dev                       # build a deployable .zip
+wiqd plugin validate --mode deep --env dev          # full app-package validation via MVL/deep validation
+wiqd plugin publish --env dev                       # submit to the org catalog for tenant admin approval
+wiqd plugin share --scope users --email you@contoso.com --env dev
 ```
 
 Already have a plugin authored for another host? [`wiqd plugin import`](/cli/reference/#wiqd-plugin-import)

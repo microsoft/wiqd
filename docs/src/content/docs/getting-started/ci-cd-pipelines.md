@@ -1,9 +1,16 @@
 ---
-title: Agent development pipeline setup
+title: Agent component pipeline setup
 description: Prepare WIQD authentication and lifecycle commands for an existing CI/CD system.
 ---
 
-# Set up agent development CI/CD
+# Set up agent-component development CI/CD
+
+The plugin is the app package you ship; a declarative agent is an optional
+component. This page documents the shipped **agent-project** `agent-ci-cd`
+workflow and its agent-specific command body, not a plugin-aware pipeline
+generator. Do not apply that executable body unchanged to a `wiqd plugin`
+project. For plugin commands and their validation, environment, and publishing
+requirements, see [Build a Plugin](/getting-started/build-a-plugin/).
 
 The installed **wiqd skill** helps prepare WIQD's part of your pipeline:
 authentication, project/environment inputs, lifecycle commands and result handling.
@@ -13,7 +20,7 @@ secret-store administration and release controls, not for WIQD's auth contract.
 
 For example, ask:
 
-> Prepare WIQD CI/CD for `agents/helpdesk` in environment `staging`. Explain
+> Prepare WIQD CI/CD for `agents/helpdesk` in environment `dev`. Explain
 > the supported authentication choices and commands to validate, provision,
 > package and submit to our org catalog. Include GitHub Actions step snippets
 > using username/password authentication.
@@ -102,7 +109,7 @@ Insert one of these **step snippets** into an existing trusted release job after
 checkout, approved WIQD installation and required project build/tests. Use
 PowerShell 7 from the checkout root. Set the project path and lifecycle environment
 directly in the commands using existing `--path` and `--env` options, for example
-`--path ./agents/helpdesk --env staging`. No additional pipeline variables are
+`--path ./agents/helpdesk --env dev`. No additional pipeline variables are
 needed for these values. Store credentials as secrets. Do not inherit
 the other auth mode's keys at job/pipeline scope, even as empty values.
 

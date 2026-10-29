@@ -5,9 +5,12 @@ description: How Work IQ Dev Tools use local, dev, staging, and prod environment
 
 # Environments
 
-An **environment** in Work IQ Dev Tools is a named slot that holds the configuration and cloud resources for one instance of your agent. The same project source can be provisioned into multiple environments, each with its own M365 app registration, tenant, and configuration values.
+An **environment** in Work IQ Dev Tools is a named slot that holds the configuration and cloud resources for one instance of your plugin. The same project source can be provisioned into multiple environments, each with its own M365 app registration, tenant, and configuration values. Existing agent-focused projects use the same lifecycle concept.
 
-Environments live in `env/.env.<name>` files inside your project. Work IQ Dev Tools and the core lifecycle backend name them based on the file's suffix: `env/.env.local` becomes the `local` environment, `env/.env.dev` becomes `dev`, and so on.
+By default, environments live in `env/.env.<name>` files inside your project.
+`m365agents.yml` can select a different project-contained `environmentFolderPath`.
+Work IQ Dev Tools and the core lifecycle backend name environments based on
+the file's suffix: `.env.local` becomes `local`, `.env.dev` becomes `dev`, and so on.
 
 ## The conventional names
 
@@ -18,37 +21,57 @@ Environments live in `env/.env.<name>` files inside your project. Work IQ Dev To
 | `staging` | Pre-production tenant for final validation. |
 | `prod` | Production tenant — the one your real users hit. |
 
-These are conventions, not enforced names. You can add `qa`, `customer-acme`, or any other slot that fits your workflow with `wiqd agent env add --name <name>`.
+These are conventions, not enforced names. Choose a portable filename segment
+such as `qa` or `customer-acme`, not a path. Existing agent projects can manage
+definitions with `wiqd agent env add --name <name>`.
 
 ## How environments enter every command
 
-Most agent commands accept `--env <name>`. The default is whatever the command's spec says (usually `local` for development, but `wiqd agent show` reads them all when you omit `--env`).
+Plugin lifecycle commands accept `--env <name>`. Use the same explicit
+environment when provisioning, packaging, validating deeply, sharing, and
+publishing. Defaults and supported options remain command-specific.
+
+The documentation uses **`dev` as its standard example environment** and
+passes `--env dev` explicitly. This does not change CLI defaults: commands
+that currently default to `local` still do so when the option is omitted.
 
 ```bash
-wiqd agent provision --env local
-wiqd agent eval --env staging
-wiqd agent publish --env prod
+wiqd plugin provision --env dev
+wiqd plugin package --env dev
+wiqd plugin validate --mode deep --env dev
+wiqd plugin publish --env dev
 ```
 
 The selected environment determines which `.env.<name>` file Work IQ Dev Tools read, which tenant the upstream tool authenticates against, and which app registration gets updated.
 
 ## The first provision creates the slot
 
-When you run `wiqd agent provision --env dev` for the first time, Work IQ Dev Tools create the M365 app registration, write the resulting IDs back into `env/.env.dev`, and commit the slot. Re-running the command updates the existing app instead of creating a new one. Use `wiqd agent env reset --env dev` if you want to wipe a slot and start fresh.
+When you run `wiqd plugin provision --env dev` for the first time, Work IQ Dev
+Tools register the plugin and write the resulting IDs into `.env.dev` in the
+configured environment folder. Provision before package or share, which depend
+on that file. Re-provisioning uses the existing environment identity. Never
+commit credentials or assume provisioning commits files to Git.
 
 ## Listing and inspecting
 
+Use `wiqd plugin show` to inspect a plugin project. The following commands
+provide agent-focused views for existing agent projects:
+
 - `wiqd agent env list` — show every environment defined in the project.
-- `wiqd agent show --env staging` — view the agent's identity and provisioned resources for one environment.
+- `wiqd agent show --env dev` — view the agent's identity and provisioned resources for one environment.
 - `wiqd agent show` (no `--env`) — show all of them at once.
 
 ## When you don't need environments
 
-The command that doesn't care about environments at all is `wiqd agent validate` (it reads source files only). Everything else — `provision`, `package`, `publish`, `eval`, `monitor`, `share`, `delete` — needs to know which slot you mean.
+Static `wiqd plugin validate` checks the declarative-agent source surface
+offline without provisioning. Deep validation uses the selected environment's
+built package. Agent evaluation targets a deployed declarative-agent component,
+not all capabilities in a plugin.
 
 ## Go deeper
 
-- [Agent lifecycle](/concepts/agent-lifecycle/) — where environments fit into the bigger flow
+- [Build a Plugin](/getting-started/build-a-plugin/) — where environments fit into plugin delivery
+- [Agent component lifecycle](/concepts/agent-lifecycle/) — existing agent-project workflows
 - [`wiqd agent env`](/cli/reference/#wiqd-agent-env) — manage environments
-- [`wiqd agent provision`](/cli/reference/#wiqd-agent-provision), [`wiqd agent publish`](/cli/reference/#wiqd-agent-publish)
+- [`wiqd plugin provision`](/cli/reference/#wiqd-plugin-provision), [`wiqd plugin publish`](/cli/reference/#wiqd-plugin-publish)
 - [wiqd Core extension](/extensions/provided/core/) — the upstream that defines the `.env.*` file format
