@@ -14,7 +14,9 @@ The **host** is the `wiqd` binary you install. It owns:
 - The command-line surface — parsing flags, picking subcommands, printing help.
 - Global concerns — authentication, configuration, telemetry, output formatting (`--json`), the spinner, the banner.
 - A small set of *core* commands that work without any extensions: `version`, `config`, `auth`, `update`, `doctor`, `docs`, `feedback`, `install`, `uninstall`, `ext`.
-- One agent-specific core command: `wiqd agent validate` (static mode) and its sibling `wiqd agent lsp`. These ship with the host because manifest validation must work offline.
+- The bundled `microsoft.validate` runtime contributes `wiqd agent validate` (source, package and
+  Marketplace) plus the native `wiqd agent lsp` protocol entry. Source remains offline; provider
+  behavior belongs to the extension, not domain-specific host branches.
 
 The host is intentionally generic. It has no built-in knowledge of domain behavior from Work IQ, the eval suite, or lifecycle-specific tools.
 

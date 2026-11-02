@@ -53,7 +53,7 @@ agent-specific workflow, not as a prerequisite for every plugin.
 | [`wiqd agent publish`](/cli/reference/#wiqd-agent-publish) | Publish to the org catalog. |
 | [`wiqd agent delete`](/cli/reference/#wiqd-agent-delete) (alias `uninstall`) | Delete cloud resources by env or title ID. |
 | [`wiqd agent env`](/cli/reference/#wiqd-agent-env) | List, add, and reset environments. |
-| `wiqd agent validate --mode deep` | Delegate deep validation to the core runtime. |
+| `wiqd agent validate --mode package --package-file "<zip>"` | Validate checks the captured final ZIP through Core's TDP API. |
 
 ## Collaboration
 

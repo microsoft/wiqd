@@ -98,7 +98,8 @@ Microsoft 365 business-plugin commands are unchanged.
 
 ## Path 2: Use the installation script
 
-The fastest way to get started — installs Node.js (if needed), the `wiqd` CLI, and the VS Code extension:
+Install a supported Node.js/npm environment first, then use the script to install
+the `wiqd` CLI and retained integrations:
 
 ### macOS / Linux
 
@@ -142,11 +143,11 @@ Get-Content install-wiqd.ps1   # review the script
 
 The installer will:
 
-1. **Detect Node.js** — if missing or below the minimum version:
-   - **Windows:** installs [fnm](https://github.com/Schniz/fnm) (Fast Node Manager) via `winget install Schniz.fnm` if fnm is not already present, activates it in the current PowerShell session, then installs Node LTS through `fnm i --lts`. No new terminal required — `node` and `npm` are available immediately.
-   - **macOS/Linux:** installs via nvm, Homebrew, or apt.
-   - Existing supported Node.js installations are preserved.
-2. **Install `wiqd`** — downloads and installs the wiqd CLI (includes the core lifecycle backend)
+1. **Verify Node.js/npm** — requires launchable Node.js 24.15+ and npm from the
+   caller's current `PATH`. The installer never provisions a runtime, selects a
+   version manager, elevates, or changes shell profiles.
+2. **Install `wiqd`** — installs the exact compatible npm package set from the
+   configured npm registry, or an explicitly supplied compatible tarball
 3. **Verify** — confirms `wiqd --version` works, then `wiqd doctor` reconciles managed
    extension owners and reports targeted remediation when needed
 4. **VS Code extension** — installs the Work IQ extension for real-time validation
@@ -233,7 +234,7 @@ The script-block-wrapped form `iex "& { $(irm 'URL') } -Flag"` is what makes it 
 | `-SkipPlugin` | `--skip-plugin` | Skip all host-plugin installation, update, and migration work |
 | `-Insiders` | `--insiders` | Install the extension in VS Code Insiders |
 | `-Force` | `--force` | Reinstall even if components are already present |
-| `-NodeVersion 24` | `--node-version 24` | Specify the Node.js major version (default: `24`) |
+| `-Tarball <path>` | `--tarball <path>` | Install one explicit compatible `@microsoft/wiqd` `.tgz`; all verification and integrations still run |
 | `-Version <version>` | `--version <version>` | Specific wiqd version to install. With no override, the installer pins the exact version stamped into it at release time — never a floating `latest`/`preview` tag. Accepts a concrete version or an npm dist-tag such as `preview` or `latest`. |
 | `-Channel <channel>` | `--channel <channel>` | Select `latest`, `preview`, or `dev`. The `dev` channel uses npm's `alpha` tag; `alpha` is accepted as a compatibility alias. Cannot be combined with the version flag. With no override, the stamped installer default is unchanged. |
 
@@ -311,7 +312,7 @@ curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --version 0.1.9
 
 ## npm
 
-`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path (they also handle Node.js and the VS Code extension), but a manual install works too. The npm package does not contain a local-composition `plugin/` payload:
+`wiqd` is published to public npm as [`@microsoft/wiqd`](https://www.npmjs.com/package/@microsoft/wiqd). The one-liner installers above are still the recommended path because they also verify readiness and reconcile optional integrations, but they require Node/npm to be installed first. A manual install works too:
 
 ```bash
 npm install -g @microsoft/wiqd
@@ -347,7 +348,7 @@ iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -Force"
 
 | Requirement | Minimum | Notes |
 |-------------|---------|-------|
-| Node.js | 24.15+ | Auto-installed by one-liner installer (via fnm on Windows) |
+| Node.js | 24.15+ | Must already be launchable from the caller's `PATH` |
 | npm | (bundled with Node.js) | Included with Node.js 24+ |
 | OS | Windows 10+, macOS, Linux | All platforms supported via installer scripts |
 | Internet | Required | For package downloads |
@@ -364,76 +365,58 @@ If `wiqd` fails with:
   Not installed? Get it from https://nodejs.org, then re-run wiqd.
 ```
 
-then the launcher wiqd installed could not locate a Node executable. This applies to the launchers wiqd writes: the Windows global `wiqd.ps1` and the per-worktree `.bin/` launchers. This is common with version managers such as fnm and nvm, whose shell hook only puts Node on `PATH` once your shell profile has run — a terminal opened before that hook was in place has Node on disk but not on `PATH`.
+then a developer worktree launcher could not locate Node. Published global,
+local, and npm-exec launchers are npm-owned and use the caller's working
+Node/PATH environment; `WIQD_NODE` and an install-time recorded interpreter do
+not apply to published-package launchers.
 
-Two install paths use npm's own launcher instead, which resolves `node` from `PATH` only. On both, `WIQD_NODE` has no effect and the fix is to put Node back on `PATH`:
-
-- **A global install on macOS or Linux.**
-- **Windows, after the one-liner installer, or after `wiqd update`.** Those paths remove wiqd's own `wiqd.ps1` so a `Restricted` or `AllSigned` execution policy cannot hard-fail the command, so PowerShell resolves npm's `wiqd.cmd` instead. Installing directly with `npm install -g @microsoft/wiqd` leaves wiqd's own launcher in place, so `WIQD_NODE` does apply there. On the npm-launcher paths, the error you will see is cmd's own, not the message above:
+On Windows, the bootstrap removes only the selected npm prefix's `wiqd.ps1` so
+restrictive execution policy selects npm's `wiqd.cmd`. If `wiqd` is blocked
+after a direct npm install, try the `.cmd` launcher and repair PATH rather than
+editing launcher bytes:
 
   ```
   '"node"' is not recognized as an internal or external command,
   operable program or batch file.
   ```
 
-wiqd's own launcher looks for Node in this order, and uses the first one that exists:
-
-1. `WIQD_NODE`, if you set it to the full path of a `node` executable.
-2. A `node.exe` sitting next to the launcher in the npm global directory (Windows).
-3. `node` on your `PATH`.
-4. The absolute path to the Node the launcher was written under — at install time for the global launcher, at `install.ps1 -Worktree` time for a worktree launcher. It is deliberately last, so switching versions with fnm or nvm still takes effect. A POSIX worktree launcher generated on Windows has no rung 4 at all, because a Windows Node path is meaningless under WSL or Git Bash.
-
-The two fixes, in order of preference:
+For published installs, fix the caller environment:
 
 ```powershell
 # 1. Put Node back on PATH — usually just opening a new terminal after your
 #    version manager's shell hook is installed.
 node --version
 
-# 2. Or point wiqd at a specific Node explicitly.
-$env:WIQD_NODE = 'C:\Program Files\nodejs\node.exe'
-wiqd --version
+wiqd.cmd --version
 ```
 
 ```bash
 # 1. Put Node back on PATH
 node --version
 
-# 2. Or point wiqd at a specific Node explicitly
-export WIQD_NODE=/usr/local/bin/node
 wiqd --version
 ```
 
-`WIQD_NODE` is an escape hatch, not a permanent fix — if you find yourself needing it every session, your Node version manager's shell hook is not being sourced. Run `wiqd doctor` for the manager-state report. If no Node is installed at all, install Node 24.15 or later from [nodejs.org](https://nodejs.org) and re-run the installer.
+Developer `scripts/install.ps1 -Local/-Worktree` launchers retain their separate
+WIQD-owned fallback behavior. If no Node is installed at all, install Node 24.15
+or later from [nodejs.org](https://nodejs.org) and re-run the installer.
 
-### I have multiple Node version managers installed
+The installer warns if this shell's normal `wiqd` command is missing or resolves
+elsewhere, even when the selected npm launcher passed verification.
+If a different prefix still wins after reinstall, compare `npm prefix -g` with
+every resolved launcher (`Get-Command wiqd -All` on PowerShell or
+`type -a wiqd` on Bash). Remove or reorder the stale prefix manually. Bootstrap
+does not scan or delete launchers outside the selected npm prefix.
 
-If you already have nvm-windows, nvm, volta, asdf, nodenv, Homebrew Node, system Node, or Chocolatey-installed Node on your machine, the installer detects every Node version manager on PATH before deciding what to do. The short version:
+### Retired bootstrap options
 
-- **Existing Node ≥ 24.15.0:** the installer uses your existing Node and does NOT install fnm. Your shell profile is left untouched.
-- **Existing Node too old:** the installer prompts (interactive) for upgrade-in-place vs switch-to-fnm. In CI / non-interactive contexts, it exits 1 with explicit guidance.
-- **fnm + nvm both installed, nvm wins PATH:** the installer detects the conflict, refuses to claim success, and prompts for resolution. This is the bug the detection logic was designed to catch.
-
-You can pin the strategy explicitly:
-
-```powershell
-# Use existing nvm-windows install, skip fnm install entirely
-iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -NodeManager nvm"
-
-# Force fnm even when other managers are detected
-iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -NodeManager fnm"
-
-# Corporate-policy escape hatch — never install fnm, use system Node only
-iex "& { $(irm 'https://aka.ms/wiqd/install.ps1') } -NodeManager system"
-```
-
-```bash
-curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --node-manager nvm
-curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --node-manager fnm
-curl -fsSL https://aka.ms/wiqd/install.sh | bash -s -- --node-manager system
-```
-
-`wiqd doctor` also reports the Node manager state on every run and warns when fnm is installed-but-inactive while wiqd's npm globals appear to live under fnm.
+`Source`/`source` (including `npm`), `Repo`/`repo`, bootstrap
+`Local`/`local`, `NodeManager`/`node-manager`, and
+`NodeVersion`/`node-version` are no longer accepted behaviors. Remove those
+arguments from automation. Use the configured npm registry, or pass
+`-Tarball`/`--tarball` for an explicit compatible candidate. Contributor
+`scripts/install.ps1 -Local/-Worktree` remains supported and is not the web
+bootstrap.
 
 ## Managed extension CLI state
 

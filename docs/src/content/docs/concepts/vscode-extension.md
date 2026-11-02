@@ -5,7 +5,11 @@ description: Real-time manifest validation, diagnostics, and language features i
 
 # VS Code extension
 
-The Work IQ Dev Tools VS Code extension brings the same validation engine that powers `wiqd agent validate` directly into your editor. As you type, schema problems show up as squigglies, hovers explain the rule that was violated, and quick fixes appear where the validator can suggest one. You don't have to save the file, switch to a terminal, or re-run a command — feedback is immediate.
+The Work IQ Dev Tools VS Code extension brings the diagnostics engine used by
+`wiqd agent validate --mode source` into your editor. As you type, schema problems show up as
+squigglies, hovers explain the violated rule, and quick fixes appear where supported. The editor
+can check unsaved buffers; the source command checks saved files. Package/Marketplace validation
+uses captured ZIP bytes and has a different scope.
 
 This page explains what the extension does and where it fits. For installation steps, see [Installation](/getting-started/installation/).
 
@@ -14,7 +18,9 @@ This page explains what the extension does and where it fits. For installation s
 - **Live diagnostics on every keystroke.** Open a `declarativeAgent.json` or `manifest.json` and the extension lights up the file with errors, warnings, and informational diagnostics from the Microsoft Validation Layer (MVL) — the same engine the M365 platform uses to accept a manifest.
 - **Hovers and quick fixes.** Hover an underline to read the full diagnostic. When the validator knows a safe fix (for example, normalising a casing inconsistency), VS Code offers it as a code action.
 - **Schema-aware completion.** Manifest fields, enums, and capability shapes auto-complete because the schema is bundled with the extension.
-- **A consistent story across local CLI and editor.** Whatever you see in VS Code is exactly what `wiqd agent validate` will say at the terminal and what CI will say on the next push. No "works in my editor" surprises.
+- **Shared source diagnostics, distinct scopes.** `wiqd agent validate --mode source` reuses the
+  editor's diagnostics service on saved files. Unsaved buffers and editing-only advisory checks
+  can differ; package/Marketplace checks evaluate captured ZIPs, not the editor buffer.
 
 ## How it works
 
@@ -28,7 +34,9 @@ Because the server is just the Work IQ Dev Tools CLI in a different mode, it sha
 - **During scaffolding**, to catch malformed capability blocks the moment you paste them in.
 - **During reviews**, to load a teammate's branch and immediately see whether the manifest is well-formed.
 
-The extension is not a substitute for `wiqd agent validate` in CI — CI still runs the CLI to gate merges. The editor experience is for the inner loop.
+The extension is not a substitute for `wiqd agent validate --mode source` in offline CI.
+Build and explicitly validate the final ZIP when package acceptance is required. The editor
+experience is for the inner loop, not proof of deployment/publication approval.
 
 ## Installation
 

@@ -63,6 +63,11 @@ provide agent-focused views for existing agent projects:
 
 ## When you don't need environments
 
+`wiqd agent validate --mode source` reads saved source using only the selected environment context
+(`local` by default). Use the same path/environment before packaging or provisioning. Package
+validation checks captured ZIP bytes; `--env` does not choose or rebuild that ZIP.
+`provision`, `package`, `publish`, `eval`, `monitor`, `share` and `delete` need the intended slot.
+
 Static `wiqd plugin validate` checks the declarative-agent source surface
 offline without provisioning. Deep validation uses the selected environment's
 built package. Agent evaluation targets a deployed declarative-agent component,

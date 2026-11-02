@@ -2,6 +2,24 @@
 title: Changelog
 ---
 
+## 0.23.0 — 2026-11-02
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- add ten evidence-bound functional policy checks
+- add policy repairability and autofix history
+- prepare ZIP targets for live validation
+
+### Fixes
+
+- bind StoreOps evidence in host
+- recover missing CLI before falling back
+- require shared scope before sharing
+- point lifecycle links to Cowork
+- require title ID for Cowork links
+
 ## 0.22.0 — 2026-10-29
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

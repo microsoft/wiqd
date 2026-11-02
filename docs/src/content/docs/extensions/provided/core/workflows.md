@@ -9,7 +9,7 @@ description: Workflows and references contributed by the wiqd Core extension
 
 | File | Purpose |
 | --- | --- |
-| `workflows/wiqd-core.md` | Full native lifecycle: create, edit, validate, provision, package, share, publish, delete, environments, migration, and localization. |
+| `workflows/wiqd-core.md` | Native lifecycle: create, edit with source prechecks, provision, package, share, publish, delete, environments, migration, and localization. |
 | `workflows/plugin.md` | Standalone reusable plugin authoring and lifecycle. |
 | `workflows/partner-center.md` | 3P Partner Center publishing guidance. |
 
@@ -17,7 +17,11 @@ description: Workflows and references contributed by the wiqd Core extension
 
 The extension contributes reference material under `packages/wiqd-ext-core/references/`, including authoring, schema, provisioning, packaging, sharing, validation, localization, API plugin, MCP plugin, authentication, and workspace-gate guidance.
 
-Deep validation is delegated statically to `microsoft.wiqd.core`; there is no backend selector or ATK rollback path.
+Explicit validation and identified-finding repair belong to the `validation` workflow
+from `microsoft.validate`. Core lifecycle prechecks explicitly use `--mode source` with the same
+project/environment; they do not build a ZIP merely to check source. Package validation uses
+Core's typed TDP API; Marketplace includes TDP and StoreOps on one ZIP. There is no experiment
+selector or ATK fallback, and these workflow gates do not force new backend validation.
 
 ## Editing the default response mode
 
@@ -30,5 +34,6 @@ reads the complete resolved `default_response_mode` property. The lookup must
 show both `type: string` and the allowed `enum`; finding the enum alone is not
 enough. Missing or incompatible schema evidence stops the edit.
 
-After the edit, the workflow validates the project. An explicit request not to
+After the edit, the workflow source-checks the saved project with the provisioning path/environment.
+An explicit request not to
 deploy or provision suppresses provision, but does not skip validation.

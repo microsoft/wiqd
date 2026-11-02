@@ -161,6 +161,12 @@ Static validation checks the declarative-agent surface, not the entire plugin.
 Provision before packaging; deep validation needs the built ZIP. The plugin
 command tree is alpha and enabled by default.
 
+Existing agent projects use `wiqd agent validate --mode source` for offline saved-source checks,
+`--mode package --package-file ./final.zip` for TDP validation of an existing ZIP, and
+`--mode marketplace --package-file ./final.zip` for package and Marketplace policy checks.
+Package is the default mode; validation never builds or publishes automatically.
+See [agent validation](https://aka.ms/wiqd/docs?id=cli/agent/agent-validate).
+
 ### Share with users or your tenant
 
 ```powershell

@@ -16,17 +16,18 @@
 #   Get-Content install.ps1   # review
 #   .\install.ps1             # run
 #
-# Installs the wiqd CLI and all dependencies:
-#   1. Verify Node.js >= the minimum version (block + suggest if missing;
-#      the installer never installs Node itself)
+# Installs the wiqd CLI and retained integrations:
+#   1. Verify caller-provided Node.js/npm at the supported floor
 #   2. @microsoft/wiqd (npm global package — includes extension payloads)
 #   3. Verify installation (`wiqd doctor` reconciles active managed Work IQ
 #      and Eval generations; related commands retry if verification was incomplete)
 #   4. Work IQ VS Code extension (optional)
-#   5. wiqd plugin — installed only for the plugin host(s) already on PATH
-#      (Copilot CLI and/or Claude Code). Never installs a host; skipped
-#      gracefully when neither is present. Skip entirely with -SkipPlugin.
+#   5. Host-plugin installation for supported hosts already on PATH.
+#      Skip with -SkipPlugin.
 #
+# Acquisition is npm registry by default. -Tarball may supply one explicit
+# compatible host package. Source/Repo/Local/NodeManager/
+# NodeVersion inputs are retired and fail with migration guidance.
 #
 # -Force         Full reinstall, end-to-end. Bypasses every "already installed"
 #                short-circuit:
@@ -45,19 +46,21 @@
 # whose arg parser already exits on an unknown option.
 [CmdletBinding()]
 param(
-    # The 3P installer ships from the public npm registry only.
-    [ValidateSet("npm")]
-    [string]$Source = "npm",
+    # Retired inputs remain parseable only to provide migration diagnostics.
+    [string]$Source,
     [string]$Version = "latest",
     [ValidateSet("latest", "preview", "dev", "alpha")]
     [string]$Channel,
-    [string]$Repo = "microsoft/wiqd",
+    [string]$Repo,
     [switch]$SkipVSCode,
     [switch]$SkipPlugin,
     [switch]$PluginNonFatal,
     [switch]$Insiders,
-    [string]$NodeVersion = "24",
-    [switch]$Force
+    [string]$NodeVersion,
+    [switch]$Force,
+    [switch]$Local,
+    [string]$Tarball,
+    [string]$NodeManager
 )
 
 # Windows PowerShell 5.1 lacks features wiqd's installer relies on (the
@@ -100,12 +103,12 @@ $UpdateResultPath = [Environment]::GetEnvironmentVariable('WIQD_UPDATE_RESULT_PA
 $script:InstallerVersionExplicit = $PSBoundParameters.ContainsKey('Version')
 if ($Channel) {
     if ($script:InstallerVersionExplicit) { throw '-Channel and -Version cannot be combined.' }
-    if ($Source -ne 'npm') { throw '-Channel requires -Source npm.' }
     $Version = $Channel.ToLowerInvariant()
     if ($Version -eq 'dev') { $Version = 'alpha' }
     $script:InstallerVersionExplicit = $true
 }
 $script:InstallerForceRequested = [bool]$Force
+$script:InstallerBoundParameters = $PSBoundParameters
 
 $script:InstallUrl = 'https://aka.ms/wiqd/install.ps1'
 
@@ -123,12 +126,9 @@ $script:PublicNpmRegistry = 'https://registry.npmjs.org/'
 # empty array in the 3P mirror where no setter ever runs.
 $script:NpmRegistryArgs = @()
 
-# The plugin step is a foreach over possibly-multiple hosts (copilot, claude),
-# so "succeeded" (>=1 host installed cleanly) and "failed" (>=1 host errored)
-# are tracked separately from $installSuccess. A host being ABSENT is a
-# graceful skip, never a failure; only an attempted-and-errored install trips
-# Failed/Succeeded/Skipped/Cancelled (+ FailedPluginHosts) drive the
-# summary banners, the skills-list gate, and the final exit code.
+# Plugin results stay separate from
+# core installation so optional failure is reported truthfully without rolling
+# back a verified CLI.
 $script:PluginInstallFailed = $false
 $script:VSCodeInstallFailed = $false
 $script:PluginInstallSucceeded = $false
@@ -139,16 +139,17 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.22.0"
+$script:WiqdVersion = "0.23.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
 # When called via & inside another script, InvocationName mismatches the parsed
 # command text, corrupting the first argument (e.g. "install" → "pm install").
 # Resolve npm.cmd (bypasses the .ps1 wrapper) once and reuse everywhere.
-$npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
-if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
+$npmCmd = Get-Command npm.cmd -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $npmCmd) { $npmCmd = Get-Command npm -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
 $script:NpmExe = if ($npmCmd) { $npmCmd.Source } else { $null }
+$script:NodeExe = $null
 $script:LastNpmErrorCode = $null
 $script:LastNpmRegistry = $null
 $script:LastNpmMissingSpec = $null
@@ -1010,7 +1011,8 @@ function ConvertTo-SafePowerShellLiteral {
     $safe = $Value -replace "$([char]27)\][^$([char]7)]*(?:$([char]7)|$([char]27)\\)", ''
     $safe = $safe -replace "$([char]27)\[[0-9;?]*[ -/]*[@-~]", ''
     $safe = $safe -replace '[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', ''
-    return "'" + $safe.Replace("'", "''") + "'"
+    # PowerShell also treats smart single quotes as literal delimiters.
+    return "'" + ($safe -replace "(['\u2018\u2019\u201A\u201B])", '$1$1') + "'"
 }
 
 # Runs a `wiqd --version` / `wiqd doctor` install-time smoke-test through
@@ -1078,6 +1080,21 @@ function Test-WiqdInstallComplete {
     }
 
     return $missing.ToArray()
+}
+
+function Confirm-WiqdInstallComplete {
+    $missingArtifacts = @(Test-WiqdInstallComplete)
+    if ($missingArtifacts.Count -eq 0) { return $true }
+    Write-Err "installation incomplete. Repair:"
+    Write-Hint "  npm uninstall -g $WiqdPackage, then re-run this installer."
+    return $false
+}
+
+function Write-WiqdLauncherRepair {
+    Write-Err "wiqd is installed, but the npm-owned launcher could not run."
+    Write-Hint "wiqd installed, but not yet on PATH. Restart your terminal."
+    Write-Hint "Ensure Node.js and the selected npm prefix are on PATH, then retry."
+    Write-Hint "Still failing? npm uninstall -g $WiqdPackage, then re-run this installer."
 }
 
 # Deprecated npm config keys (npm 10.x).
@@ -1324,6 +1341,60 @@ function Install-NpmGlobalPackages {
     return $true
 }
 
+function Get-WiqdInstalledLauncher {
+    if (-not $script:NpmExe) { return $null }
+    $prefixResult = Invoke-Native { & $script:NpmExe prefix -g --loglevel=error }
+    if ($prefixResult.Failed -or $prefixResult.StdOut.Count -eq 0) { return $null }
+    $prefix = $prefixResult.StdOut[0].Trim()
+    if ([string]::IsNullOrWhiteSpace($prefix)) { return $null }
+    $candidate = if ($IsWindows -or $env:OS -eq 'Windows_NT') {
+        Join-Path $prefix 'wiqd.cmd'
+    } else {
+        Join-Path $prefix 'bin/wiqd'
+    }
+    if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    return $null
+}
+
+function Show-WiqdLauncherPathWarning {
+    $resolved = Get-Command wiqd -ErrorAction SilentlyContinue
+    $comparison = if ($IsWindows -or $env:OS -eq 'Windows_NT') { [StringComparison]::OrdinalIgnoreCase } else { [StringComparison]::Ordinal }
+    if ($resolved -and $resolved.CommandType -in @('Application', 'ExternalScript') -and
+        [string]::Equals($resolved.Source, $script:WiqdLauncher, $comparison)) { return }
+
+    if ($resolved) {
+        $current = if ($resolved.Source) { $resolved.Source } else { "$($resolved.CommandType): $($resolved.Name)" }
+        Write-Warn "The normal wiqd command resolves elsewhere: $current"
+    } else {
+        Write-Warn "The normal wiqd command is not available in this shell."
+    }
+    Write-Hint "Verified npm launcher: $script:WiqdLauncher"
+    Write-Hint "Compare 'Get-Command wiqd -All' with 'npm prefix -g'. Reorder PATH or manually remove the stale launcher, then restart your terminal."
+    Write-Hint "No launchers outside the selected npm prefix were changed."
+}
+
+function Invoke-WiqdInstalled {
+    param([Parameter(Mandatory)][string[]]$Arguments)
+    if (-not $script:WiqdLauncher) { $script:WiqdLauncher = Get-WiqdInstalledLauncher }
+    if (-not $script:WiqdLauncher) {
+        return [pscustomobject]@{
+            StdOut = @(); StdErr = @('The npm-owned wiqd launcher was not found at the selected global prefix.')
+            Combined = @('The npm-owned wiqd launcher was not found at the selected global prefix.')
+            ExitCode = 2; Failed = $true
+        }
+    }
+    $priorProbe = $env:WIQD_INSTALLER_PROBE
+    $priorTelemetry = $env:WIQD_TELEMETRY
+    try {
+        $env:WIQD_INSTALLER_PROBE = '1'
+        $env:WIQD_TELEMETRY = '0'
+        return Invoke-Native { & $script:WiqdLauncher @Arguments }
+    } finally {
+        if ($null -eq $priorProbe) { Remove-Item Env:\WIQD_INSTALLER_PROBE -ErrorAction SilentlyContinue } else { $env:WIQD_INSTALLER_PROBE = $priorProbe }
+        if ($null -eq $priorTelemetry) { Remove-Item Env:\WIQD_TELEMETRY -ErrorAction SilentlyContinue } else { $env:WIQD_TELEMETRY = $priorTelemetry }
+    }
+}
+
 function Invoke-WiqdSeedDefaults {
     # Seed the default extension registrations at install time via the host's own
     # hidden `wiqd ext seed-defaults` command. Activation is registration-only:
@@ -1333,7 +1404,7 @@ function Invoke-WiqdSeedDefaults {
     # re-run never resurrects a default the user removed and a second invocation
     # is a harmless no-op. Non-fatal: a seeding hiccup leaves wiqd installed and
     # the user can recover with `wiqd doctor` / `wiqd ext add`.
-    $r = Invoke-Native { & wiqd ext seed-defaults }
+    $r = Invoke-WiqdInstalled -Arguments @('ext', 'seed-defaults')
     if ($r.Failed) {
         Write-Warn "Could not seed default extensions automatically."
         Write-Hint "Run 'wiqd doctor' to restore them, or 'wiqd ext add <id>' per default."
@@ -1363,7 +1434,7 @@ function Show-DependencyStatus {
         @{ Keys = @('workiq EULA', 'workiq');   Label = 'workiq EULA'; Required = $false; OkWord = 'Accepted';  Note = '';                                            ExtensionId = 'microsoft.workiq'; ReRun = $false }
     )
 
-    $probe = Invoke-WiqdProbe { & wiqd doctor --json }
+    $probe = Invoke-WiqdInstalled -Arguments @('doctor', '--json')
     $checks = $null
     if ($probe.StdOut.Count -gt 0) {
         try {
@@ -1523,32 +1594,13 @@ function Get-ShortDoctorMessage {
 }
 
 
-function Install-FromNpmRegistry {
-    param($package, $version)
-
-    # Always pin an exact, already-resolved version (R29/R31) — a bare package name
-    # or a floating dist-tag would silently resolve npm's 'latest' dist-tag, which
-    # carries no prerelease during the preview period and would install the wrong
-    # build.
-    $packageSpec = if ($version) { "$package@$version" } else { $package }
-
-    $installed = Install-NpmGlobalPackages `
-        -Packages @($packageSpec) `
-        -DisplayName "$packageSpec from npm registry"
-    if (-not $installed -and $script:LastNpmErrorCode -eq "E404") {
-        if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne $packageSpec) {
-            Write-Warn "A dependency ($script:LastNpmMissingSpec) of $packageSpec was not found using your npm configuration."
-        } else {
-            Write-Warn "$packageSpec was not found using your npm configuration."
-        }
-    }
-    return $installed
-}
-
-
 function Get-NodeVersion {
     try {
-        $r = Invoke-Native { & node --version }
+        $nodeCommand = Get-Command node -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $nodeCommand -or -not (Test-Path -LiteralPath $nodeCommand.Source -PathType Leaf)) { return $null }
+        $script:NodeExe = $nodeCommand.Source
+        $r = Invoke-Native { & $script:NodeExe --version }
+        if ($r.Failed) { return $null }
         $raw = if ($r.StdOut.Count -gt 0) { $r.StdOut[0] } else { '' }
         if ($raw -match 'v?(\d+\.\d+\.\d+)') { return [version]$Matches[1] }
     } catch { }
@@ -1572,79 +1624,45 @@ function Get-NpmGlobalPackageVersion {
     return $null
 }
 
-function Get-TargetVersion {
-    param($Source, $Repo, $Version, $Package)
-
-    if ($Channel -or $Version -eq 'alpha') {
-        if ($Source -notin @('npm', 'auto')) { throw 'Alpha/channel installation requires npm.' }
-        $directory = Join-Path ([IO.Path]::GetTempPath()) ("wiqd-npm-" + [Guid]::NewGuid().ToString('N'))
-        New-Item -ItemType Directory -Path $directory -Force | Out-Null
-        try {
-            Push-Location -LiteralPath $directory
-            try {
-                $result = Invoke-Native { & $script:NpmExe view "$Package@$Version" version --json --loglevel=error }
-                if ($result.Failed) { throw "Unable to resolve npm channel '$Version'. Check your registry and retry." }
-                $resolved = ($result.StdOut -join "`n") | ConvertFrom-Json
-                if ($resolved -isnot [string] -or $resolved -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') {
-                    throw "npm channel '$Version' did not resolve to one concrete version."
-                }
-                if ($Version -eq 'alpha' -and $resolved -notmatch '^\d+\.\d+\.\d+-alpha\.') {
-                    throw "npm alpha channel points to non-alpha version '$resolved'."
-                }
-                return $resolved
-            } finally { Pop-Location }
-        } finally { Remove-Item -LiteralPath $directory -Recurse -Force }
-    }
-    # Explicit version or dist-tag requested — resolve it to a concrete version via
-    # the registry (R30) so the up-to-date comparison never diffs a moving tag (e.g.
-    # "preview") against an installed concrete version. Falls back to the literal
-    # (leading 'v' stripped) if the registry can't be reached.
-    if ($Version -and $Version -ne "latest") {
-        if ($Source -in @("npm", "auto")) {
-            try {
-                $npmWorkingDirectory = Join-Path ([System.IO.Path]::GetTempPath()) ("wiqd-npm-" + [Guid]::NewGuid().ToString("N"))
-                $locationPushed = $false
-                try {
-                    New-Item -ItemType Directory -Path $npmWorkingDirectory -Force | Out-Null
-                    Push-Location -LiteralPath $npmWorkingDirectory
-                    $locationPushed = $true
-                    $r = Invoke-Native { & $script:NpmExe view "$Package@$Version" version --loglevel=error }
-                } finally {
-                    if ($locationPushed) { Pop-Location }
-                    Remove-Item -LiteralPath $npmWorkingDirectory -Recurse -Force
-                }
-                $ver = if ($r.StdOut.Count -gt 0) { $r.StdOut[0] } else { '' }
-                if ($r.ExitCode -eq 0 -and $ver) {
-                    return $ver.Trim()
-                }
-            } catch { }
-        }
-        return ($Version -replace '^v', '')
-    }
-
-
-    # No explicit version, npm source — pin to the exact version stamped into this
-    # installer at release time (R29), never a dist-tag query: during the preview
-    # period the 'latest' dist-tag does not carry the prerelease, so resolving it
-    # here would silently downgrade or skip a preview build.
-    if ($Source -in @("npm", "auto")) {
-        return $script:WiqdVersion
-    }
-
-    # Could not determine target version — let install proceed to be safe.
-    return $null
+function Get-WiqdTarballMetadata {
+    param([Parameter(Mandatory)][string]$Path)
+    $directory = Join-Path ([IO.Path]::GetTempPath()) ("wiqd-tarball-probe-" + [Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    try {
+        Push-Location -LiteralPath $directory
+        try { $result = Invoke-Native { & $script:NpmExe pack $Path --ignore-scripts --dry-run --json --loglevel=error } }
+        finally { Pop-Location }
+        if ($result.Failed -or $result.StdOut.Count -eq 0) { return $null }
+        $rows = @(($result.StdOut -join "`n") | ConvertFrom-Json -ErrorAction Stop)
+        if ($rows.Count -ne 1) { return $null }
+        $metadata = $rows[0]
+        $files = @($metadata.files | ForEach-Object { [string]$_.path })
+        if ([string]$metadata.name -ne '@microsoft/wiqd' -or [string]::IsNullOrWhiteSpace([string]$metadata.version) -or
+            $files -notcontains 'extensions/wiqd-ext-core/wiqd-extension.json' -or
+            $files -notcontains 'extensions/wiqd-ext-core/dist/index.js') { return $null }
+        return [pscustomobject]@{ Version = [string]$metadata.version; Files = $files }
+    } catch { return $null }
+    finally { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
-function Refresh-PathInSession {
-    # Append newly-registered PATH entries without overwriting process-local paths
-    $machinePath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
-    $userPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-    $registered = "$machinePath;$userPath" -split ";" | Where-Object { $_ }
-    $current = $env:PATH -split ";" | Where-Object { $_ }
-    $missing = $registered | Where-Object { $_ -notin $current }
-    if ($missing) {
-        $env:PATH = ($current + $missing) -join ";"
-    }
+function Get-TargetVersion {
+    param([string]$Version, [string]$Package)
+    if (-not $script:InstallerVersionExplicit) { return $script:WiqdVersion }
+    $requested = ($Version -replace '^v', '')
+    if ($requested -eq 'dev') { $requested = 'alpha' }
+    if ($requested -match '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { return $requested }
+    $directory = Join-Path ([IO.Path]::GetTempPath()) ("wiqd-npm-" + [Guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    try {
+        Push-Location -LiteralPath $directory
+        try { $result = Invoke-Native { & $script:NpmExe view "$Package@$requested" version --json --loglevel=error } }
+        finally { Pop-Location }
+        if ($result.Failed) { throw "Unable to resolve npm version or channel '$requested'. Check your registry and retry." }
+        $resolved = ($result.StdOut -join "`n") | ConvertFrom-Json
+        if ($resolved -isnot [string] -or $resolved -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { throw "npm version or channel '$requested' did not resolve to one concrete version." }
+        if ($requested -eq 'alpha' -and $resolved -notmatch '^\d+\.\d+\.\d+-alpha\.') { throw "npm alpha channel points to non-alpha version '$resolved'." }
+        return $resolved
+    } finally { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 function Remove-WiqdPowerShellShim {
@@ -1659,11 +1677,9 @@ function Remove-WiqdPowerShellShim {
             return
         }
 
-        # Remove the .ps1 shim wiqd's own postinstall writes over npm's — an
-        # unsigned .ps1 is refused under the Restricted and AllSigned execution
-        # policies, and because PATHEXT already selected it PowerShell errors
-        # outright rather than falling back to npm's .cmd. Any later
-        # `npm install -g @microsoft/wiqd` re-creates it.
+        # npm owns both launcher files. Remove only the selected-prefix .ps1
+        # launcher so restrictive execution policy selects npm's .cmd sibling;
+        # never rewrite launcher bytes or inspect unrelated prefixes.
         $ps1Shim = Join-Path $npmPrefix.Trim() "wiqd.ps1"
         Remove-Item $ps1Shim -Force -ErrorAction SilentlyContinue
     } catch {
@@ -1671,11 +1687,6 @@ function Remove-WiqdPowerShellShim {
         # block the install because the .cmd shim remains available.
     }
 }
-
-
-# ─────────────────────────────────────────────
-# Quick Start helpers
-# ─────────────────────────────────────────────
 
 function Write-WiqdQuickstart {
     $copilotPresent = Test-CommandExists 'copilot'
@@ -1720,7 +1731,6 @@ function Write-WiqdQuickstart {
     Write-Host "   https://aka.ms/wiqd/docs" -ForegroundColor White
     Write-Host ""
 }
-
 
 
 function Save-WiqdInstallProvenance {
@@ -1826,6 +1836,24 @@ if ($env:WIQD_INSTALLER_TEST_MODE -and $MyInvocation.InvocationName -eq '.') { r
 # terminal call site (at the very end of this file) is the only place that
 # ever calls `exit`, and only when this is a real on-disk invocation.
 function Invoke-WiqdInstall {
+    $retiredInputs = [ordered]@{
+        Source = "-Source is retired. Omit it; the installer uses npm registry acquisition by default."
+        Repo = "-Repo is retired because GitHub Release acquisition is no longer supported."
+        Local = "-Local is retired from bootstrap. Contributors should use .\scripts\install.ps1 -Local or -Worktree."
+        NodeManager = "-NodeManager is retired. Install and select a supported Node.js runtime before running this installer."
+        NodeVersion = "-NodeVersion is retired. Install Node.js $MinNodeVersion or newer before running this installer."
+    }
+    foreach ($entry in $retiredInputs.GetEnumerator()) {
+        if ($script:InstallerBoundParameters.ContainsKey($entry.Key)) { Write-Err $entry.Value; return 1 }
+    }
+
+    if ($Tarball) {
+        $tarballMatches = @(Get-ChildItem -Path $Tarball -File -ErrorAction SilentlyContinue)
+        if ($tarballMatches.Count -ne 1) { Write-Err "-Tarball must identify exactly one existing .tgz package: $Tarball"; return 1 }
+        $Tarball = $tarballMatches[0].FullName
+        if ($Tarball -notmatch '\.tgz$') { Write-Err "-Tarball must point to a .tgz npm package: $Tarball"; return 1 }
+    }
+
     if ($UpdateResultPath -and -not (Test-WiqdUpdateResultPath)) {
         Write-Err 'The wiqd update result path is invalid or untrusted.'
         return 1
@@ -2018,43 +2046,35 @@ if (-not $SkipPlugin) { $totalSteps++ }
 
 Write-Step 1 $totalSteps "Checking Node.js..."
 
-# The 3P installer never installs Node — it only verifies a usable Node is
-# already present and blocks with guidance when it is missing or too old.
+# Caller-provided Node/npm is a hard precondition. Bootstrap never installs,
+# upgrades, selects, or activates a runtime and never mutates PATH or profiles.
 $nodeVer = Get-NodeVersion
 if (-not $nodeVer) {
-    Write-Err "Node.js is required but was not found on PATH."
-    Write-Host ""
-    Write-Host " Install Node.js v$MinNodeVersion or newer, then re-run this installer:" -ForegroundColor Yellow
-    Write-Host "   https://nodejs.org/en/download/" -ForegroundColor White
-    Write-Host ""
+    Write-Err "Node.js $MinNodeVersion or newer is required but no launchable node executable was found."
+    Write-Hint "Install Node.js from https://nodejs.org/, ensure node is on PATH, then rerun this installer."
     return 1
 }
 if ($nodeVer -lt $MinNodeVersion) {
-    Write-Err "Node.js v$nodeVer found, but wiqd requires v$MinNodeVersion or newer."
-    Write-Host ""
-    Write-Host " Upgrade Node.js, then re-run this installer:" -ForegroundColor Yellow
-    Write-Host "   https://nodejs.org/en/download/" -ForegroundColor White
-    Write-Host ""
+    Write-Err "Node.js v$nodeVer is unsupported; wiqd requires v$MinNodeVersion or newer."
+    Write-Hint "Upgrade Node.js, ensure the selected runtime is on PATH, then rerun this installer."
     return 1
 }
 Write-Ok "Node.js v$nodeVer detected"
-
-# nvm4w ships an npm.ps1 wrapper that corrupts args when called via &; resolve
-# npm.cmd once and reuse it (mirrors the top-of-script resolution).
-$npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
-if (-not $npmCmd) { $npmCmd = Get-Command npm -ErrorAction SilentlyContinue }
+$npmCmd = Get-Command npm.cmd -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $npmCmd) { $npmCmd = Get-Command npm -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 }
 $script:NpmExe = if ($npmCmd) { $npmCmd.Source } else { $null }
-
-if (-not (Test-CommandExists "npm")) {
-    Write-Err "npm not found despite Node.js being installed."
-    Write-Hint "Restart your terminal and re-run this installer."
+if (-not $script:NpmExe) {
+    Write-Err "npm is required but no launchable npm executable was found."
+    Write-Hint "Repair the Node.js installation or PATH, then rerun this installer."
     return 1
 }
 $npmVerResult = Invoke-Native { & $script:NpmExe --version }
-$npmVer = if ($npmVerResult.StdOut.Count -gt 0) { $npmVerResult.StdOut[0] } else { 'unknown' }
-Write-Ok "npm v$npmVer ready"
-
-# Surface stale ~/.npmrc keys once, before any npm install runs.
+if ($npmVerResult.Failed -or $npmVerResult.StdOut.Count -eq 0) {
+    Write-Err "npm was found but could not be launched successfully."
+    Write-Hint "Repair the Node.js/npm installation or PATH, then rerun this installer."
+    return 1
+}
+Write-Ok "npm v$($npmVerResult.StdOut[0].Trim()) ready"
 Show-NpmConfigDeprecationWarning
 
 # ─────────────────────────────────────────────
@@ -2063,97 +2083,62 @@ Show-NpmConfigDeprecationWarning
 
 Write-Step 2 $totalSteps "Installing wiqd CLI..."
 
-$currentVersion = Get-NpmGlobalPackageVersion $WiqdPackage
-$installedWiqdVersion = $script:WiqdVersion
-# Resolved unconditionally (not just when something is already installed) because
-# the actual install call below also needs a concrete, pinned version (R29/R30) —
-# never a bare package name or a floating dist-tag.
-$targetVersion = Get-TargetVersion -Source $Source -Repo $Repo -Version $Version -Package $WiqdPackage
-
-# Skip install only when the exact target version already matches — no -Force
-# needed to upgrade.
-$skipInstall = $false
-if ($currentVersion -and -not $Force) {
-    if ($targetVersion -and $currentVersion -eq $targetVersion) {
-        $skipInstall = $true
-    }
-}
-
-if ($skipInstall) {
-    $installedWiqdVersion = $currentVersion
-    # R32: a neutral hand-off, NOT a health claim. Step 3 owns the verdict.
-    Write-Info "Found wiqd v$currentVersion — verifying..."
-    Write-Hint "Use -Force to reinstall"
-    Remove-WiqdPowerShellShim
-} else {
-    if ($currentVersion) {
-        Write-Info "Updating wiqd (current: v$currentVersion)..."
-    }
-
-    $script:NpmInstallConflict = $false
-    $script:NpmInstallPermission = $false
-    $installOk = Install-FromNpmRegistry -package $WiqdPackage -version $targetVersion
-
-    if (-not $installOk) {
-        if ($script:NpmInstallConflict) {
-            # EEXIST advisory (exact file + removal command) already printed by
-            # the install primitive (R35). A local file conflict is not a
-            # network problem, so don't add the connectivity hint.
-            return 1
-        }
-        if ($script:NpmInstallPermission) {
-            # EACCES/EPERM advisory (prefix fix + elevation) already printed by
-            # the install primitive (R35). A local permission failure is not a
-            # network problem, so don't add the connectivity hint.
-            return 1
-        }
-        Write-Err "wiqd installation failed."
-        Write-Host ""
-        if ($script:LastNpmErrorCode -eq "E404") {
-            $safeLastRegistry = Get-SafeRegistryLabel $script:LastNpmRegistry
-            $isPublicRegistry = $script:LastNpmRegistry -and $script:LastNpmRegistry.TrimEnd('/') -eq $script:PublicNpmRegistry.TrimEnd('/')
-            if ($script:LastNpmMissingSpec -and $script:LastNpmMissingSpec -ne "$WiqdPackage@$targetVersion") {
-                Write-Hint "A dependency ($script:LastNpmMissingSpec) was not found in $safeLastRegistry."
-            } else {
-                Write-Hint "$WiqdPackage@$targetVersion was not found in $safeLastRegistry."
-            }
-            if ($isPublicRegistry) {
-                Write-Hint "After it is published, run 'npm install -g $WiqdPackage@$targetVersion --registry $script:PublicNpmRegistry'."
-            } else {
-                Write-Hint "After it becomes available, re-run this installer to use your configured registry."
-            }
-        } else {
-            Write-Hint "Check your network connection and that npm can reach the registry, then re-run."
-        }
+$tarballMetadata = $null
+if ($Tarball) {
+    $tarballMetadata = Get-WiqdTarballMetadata -Path $Tarball
+    if (-not $tarballMetadata) {
+        Write-Err "The supplied tarball is not a valid @microsoft/wiqd package with the required host payload."
         return 1
     }
-
-    Remove-WiqdPowerShellShim
-
-    Refresh-PathInSession
-    $wiqdVer = $null
-    try {
-        $r = Invoke-WiqdProbe { & wiqd --version }
-        if ($r.ExitCode -eq 0 -and $r.StdOut.Count -gt 0) {
-            $wiqdVer = $r.StdOut[0]
-        }
-    } catch { }
-
-    if ($wiqdVer) {
-        $installedWiqdVersion = $wiqdVer.Trim()
-        Write-Ok "wiqd installed: $installedWiqdVersion"
-    } else {
-        $prefixResult = Invoke-Native { & $script:NpmExe config get prefix --loglevel=error }
-        $npmBin = if ($prefixResult.StdOut.Count -gt 0) { $prefixResult.StdOut[0] } else { '' }
-        if ($npmBin) {
-            Write-Warn "wiqd installed but not in PATH"
-            Write-Hint "Add to PATH: $npmBin"
-        } else {
-            Write-Err "wiqd installation could not be verified"
-        }
+    $targetVersion = $tarballMetadata.Version
+} else {
+    try { $targetVersion = Get-TargetVersion -Version $Version -Package $WiqdPackage }
+    catch {
+        Write-Err $_.Exception.Message
+        return 1
     }
 }
+$currentVersion = Get-NpmGlobalPackageVersion $WiqdPackage
+$skipInstall = -not $Tarball -and $currentVersion -and -not $Force -and $currentVersion -eq $targetVersion
+if ($skipInstall) { Write-Info "Found wiqd v$currentVersion — verifying..."; Write-Hint "Use -Force to reinstall" }
+else {
+    if ($currentVersion) { Write-Info "Updating wiqd (current: v$currentVersion)..." }
+    $hostPackageSpec = if ($Tarball) { $Tarball } else { "${WiqdPackage}@$targetVersion" }
+    $installOk = Install-NpmGlobalPackages -Packages @($hostPackageSpec) -DisplayName 'wiqd'
+    if (-not $installOk) {
+        Write-Err "wiqd package installation failed. No alternate source was attempted."
+        return 1
+    }
+}
+# npm's version metadata can survive an interrupted extraction. Diagnose the
+# payload before resolving or executing a launcher that depends on those files.
+if (-not (Confirm-WiqdInstallComplete)) { return 1 }
+Remove-WiqdPowerShellShim
+$script:WiqdLauncher = Get-WiqdInstalledLauncher
+if (-not $script:WiqdLauncher) { Write-WiqdLauncherRepair; return 1 }
+try {
+    $versionProbe = Invoke-WiqdInstalled -Arguments @('--version')
+} catch {
+    Write-WiqdLauncherRepair
+    return 1
+}
+if ($versionProbe.ExitCode -eq 130) { return 130 }
+if ($versionProbe.Failed -or $versionProbe.StdOut.Count -eq 0) { Write-WiqdLauncherRepair; return 1 }
+$installedWiqdVersion = $versionProbe.StdOut[0].Trim()
+if ($installedWiqdVersion -ne $targetVersion) { Write-Err "Requested wiqd v$targetVersion, but npm reports v$installedWiqdVersion installed."; return 1 }
+Write-Ok "wiqd installed: $installedWiqdVersion"
 
+
+# The private wrapper can cause npm to regenerate launchers. Re-apply the
+# selected-prefix execution-policy safeguard after the final npm operation.
+if (-not (Confirm-WiqdInstallComplete)) { return 1 }
+Remove-WiqdPowerShellShim
+$script:WiqdLauncher = Get-WiqdInstalledLauncher
+if (-not $script:WiqdLauncher) {
+    Write-WiqdLauncherRepair
+    return 1
+}
+Show-WiqdLauncherPathWarning
 
 # ─────────────────────────────────────────────
 # Step 3: Verify installation
@@ -2167,21 +2152,8 @@ Write-Step 3 $totalSteps "Verifying installation..."
 
 $installSuccess = $false
 
-# R32: verify on-disk completeness BEFORE trusting a runtime probe. npm reports
-# "already installed" on version metadata alone, so an interrupted install can
-# leave the package registered-but-incomplete and the probe below could either
-# run a stale copy or fail confusingly. A missing/empty required artifact is a
-# fatal verdict with an uninstall-first repair (a plain re-run or -Force is an
-# npm no-op on same-version corruption — only `npm uninstall -g` re-extracts).
-$missingArtifacts = @(Test-WiqdInstallComplete)
-if ($missingArtifacts.Count -gt 0) {
-    Write-Err "installation incomplete. Repair:"
-    Write-Hint "  npm uninstall -g $WiqdPackage, then re-run this installer."
-    return 1
-}
-
 try {
-    $r = Invoke-WiqdProbe { & wiqd --version }
+    $r = Invoke-WiqdInstalled -Arguments @('--version')
     if ($r.ExitCode -eq 130) { return 130 }
     $wiqdCheck = if ($r.StdOut.Count -gt 0) { $r.StdOut[0] } else { $null }
     if ($r.ExitCode -eq 0 -and $wiqdCheck) {
@@ -2194,16 +2166,11 @@ try {
         # plugin composes from the active set. Non-fatal.
         Invoke-WiqdSeedDefaults | Out-Null
     } else {
-        # R32: files are present (completeness passed above) but the CLI didn't
-        # run — it's a PATH problem, not a broken install. Fatal so the exit
-        # code is honest, with the uninstall-first repair as the fallback.
-        Write-Err "wiqd installed, but not yet on PATH. Restart your terminal."
-        Write-Hint "  Still failing? npm uninstall -g $WiqdPackage, then re-run this installer."
+        Write-WiqdLauncherRepair
         return 1
     }
 } catch {
-    Write-Err "wiqd installed, but not yet on PATH. Restart your terminal."
-    Write-Hint "  Still failing? npm uninstall -g $WiqdPackage, then re-run this installer."
+    Write-WiqdLauncherRepair
     return 1
 }
 
@@ -2220,7 +2187,7 @@ if (-not (Show-DependencyStatus)) {
 # un-gated. Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
 if ($eulaChoice -eq 'accepted') {
     try {
-        Invoke-Native { & wiqd eula accept wiqd --installer-stamp } | Out-Null
+        Invoke-WiqdInstalled -Arguments @('eula', 'accept', 'wiqd', '--installer-stamp') | Out-Null
     } catch {
         # Non-fatal: the user can still run `wiqd eula accept wiqd` manually.
     }
@@ -2418,7 +2385,6 @@ if ($installSuccess -and -not $script:PluginInstallFailed -and -not $script:Plug
     Write-Host " ║    ✓ wiqd installed successfully!    ║" -ForegroundColor Green
     Write-Host " ╚══════════════════════════════════════╝" -ForegroundColor Green
     Write-Host ""
-
 
     Write-WiqdQuickstart
 } elseif ($installSuccess -and $script:PluginInstallCancelled) {

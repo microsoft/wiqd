@@ -1,46 +1,14 @@
 ---
 title: Validation & MVL
-description: Validate plugins with offline declarative-agent checks and package-first deep validation.
+description: Plugin static/deep checks, agent source/package/Marketplace validation and editor diagnostics.
 ---
 
 # Validation & MVL
 
-Validation is a fast feedback loop throughout WIQD's plugin lifecycle. Static
-validation checks a plugin's **declarative-agent component** offline; deep
-validation checks its **built app package** through the Microsoft 365 service.
-Neither substitutes for trying skills, connectors, and agent behavior in the
-target experience.
+Validation checks a defined surface, not every aspect of a plugin. Choose the
+command and scope for the project you are working on.
 
-## Two modes
-
-```bash
-wiqd plugin validate --env dev              # static (default), declarative-agent surface
-wiqd plugin validate --mode deep --env dev  # needs an already-built ZIP
-```
-
-Existing agent-focused projects continue to use `wiqd agent validate`.
-
-### Static mode
-
-Static mode runs the **Microsoft Validation Layer (MVL)** — the same engine the M365 platform uses to accept a manifest. It's offline, needs no auth, and finishes in sub-second on a normal project. It catches:
-
-- Schema violations (missing required fields, wrong types, bad enum values).
-- Cross-file references that don't resolve (e.g., a capability that points to a file that isn't there).
-- Constraints the M365 platform enforces but a JSON schema alone can't (e.g., maximum number of conversation starters).
-
-This is the mode you should run on every save, on every commit hook, and on every PR.
-
-For plugins, static mode does not inspect the root app manifest, skill content,
-or root connectors. A skill-only or connector-only plugin has no
-declarative-agent surface to check, so a static pass does not establish
-whole-plugin validity.
-
-### Deep mode
-
-Deep mode resolves an already-built app package and hands it to wiqd Core's
-in-process validation handler for platform-aware package checks. It does not
-build the package or run static validation first. For a new plugin, provision
-before packaging so the selected environment and app identity exist:
+## Plugin validation
 
 ```bash
 wiqd plugin validate --env dev
@@ -49,40 +17,72 @@ wiqd plugin package --env dev
 wiqd plugin validate --mode deep --env dev
 ```
 
-Deep mode needs service access and does not require the ATK CLI. Inspect its
-findings before sharing or submitting to your tenant catalog.
+Static mode is offline and checks the **declarative-agent component** and its
+references, not the root app manifest, skills or root connectors. A skill-only
+or connector-only plugin has no declarative-agent surface to check, so a static
+pass does not establish whole-plugin validity.
+
+Deep mode checks an **already-built app package** through Core's in-process
+Microsoft 365 validation handler. It does not build or run static validation first.
+Provision before packaging so the selected environment and app identity exist.
+Deep validation needs service access, not the retired ATK CLI.
+
+Inspect findings before sharing or submitting to your tenant catalog. Deep JSON
+can return exit code `0` with `data.valid: false`; automation must inspect that
+field. Neither static nor deep checks replace trying skills, connectors and
+behavior in the target experience.
+
+## Agent source, package and Marketplace validation
+
+Existing agent projects use three explicit scopes:
+
+```bash
+wiqd agent validate --mode source --path ./my-agent --env local
+wiqd agent validate --mode package --package-file ./final.zip
+wiqd agent validate --mode marketplace --package-file ./final.zip --listing-file ./listing.json
+```
+
+Source runs offline one-shot checks through the same `DiagnosticsService` used
+by the editor LSP. It initially checks saved `appPackage/declarativeAgent.json`
+and returns checked files and diagnostic codes, severities and locations.
+It needs no ZIP, build, sign-in or report directory and does not start an LSP
+server. This is not project-wide or final-package acceptance. Environment context
+is limited to the selected `--env` (`local` by default).
+
+Package is the default when `--mode` is omitted. It uploads a read-only copy of
+an existing captured ZIP to TDP through Core. Marketplace includes that package
+validation and StoreOps policy checks on the same snapshot. Neither mode builds
+automatically. Select an explicit ZIP, or have exactly one nonrecursive ZIP in
+`appPackage/build`; missing or ambiguous inputs fail rather than choosing the newest.
+Unavailable authentication or evidence is incomplete, not an implicit pass.
+
+Use the same project/environment for source and authorized package/provision
+operations. These coding-agent prechecks are workflow gates, not newly forced
+backend gates. Source has no ZIP identity and cannot prove that a later provision
+uploads a previously validated package. Validation never authorizes publication.
+
+For agent validation, exit `0` means passed; `1` means findings, incomplete work,
+input or report-write failure; `2` means invalid source project or missing
+runtime/configuration; `130` means cancelled. Read success `data` or completed
+non-pass `error.data` and use `validation.result` for the overall verdict.
+Warnings do not block. Package/Marketplace reports preserve captured inputs;
+source has no HTML report.
+
+Old agent modes `static`, `deep`, `manifest` and comma-combined selections are
+rejected with migration guidance. **Plugin** validation retains its separate
+static/deep syntax.
 
 ## Real-time validation in VS Code
 
-The [VS Code extension](/concepts/vscode-extension/) starts a `wiqd agent lsp` server that streams the same MVL diagnostics into the editor as you type. No save-and-run loop — squigglies appear inline, with hover details and quick fixes where MVL can suggest them.
-
-## Where validation fits in the lifecycle
-
-```text
-compose/edit ─▶ static validate ─▶ provision ─▶ package ─▶ deep validate ─▶ share/publish
-```
-
-Treat validation as a precondition for every other command in the pipeline. Work IQ Dev Tools don't *force* you to validate before provisioning, but if you don't, you'll find out the same problems the slow way — through an upstream error halfway through a deploy.
-
-## Exit codes
-
-```text
-0    Command completed; for deep JSON output, inspect data.valid
-1    Static validation errors (your manifest needs fixing)
-2    Infrastructure error (missing project, package, or validation dependency)
-130  Cancelled (Ctrl+C)
-```
-
-Deep validation findings are a designed domain outcome: the command can exit `0`
-with `data.valid: false`. Automation must inspect that field rather than relying
-only on the process exit code. See [Exit codes & output](/concepts/exit-codes-output/)
-for the shared command contract.
+The [VS Code extension](/concepts/vscode-extension/) starts `wiqd agent lsp`
+for live open-buffer diagnostics, hovers and available quick fixes. Unsaved
+buffers and editor-only advisory checks can differ from saved-source results;
+neither promises identical editor and final-ZIP findings.
 
 ## Go deeper
 
-- [`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) — plugin validation
-- [`wiqd agent validate`](/cli/reference/#wiqd-agent-validate) — existing agent-project validation
-- [`wiqd agent lsp`](/extensions/provided/validate/cli/) — the editor integration
-- [Validate extension](/extensions/provided/validate/) — the MVL engine + LSP server
-- [VS Code extension](/concepts/vscode-extension/) — installing the live editor experience
-- [Build a Plugin](/getting-started/build-a-plugin/) — where validation sits in plugin delivery
+- [Agent validation guide](/cli/agent/agent-validate/) - options, JSON, authorized repair and compatible CLI/plugin upgrades with fresh sessions
+- [Plugin validation](/cli/reference/#wiqd-plugin-validate) - plugin static/deep commands
+- [Exit codes & output](/concepts/exit-codes-output/) - shared command contract
+- [Validate extension](/extensions/provided/validate/) - runtime and LSP integration
+- [Build a Plugin](/getting-started/build-a-plugin/) - plugin delivery
