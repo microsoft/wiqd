@@ -155,6 +155,56 @@
           }
         }
       }
+    },
+    {
+      "not": {
+        "required": ["runtime", "upstream"]
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "required": ["runtime"]
+        }
+      },
+      "then": {
+        "properties": {
+          "commands": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/LegacyCommandWithoutProtocolProcess"
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "definitions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/CommandWithoutProtocolProcess"
+                    }
+                  },
+                  "additionalNamespaces": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "_description": {},
+                        "_gatedBy": {}
+                      },
+                      "additionalProperties": {
+                        "$ref": "#/definitions/CommandWithoutProtocolProcess"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "description": "A wiqd extension manifest (`wiqd-extension.json`). Declares the commands, upstream tool, auth providers, doctor checks, and mock responses an extension contributes to the wiqd host.",
@@ -210,6 +260,19 @@
       },
       "required": ["name", "binary", "rules"],
       "description": "A manifest-declared health check run by `wiqd doctor`. The host resolves `binary`, probes it with `args`, and maps the result to a row via the declarative outcomes — it never branches on the extension's identity. The shape is rich enough to express a tri-state probe (the workiq `--json` check): `missing` (binary absent), `onError` (probe threw), and an ordered `rules` list (first match wins) over the completed probe."
+    },
+    "CommandWithoutProtocolProcess": {
+      "not": {
+        "required": ["protocolProcess"]
+      },
+      "properties": {
+        "subcommands": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/CommandWithoutProtocolProcess"
+          }
+        }
+      }
     },
     "CompletionSpec": {
       "type": "object",
@@ -1034,6 +1097,19 @@
       },
       "required": ["name", "handler"]
     },
+    "LegacyCommandWithoutProtocolProcess": {
+      "properties": {
+        "definition": {
+          "$ref": "#/definitions/CommandWithoutProtocolProcess"
+        },
+        "subcommands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LegacyCommandWithoutProtocolProcess"
+          }
+        }
+      }
+    },
     "ManagedInstallConfig": {
       "type": "object",
       "properties": {
@@ -1262,6 +1338,10 @@
           "$ref": "#/definitions/HandlerConfig",
           "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, passthroughExitCodes, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
+        "protocolProcess": {
+          "$ref": "#/definitions/ProtocolProcessConfig",
+          "description": "Package-local stdio protocol; selects a process without importing the runtime."
+        },
         "nativeDryRunHandler": {
           "type": "string",
           "description": "When set, and the user passes `--dry-run`, the executor delegates to this named native TypeScript handler instead of spawning the upstream binary. The name must be registered in the host's dry-run handler registry. This lets an ATK-backed command (e.g. `agent publish`) expose a no-submit validation path without any host code knowing which command it is — the manifest owns the routing decision."
@@ -1309,6 +1389,25 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "required": ["protocolProcess"]
+          },
+          "then": {
+            "properties": {
+              "description": {},
+              "hidden": {},
+              "aliases": {},
+              "gatedBy": {},
+              "activationWhen": {},
+              "options": {},
+              "preflight": {},
+              "validate": {},
+              "protocolProcess": {}
+            },
+            "additionalProperties": false
+          }
+        },
         {
           "if": {
             "required": ["passthroughExitCodes"]
@@ -1784,6 +1883,25 @@
           "type": "string"
         }
       }
+    },
+    "ProtocolProcessConfig": {
+      "type": "object",
+      "properties": {
+        "binary": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?![\\s\\S])"
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?![\\s\\S]*\\u0000)(?![\\s\\S]*\\$\\{)[\\s\\S]*$"
+          }
+        }
+      },
+      "required": ["binary", "args"],
+      "description": "Closed protocol launch declaration: a portable binary basename and literal argv.",
+      "additionalProperties": false
     },
     "RuntimeConfig": {
       "type": "object",

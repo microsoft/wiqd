@@ -89,7 +89,8 @@ Packaging succeeds only when fx-core succeeds and the resulting ZIP exists and i
 
 - [`wiqd agent provision`](/cli/reference/#wiqd-agent-provision) — create or update the selected
   environment before packaging.
-- [`wiqd agent validate`](/cli/reference/#wiqd-agent-validate) — run static validation.
-- [`wiqd agent validate --mode deep`](/cli/reference/#wiqd-agent-validate) — validate an already
-  built package; deep validation does not build one.
+- [`wiqd agent validate --mode source`](/cli/agent/agent-validate/) — offline saved-source checks
+  with the same packaging path/environment; the coding-agent workflow runs this before building.
+- [`wiqd agent validate --mode package`](/cli/agent/agent-validate/) — validate the exact
+  built ZIP. Marketplace mode includes package and policy checks; neither mode builds.
 - [Agent lifecycle](/concepts/agent-lifecycle/) — the full authoring flow.

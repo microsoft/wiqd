@@ -62,8 +62,8 @@ not implicitly provision.
 Catch problems before deploying.
 
 ```bash
-wiqd agent validate --env dev              # fast static checks
-wiqd agent validate --mode deep --env dev  # full Microsoft 365 project validation
+wiqd agent validate --mode source --path . --env local  # offline saved-source diagnostics
+wiqd agent validate --mode package --package-file ./final.zip  # existing final ZIP through TDP
 ```
 
 Static mode runs the Microsoft Validation Layer (MVL) engine offline — no network, no auth, sub-second. Deep mode adds semantic project checks through the validation/core extension boundary. See [Validation & MVL](/concepts/validation-mvl/).

@@ -203,6 +203,17 @@ wiqd plugin list --root .
 wiqd plugin delete --env dev --yes
 ```
 
+After provisioning or sharing, wiqd prints a **Cowork install/test** link in
+this form:
+
+```text
+https://m365.cloud.microsoft/cowork#/customize/plugins/<M365_TITLE_ID>
+```
+
+Open that link to install and test the standalone plugin in Cowork. Declarative
+agents use a different Microsoft 365 Copilot chat link; wiqd keeps that agent
+route separate from standalone plugin lifecycle output.
+
 :::note
 **Order matters:** `provision` must run before `package` — `provision` writes `.env.<env>` under
 the `m365agents.yml` `environmentFolderPath` (default `./env`), which `package` needs to resolve

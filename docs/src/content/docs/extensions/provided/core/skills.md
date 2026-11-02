@@ -14,7 +14,9 @@ optional components, alongside skills and connectors.
 
 - **Scaffold and compose** — create a plugin, then add skills, connectors, and an optional declarative agent.
 - **Edit** — modify instructions, capabilities, actions, plugins, auth, and localization.
-- **Validate** — run static checks and deep service validation before deploying.
+- **Source prechecks** — use explicit offline source checks during edit/package/provision flows.
+  Explicit validation and finding-bound repair route to the [Validate workflow](/extensions/provided/validate/skills/).
+- **Plugin validation** — use plugin static checks and deep validation of a built package.
 - **Provision** — register the plugin in an environment.
 - **Package** — build the deployable `.zip`.
 - **Share / collaborate** — grant user, tenant, or collaborator access.
@@ -27,7 +29,9 @@ optional components, alongside skills and connectors.
 
 Existing agent-focused workflows also remain available:
 
-> create agent · new agent · scaffold agent · edit my agent · update my agent · add a capability · add a plugin · provision my agent · deploy my agent · package my agent · share my agent · delete my agent · show my agent · manage environments · validate my agent · fix my agent manifest · localize my agent
+> create agent · new agent · scaffold agent · edit my agent · update my agent · add a capability · add a plugin · provision my agent · deploy my agent · package my agent · share my agent · delete my agent · show my agent · manage environments · localize my agent
+
+Explicit agent validation and finding repair route to the canonical Validate workflow.
 
 Improve the plugin through validation, repairs, and testing in its target
 experience. When it includes a deployed declarative agent,

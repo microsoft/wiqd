@@ -17,18 +17,18 @@
 #   cat install.sh   # review
 #   bash install.sh  # run
 #
-# Installs the wiqd CLI and all dependencies:
-#   1. Node.js LTS (if not already installed)
+# Installs the wiqd CLI and retained integrations:
+#   1. Verify caller-provided Node.js/npm at the supported floor
 #   2. @microsoft/wiqd (npm global package — includes extension payloads)
 #   3. Verify installation (`wiqd doctor` reconciles active managed Work IQ
 #      and Eval generations; related commands retry if verification was incomplete)
 #   4. Work IQ VS Code extension (optional)
-#   5. wiqd plugin — installed only for the plugin host(s) already on PATH
-#      (Copilot CLI and/or Claude Code). Never installs a host; skipped
-#      gracefully when neither is present. Skip entirely with --skip-plugin.
+#   5. Host-plugin installation for supported hosts already on PATH.
+#      Skip with --skip-plugin.
 #
-# Sources:
-#   --source npm   Install from the npm registry (default)
+# Acquisition is npm registry by default. --tarball may supply one explicit
+# compatible host package. Source/repo/local/node-manager/
+# node-version inputs are retired and fail with migration guidance.
 #
 # Requires: Internet access, curl or wget.
 
@@ -38,20 +38,24 @@ set -euo pipefail
 # Defaults
 # ─────────────────────────────────────────────
 
-SOURCE="npm"
 VERSION="latest"
 VERSION_EXPLICIT=false
 CHANNEL=""
-REPO="microsoft/wiqd"
 SKIP_VSCODE=false
 SKIP_PLUGIN=false
 PLUGIN_NON_FATAL=false
 INSIDERS=false
 UPDATE_RESULT_PATH="${WIQD_UPDATE_RESULT_PATH:-}"
-NODE_VERSION="24"
 FORCE=false
+# Explicit candidates use the same npm primitive as registry acquisition.
+TARBALL=""
+INSTALLER_ACQUISITION="registry"
+[[ -z "$TARBALL" ]] || INSTALLER_ACQUISITION="tarball"
 MIN_NODE_VERSION="24.15.0"
 WIQD_PACKAGE="@microsoft/wiqd"
+WIQD_LAUNCHER=""
+NODE_EXE=""
+NPM_EXE=""
 
 # The canonical public npm registry used only by explicit recovery paths and
 # trusted copyable hints. Normal installer flows do not pin registry selection.
@@ -86,7 +90,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.22.0"
+WIQD_INSTALLER_VERSION="0.23.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -108,12 +112,12 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --source)
             require_option_value "$@"
-            SOURCE="$2"
-            if [[ "$SOURCE" != "npm" ]]; then
-                echo "ERROR: --source must be 'npm'" >&2
-                exit 1
-            fi
-            shift 2
+            echo "ERROR: --source is retired. Omit it; the installer uses npm registry acquisition by default." >&2
+            exit 1
+            ;;
+        --source=*)
+            echo "ERROR: --source is retired. Omit it; the installer uses npm registry acquisition by default." >&2
+            exit 1
             ;;
         --version)
             require_option_value "$@"
@@ -132,8 +136,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --repo)
             require_option_value "$@"
-            REPO="$2"
-            shift 2
+            echo "ERROR: --repo is retired because GitHub Release acquisition is no longer supported." >&2
+            exit 1
+            ;;
+        --repo=*)
+            echo "ERROR: --repo is retired because GitHub Release acquisition is no longer supported." >&2
+            exit 1
             ;;
         --skip-vscode)
             SKIP_VSCODE=true
@@ -154,27 +162,47 @@ while [[ $# -gt 0 ]]; do
             ;;
         --node-version)
             require_option_value "$@"
-            NODE_VERSION="$2"
-            shift 2
+            echo "ERROR: --node-version is retired. Install Node.js ${MIN_NODE_VERSION} or newer before running this installer." >&2
+            exit 1
+            ;;
+        --node-version=*)
+            echo "ERROR: --node-version is retired. Install Node.js ${MIN_NODE_VERSION} or newer before running this installer." >&2
+            exit 1
             ;;
         --force)
             FORCE=true
             shift
             ;;
+        --tarball)
+            require_option_value "$@"
+            TARBALL="$2"
+            shift 2
+            ;;
+        --node-manager)
+            require_option_value "$@"
+            echo "ERROR: --node-manager is retired. Install and select a supported Node.js runtime before running this installer." >&2
+            exit 1
+            ;;
+        --node-manager=*)
+            echo "ERROR: --node-manager is retired. Install and select a supported Node.js runtime before running this installer." >&2
+            exit 1
+            ;;
+        --local)
+            echo "ERROR: --local is retired from bootstrap. Contributors should use ./scripts/install.ps1 -Local or -Worktree." >&2
+            exit 1
+            ;;
         --help|-h)
             echo "Usage: install.sh [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  --source <npm>           Installation source (default: npm)"
             echo "  --version <version>      Specific version to install (default: stamped version)"
             echo "  --channel <channel>      Release channel: latest, preview, dev (npm alpha)"
             echo "                           alpha is accepted as a compatibility alias for dev"
-            echo "  --repo <host/owner/repo> GitHub repository (default: microsoft/wiqd)"
             echo "  --skip-vscode            Skip VS Code extension installation"
             echo "  --skip-plugin            Skip Copilot CLI plugin installation"
             echo "  --insiders               Install extension in VS Code Insiders"
-            echo "  --node-version <ver>     Node.js major version (default: 24)"
             echo "  --force                  Reinstall even if already present"
+            echo "  --tarball <path>         Install an explicit compatible @microsoft/wiqd .tgz"
             echo "  --help                   Show this help message"
             exit 0
             ;;
@@ -190,15 +218,29 @@ if [[ -n "$CHANNEL" ]]; then
         echo "ERROR: --channel and --version cannot be combined." >&2
         exit 1
     fi
-    if [[ "$SOURCE" != "npm" ]]; then
-        echo "ERROR: --channel requires --source npm." >&2
-        exit 1
-    fi
     VERSION="$CHANNEL"
     if [[ "$VERSION" == "dev" ]]; then
         VERSION="alpha"
     fi
     VERSION_EXPLICIT=true
+fi
+# --tarball installs a specific compatible .tgz the caller already has on disk.
+if [[ -n "$TARBALL" ]]; then
+    if [[ ! -f "$TARBALL" ]]; then
+        echo "ERROR: --tarball not found: $TARBALL" >&2
+        exit 1
+    fi
+    if [[ "$TARBALL" != *.tgz ]]; then
+        echo "ERROR: --tarball must point to a .tgz package (got: $TARBALL)" >&2
+        exit 1
+    fi
+    # Metadata probing changes directories before npm reads the caller's archive.
+    if ! tarball_directory=$(cd "$(dirname "$TARBALL")" && pwd -P); then
+        echo "ERROR: --tarball directory could not be resolved: $TARBALL" >&2
+        exit 1
+    fi
+    TARBALL="$tarball_directory/$(basename "$TARBALL")"
+    INSTALLER_ACQUISITION="tarball"
 fi
 
 # ─────────────────────────────────────────────
@@ -234,6 +276,13 @@ write_err()   { printf "${RED} ERROR: %s${RESET}\n" "$1"; }
 write_hint()  { printf "${GRAY} %s${RESET}\n" "$1"; }
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
+resolve_executable_command() {
+    local candidate
+    candidate=$(type -P "$1" 2>/dev/null) || return 1
+    candidate="${candidate%%$'\n'*}"
+    [[ -n "$candidate" && -f "$candidate" && -x "$candidate" ]] || return 1
+    printf '%s\n' "$candidate"
+}
 
 # Sanitize captured subprocess output before echoing it to a terminal or CI
 # log. npm relays arbitrary transitive lifecycle-script output verbatim, so a
@@ -419,24 +468,6 @@ show_npm_config_deprecation_warning() {
     echo ""
 }
 
-
-download_to_stdout() {
-    local url="$1"
-    if command_exists curl; then
-        curl -fsSL "$url"
-    elif command_exists wget; then
-        wget -qO- "$url"
-    else
-        return 1
-    fi
-}
-
-can_prompt_on_tty() {
-    [[ -z "${CI:-}" && -r /dev/tty && -w /dev/tty ]]
-}
-
-
-# Compare semver versions: returns 0 if $1 >= $2
 version_gte() {
     local IFS=.
     local i ver1=($1) ver2=($2)
@@ -450,39 +481,18 @@ version_gte() {
 }
 
 get_node_version() {
-    if command_exists node; then
+    local node_exe="${NODE_EXE:-}"
+    if [[ -z "$node_exe" ]]; then
+        node_exe=$(resolve_executable_command node) || return 0
+    fi
+    if [[ -n "$node_exe" ]]; then
         local raw
-        raw=$(node --version 2>/dev/null || true)
+        raw=$("$node_exe" --version 2>/dev/null || true)
         echo "${raw#v}"
     fi
     return 0
 }
 
-get_os() {
-    local uname_s
-    uname_s=$(uname -s)
-    case "$uname_s" in
-        Darwin) echo "macos" ;;
-        Linux)  echo "linux" ;;
-        *)      echo "unknown" ;;
-    esac
-}
-
-
-# ─────────────────────────────────────────────
-# Quick Start helpers
-# ─────────────────────────────────────────────
-
-# R32: npm's "already installed" decision is metadata-only — it never checksums
-# the extracted tree, so an interrupted install can leave @microsoft/wiqd
-# registered-but-incomplete while the version-skip gate still fires. This checks
-# the two artifacts that MUST exist and be non-empty for the CLI to run: the bin
-# launcher and the esbuild bundle. Transitive deps, seeded config, and
-# package.json are deliberately excluded (pruned deps produce false positives;
-# package.json is what npm already trusts). Prints one missing-or-empty artifact
-# path per line and returns 1 when the install is incomplete; returns 0 (no
-# output) when complete. Fails closed (reports incomplete) when the npm global
-# root can't be resolved rather than passing blind.
 test_wiqd_install_complete() {
     if ! command_exists npm; then
         echo "npm (could not resolve npm global root)"
@@ -509,6 +519,20 @@ test_wiqd_install_complete() {
     done
 
     [[ "$incomplete" == "1" ]]
+}
+
+verify_wiqd_install_complete() {
+    if test_wiqd_install_complete >/dev/null; then return 0; fi
+    write_err "installation incomplete. Repair:"
+    write_hint "  npm uninstall -g $WIQD_PACKAGE, then re-run this installer."
+    return 1
+}
+
+write_wiqd_launcher_repair() {
+    write_err "wiqd is installed, but the npm-owned launcher could not run."
+    write_hint "wiqd installed, but not yet on PATH. Restart your terminal."
+    write_hint "Ensure Node.js and the selected npm prefix are on PATH, then retry."
+    write_hint "Still failing? npm uninstall -g $WIQD_PACKAGE, then re-run this installer."
 }
 
 # Renders the closing Quick Start block. Kept compact and helper-driven to
@@ -561,34 +585,12 @@ print_wiqd_quickstart() {
     echo ""
 }
 
-# Returns 0 (true) when the installer is allowed to prompt interactively.
-# Falls closed: any failed test → not interactive. The
-# probe MUST use /dev/tty (not [ -t 0 ]) because the most common public-
-# installer invocation form `curl ... | bash` pipes the SCRIPT through
-# stdin — so -t 0 is false even though the user has a controlling
-# terminal. Mirrors can_prompt_on_tty. Public island: both 1P and 3P
-# installers gate their EULA prompt on this function, so it must survive
-# the mirror strip. NON_INTERACTIVE defaults to false under set -u since
-# the 3P installer never defines it. The check below is a STRING compare,
-# not a truth-value command execution: in the generated public installer the
-# NON_INTERACTIVE=false default and the --non-interactive flag parser are
-# both stripped out of the public build, so this value comes entirely from
-# the caller's environment. Running it as a command (the old `if
-# ${VAR:-false};` form) would execute whatever the caller set NON_INTERACTIVE
-# to — e.g. the widespread `NON_INTERACTIVE=1` convention runs `1` (command
-# not found, falls through to interactive) and an arbitrary string is
-# outright eval'd.
 is_installer_interactive() {
     if [[ "${NON_INTERACTIVE:-false}" == "true" ]]; then return 1; fi
     [[ -z "${CI:-}" ]] || return 1
     [[ -z "${WIQD_INSTALLER_NON_INTERACTIVE:-}" ]] || return 1
     [[ -r /dev/tty && -w /dev/tty ]]
 }
-
-# ─────────────────────────────────────────────
-# Installation helpers
-# ─────────────────────────────────────────────
-
 # native-plugin:start
 wiqd_plugin_json() {
     node -e '
@@ -1581,15 +1583,41 @@ install_npm_global_packages() {
     return 0
 }
 
-# Seed the default extension registrations at install time via the host's own
-# hidden `wiqd ext seed-defaults` command. Activation is registration-only:
-# mere presence on disk never activates an
-# extension, so the install path registers the defaults. The command is
-# idempotent (the seededDefaults ledger gates each id), so a re-run never
-# resurrects a default the user removed and a second invocation is a no-op.
-# Non-fatal: a hiccup leaves wiqd installed and recoverable via `wiqd doctor`.
+resolve_wiqd_launcher() {
+    local prefix candidate
+    prefix=$(npm prefix -g --loglevel=error 2>/dev/null | head -1 | tr -d '\r') || return 1
+    [[ -n "$prefix" ]] || return 1
+    candidate="$prefix/bin/wiqd"
+    [[ -f "$candidate" && -x "$candidate" ]] || return 1
+    printf '%s\n' "$candidate"
+}
+
+show_wiqd_launcher_path_warning() {
+    local kind resolved=""
+    kind=$(type -t wiqd) || kind=""
+    if [[ "$kind" == "file" ]]; then
+        resolved=$(command -v wiqd)
+        [[ "$resolved" != "$WIQD_LAUNCHER" ]] || return 0
+    elif [[ -n "$kind" ]]; then
+        resolved="$kind: wiqd"
+    fi
+    if [[ -n "$resolved" ]]; then
+        write_warn "The normal wiqd command resolves elsewhere: $resolved"
+    else
+        write_warn "The normal wiqd command is not available in this shell."
+    fi
+    write_hint "Verified npm launcher: $WIQD_LAUNCHER"
+    write_hint "Compare 'type -a wiqd' with 'npm prefix -g'. Reorder PATH or manually remove the stale launcher, then restart your terminal."
+    write_hint "No launchers outside the selected npm prefix were changed."
+}
+
+run_wiqd_installed() {
+    [[ -n "${WIQD_LAUNCHER:-}" ]] || return 2
+    WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 "$WIQD_LAUNCHER" "$@"
+}
+
 seed_wiqd_defaults() {
-    if wiqd ext seed-defaults >/dev/null 2>&1; then
+    if run_wiqd_installed ext seed-defaults >/dev/null 2>&1; then
         write_ok "Default extensions registered"
         return 0
     fi
@@ -1626,7 +1654,7 @@ extensions_check_has_id() {
 # node CLI, so it parses the envelope into TAB-separated name/status/message.
 show_dependency_status() {
     local json checks
-    json=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd doctor --json 2>/dev/null || true)
+    json=$(run_wiqd_installed doctor --json 2>/dev/null || true)
     if [[ -z "$json" ]]; then
         write_err "Could not verify required downstream components."
         write_hint "Re-run: npm install -g @microsoft/wiqd"
@@ -1804,6 +1832,15 @@ show_dependency_status() {
     return 0
 }
 
+install_from_tarball() {
+    # Install wiqd from a caller-supplied .tgz already on disk — typically a
+    # per-PR CI test build from the run's `npm-package` artifact. Reuses the
+    # shared `npm install -g <tarball>` primitive, so it gets the same
+    # single-pass install as every other source. Path validated by the
+    # top-level guard so release test-package coordinates cannot affect public installs.
+    local tarball="$1"
+    install_npm_global_packages "$(basename "$tarball")" "$tarball"
+}
 
 install_from_npm_registry() {
     local package="$1"
@@ -1881,67 +1918,51 @@ get_bundled_cli_package_version() {
     done
 }
 
+get_wiqd_tarball_version() {
+    local tarball="$1" directory metadata status=0
+    directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-tarball-probe.XXXXXXXX") || return 1
+    metadata=$(cd "$directory" && npm pack "$tarball" --ignore-scripts --dry-run --json --loglevel=error) || status=$?
+    rm -rf "$directory"
+    [[ "$status" -eq 0 ]] || return 1
+    printf '%s' "$metadata" | node --input-type=commonjs -e '
+const rows=JSON.parse(require("node:fs").readFileSync(0,"utf8"));
+if(!Array.isArray(rows)||rows.length!==1)process.exit(1);
+const row=rows[0], files=new Set((row.files||[]).map(x=>x.path));
+if(row.name!=="@microsoft/wiqd"||typeof row.version!=="string"||
+ !files.has("extensions/wiqd-ext-core/wiqd-extension.json")||
+ !files.has("extensions/wiqd-ext-core/dist/index.js"))process.exit(1);
+process.stdout.write(row.version);'
+}
+
 get_target_version() {
-    local source="$1"
-    local repo="$2"
-    local version="$3"
-    local package="$4"
-
-    if [[ -n "$CHANNEL" || "$version" == "alpha" ]]; then
-        if [[ "$source" != "npm" && "$source" != "auto" ]]; then
-            echo "ERROR: Alpha/channel installation requires npm." >&2
-            return 1
-        fi
-        local directory resolved status=0
-        directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-npm.XXXXXXXX") || return 1
-        resolved=$(cd "$directory" && npm view "${package}@${version}" version --json --loglevel=error) || status=$?
-        rm -rf "$directory"
-        if [[ "$status" -ne 0 ]]; then
-            echo "ERROR: Unable to resolve npm channel '$version'. Check your registry and retry." >&2
-            return 1
-        fi
-        resolved=$(node -e 'const v=JSON.parse(process.argv[1]); if(typeof v!=="string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v)) process.exit(1); process.stdout.write(v)' "$resolved") || {
-            echo "ERROR: npm channel '$version' did not resolve to one concrete version." >&2
-            return 1
-        }
-        if [[ "$version" == "alpha" && ! "$resolved" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\. ]]; then
-            echo "ERROR: npm alpha channel points to non-alpha version '$resolved'." >&2
-            return 1
-        fi
-        printf '%s\n' "$resolved"
+    local version="$1" package="$2"
+    if [[ "$VERSION_EXPLICIT" != true ]]; then
+        printf '%s\n' "$WIQD_INSTALLER_VERSION"
         return
     fi
-    # Explicit version or dist-tag requested — resolve it to a concrete version via
-    # the registry (R30) so the up-to-date comparison never diffs a moving tag
-    # (e.g. "preview") against an already-installed concrete version. Falls back to
-    # the literal (leading 'v' stripped) if the registry can't be reached.
-    if [[ -n "$version" && "$version" != "latest" ]]; then
-        if [[ "$source" == "npm" || "$source" == "auto" ]]; then
-            local resolved npm_working_directory
-            npm_working_directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-npm.XXXXXXXX") || {
-                echo "${version#v}"
-                return
-            }
-            resolved=$(cd "$npm_working_directory" && npm view "${package}@${version}" version 2>/dev/null || true)
-            rm -rf "$npm_working_directory"
-            if [[ -n "$resolved" ]]; then
-                echo "$resolved"
-                return
-            fi
-        fi
-        echo "${version#v}"
+    version="${version#v}"
+    if [[ "$version" == dev ]]; then version=alpha; fi
+    if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+        printf '%s\n' "$version"
         return
     fi
-
-
-    # No explicit version, npm source — pin to the exact version stamped into this
-    # installer at release time (R29) rather than querying the registry: during the
-    # preview period the 'latest' dist-tag carries no prerelease, so resolving it
-    # here would silently skip the preview build this installer was published for.
-    if [[ "$source" == "npm" || "$source" == "auto" ]]; then
-        echo "$WIQD_INSTALLER_VERSION"
-        return
+    local directory resolved status=0
+    directory=$(mktemp -d "${TMPDIR:-/tmp}/wiqd-npm.XXXXXXXX") || return 1
+    resolved=$(cd "$directory" && npm view "${package}@${version}" version --json --loglevel=error) || status=$?
+    rm -rf "$directory"
+    if [[ "$status" -ne 0 ]]; then
+        echo "ERROR: Unable to resolve npm version or channel '$version'. Check your registry and retry." >&2
+        return 1
     fi
+    resolved=$(node -e 'const v=JSON.parse(process.argv[1]);if(typeof v!=="string"||!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v))process.exit(1);process.stdout.write(v)' "$resolved") || {
+        echo "ERROR: npm version or channel '$version' did not resolve to one concrete version." >&2
+        return 1
+    }
+    if [[ "$version" == alpha && ! "$resolved" =~ ^[0-9]+\.[0-9]+\.[0-9]+-alpha\. ]]; then
+        echo "ERROR: npm alpha channel points to non-alpha version '$resolved'." >&2
+        return 1
+    fi
+    printf '%s\n' "$resolved"
 }
 
 record_install_provenance() {
@@ -2259,31 +2280,38 @@ if ! $SKIP_PLUGIN; then TOTAL_STEPS=$((TOTAL_STEPS + 1)); fi
 
 write_step 1 "$TOTAL_STEPS" "Checking Node.js..."
 
-# The 3P installer never installs or manages Node — it only checks that a
-# compatible Node + npm are already present and blocks with guidance if not.
+# Caller-provided Node/npm is a hard precondition. Bootstrap never installs,
+# upgrades, selects, or activates a runtime and never mutates PATH or profiles.
+NODE_EXE=$(resolve_executable_command node || true)
 node_ver=$(get_node_version)
 if [[ -z "$node_ver" ]]; then
-    write_err "Node.js v${MIN_NODE_VERSION}+ is required but was not found."
-    write_hint "Install Node.js v${NODE_VERSION} from https://nodejs.org/ (or via your package manager), then re-run this installer."
+    write_err "Node.js ${MIN_NODE_VERSION} or newer is required but no launchable node executable was found."
+    write_hint "Install Node.js from https://nodejs.org/, ensure node is on PATH, then rerun this installer."
     exit 1
 fi
 if ! version_gte "$node_ver" "$MIN_NODE_VERSION"; then
-    write_err "Node.js v$node_ver found but v${MIN_NODE_VERSION}+ is required."
-    write_hint "Upgrade Node.js to v${NODE_VERSION}+ from https://nodejs.org/ (or via your package manager), then re-run this installer."
+    write_err "Node.js v$node_ver is unsupported; wiqd requires v${MIN_NODE_VERSION} or newer."
+    write_hint "Upgrade Node.js, ensure the selected runtime is on PATH, then rerun this installer."
     exit 1
 fi
 write_ok "Node.js v$node_ver detected"
-
-if ! command_exists npm; then
-    write_err "npm not found despite Node.js being installed."
-    write_hint "Restart your terminal and re-run this installer."
+NPM_EXE=$(resolve_executable_command npm || true)
+if [[ -z "$NPM_EXE" ]] || ! npm_ver=$("$NPM_EXE" --version 2>/dev/null) || [[ -z "$npm_ver" ]]; then
+    write_err "npm is required but could not be launched successfully."
+    write_hint "Repair the Node.js/npm installation or PATH, then rerun this installer."
     exit 1
 fi
-npm_ver=$(npm --version 2>/dev/null || echo "unknown")
 write_ok "npm v$npm_ver ready"
-
-# Surface stale ~/.npmrc keys before the npm install runs.
+# The installer runs in its own shell process, so clearing inherited command
+# shadows cannot alter the caller. Pin later bare invocations to the exact
+# executables that passed preflight.
+unset -f node npm 2>/dev/null || true
+unalias node npm 2>/dev/null || true
+shopt -u expand_aliases 2>/dev/null || true
+hash -p "$NODE_EXE" node
+hash -p "$NPM_EXE" npm
 show_npm_config_deprecation_warning
+
 
 # ─────────────────────────────────────────────
 # Step 2: Install wiqd (npm global)
@@ -2291,79 +2319,60 @@ show_npm_config_deprecation_warning
 
 write_step 2 "$TOTAL_STEPS" "Installing wiqd CLI..."
 
-current_version=$(get_npm_global_package_version "$WIQD_PACKAGE")
-# Resolved unconditionally (not just when something is already installed) because
-# the actual install call below also needs a concrete, pinned version (R29/R30) —
-# never a bare package name or a floating dist-tag.
-target_version=$(get_target_version "$SOURCE" "$REPO" "$VERSION" "$WIQD_PACKAGE")
-
-# Determine whether the installed version is already the target.
-skip_install=false
-if [[ -n "$current_version" ]] && ! $FORCE; then
-    if [[ -n "$target_version" && "$current_version" == "$target_version" ]]; then
-        skip_install=true
+if [[ -n "$TARBALL" ]]; then
+    if ! target_version=$(get_wiqd_tarball_version "$TARBALL"); then
+        write_err "The supplied tarball is not a valid @microsoft/wiqd package with the required host payload."
+        exit 1
+    fi
+else
+    if ! target_version=$(get_target_version "$VERSION" "$WIQD_PACKAGE"); then
+        exit 1
     fi
 fi
 
+
+current_version=$(get_npm_global_package_version "$WIQD_PACKAGE")
+skip_install=false
+if [[ -z "$TARBALL" && -n "$current_version" && "$FORCE" != true && "$current_version" == "$target_version" ]]; then
+    skip_install=true
+fi
 if $skip_install; then
     write_info "Found wiqd v$current_version — verifying..."
     write_hint "Use --force to reinstall"
 else
-    if [[ -n "$current_version" ]]; then
-        write_info "Updating wiqd (current: v$current_version)..."
+    if [[ -n "$current_version" ]]; then write_info "Updating wiqd (current: v$current_version)..."; fi
+    install_status=0
+    if [[ -n "$TARBALL" ]]; then
+        install_from_tarball "$TARBALL" || install_status=$?
+    else
+        install_from_npm_registry "$WIQD_PACKAGE" "$target_version" || install_status=$?
     fi
-    
-    if ! install_from_npm_registry "$WIQD_PACKAGE" "$target_version"; then
-        if [[ "$NPM_INSTALL_CONFLICT" == 1 ]]; then
-            # EEXIST advisory already printed by the install primitive (R35);
-            # a local file conflict is not a network problem.
-            exit 1
-        fi
-        if [[ "$NPM_INSTALL_PERMISSION" == 1 ]]; then
-            # EACCES/EPERM advisory already printed by the install primitive
-            # (R35); a local permission failure is not a network problem.
-            exit 1
-        fi
-        write_err "wiqd installation failed."
-        echo ""
-        if [[ "$LAST_NPM_ERROR_CODE" == "E404" ]]; then
-            safe_last_registry=$(safe_registry_label "$LAST_NPM_REGISTRY")
-            is_public_registry=false
-            if [[ "${LAST_NPM_REGISTRY%/}" == "${PUBLIC_NPM_REGISTRY%/}" ]]; then is_public_registry=true; fi
-            if [[ -n "$LAST_NPM_MISSING_SPEC" && "$LAST_NPM_MISSING_SPEC" != "$WIQD_PACKAGE@${target_version#v}" ]]; then
-                write_hint "A dependency ($LAST_NPM_MISSING_SPEC) was not found in $safe_last_registry."
-            else
-                write_hint "$WIQD_PACKAGE@${target_version#v} was not found in $safe_last_registry."
-            fi
-            if $is_public_registry; then
-                write_hint "After it is published, run 'npm install -g $WIQD_PACKAGE@${target_version#v} --registry $PUBLIC_NPM_REGISTRY'."
-            else
-                write_hint "After it becomes available, re-run this installer to use your configured registry."
-            fi
-        else
-            write_hint "Make sure npm can reach the public registry, then re-run this installer."
-        fi
+    if [[ "$install_status" -ne 0 ]]; then
+        write_err "wiqd package installation failed. No alternate source was attempted."
         exit 1
     fi
-    
-    # Verify
-    wiqd_ver=""
-    if command_exists wiqd; then
-        wiqd_ver=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd --version 2>/dev/null || true)
-    fi
-    
-    if [[ -n "$wiqd_ver" ]]; then
-        write_ok "wiqd installed: $(echo "$wiqd_ver" | tr -d '[:space:]')"
-    else
-        npm_bin=$(npm config get prefix 2>/dev/null || true)
-        if [[ -n "$npm_bin" ]]; then
-            write_warn "wiqd installed but not in PATH"
-            write_hint "Add to PATH: $npm_bin/bin"
-        else
-            write_err "wiqd installation could not be verified"
-        fi
-    fi
 fi
+
+# npm's version metadata can survive an interrupted extraction. Diagnose the
+# payload before resolving or executing a launcher that depends on those files.
+verify_wiqd_install_complete || exit 1
+if ! WIQD_LAUNCHER=$(resolve_wiqd_launcher); then
+    write_wiqd_launcher_repair
+    exit 1
+fi
+version_status=0
+wiqd_ver=$(run_wiqd_installed --version 2>/dev/null) || version_status=$?
+if [[ "$version_status" -eq 130 ]]; then exit 130; fi
+if [[ "$version_status" -ne 0 || -z "$wiqd_ver" ]]; then
+    write_wiqd_launcher_repair
+    exit 1
+fi
+wiqd_ver=$(printf '%s' "$wiqd_ver" | tr -d '[:space:]')
+if [[ "$wiqd_ver" != "$target_version" ]]; then
+    write_err "Requested wiqd v$target_version, but npm reports v$wiqd_ver installed."
+    exit 1
+fi
+write_ok "wiqd installed: $wiqd_ver"
 
 
 # ─────────────────────────────────────────────
@@ -2378,25 +2387,20 @@ write_step 3 "$TOTAL_STEPS" "Verifying installation..."
 
 install_success=false
 
-# R32: verify on-disk completeness BEFORE trusting a runtime probe. npm reports
-# "already installed" on version metadata alone, so an interrupted install can
-# leave the package registered-but-incomplete. A missing/empty required artifact
-# is a fatal verdict with an uninstall-first repair (a plain re-run or --force is
-# an npm no-op on same-version corruption — only `npm uninstall -g` re-extracts).
-if ! test_wiqd_install_complete >/dev/null; then
-    write_err "installation incomplete. Repair:"
-    write_hint "  npm uninstall -g $WIQD_PACKAGE, then re-run this installer."
+# The private wrapper can replace host files and regenerate npm launchers.
+verify_wiqd_install_complete || exit 1
+if ! WIQD_LAUNCHER=$(resolve_wiqd_launcher); then
+    write_wiqd_launcher_repair
     exit 1
 fi
 
 wiqd_check=""
-if command_exists wiqd; then
-    wiqd_check=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd --version 2>/dev/null) || {
-        rc=$?
-        if [[ "$rc" -eq 130 ]]; then exit 130; fi
-        wiqd_check=""
-    }
-fi
+show_wiqd_launcher_path_warning
+wiqd_check=$(run_wiqd_installed --version 2>/dev/null) || {
+    rc=$?
+    if [[ "$rc" -eq 130 ]]; then exit 130; fi
+    wiqd_check=""
+}
 
 if [[ -n "$wiqd_check" ]]; then
     write_ok "wiqd CLI: $(echo "$wiqd_check" | tr -d '\n')"
@@ -2406,11 +2410,7 @@ if [[ -n "$wiqd_check" ]]; then
     # install path registers them; do it before the plugin step. Non-fatal.
     seed_wiqd_defaults || true
 else
-    # R32: files are present (completeness passed above) but the CLI didn't run —
-    # a PATH problem, not a broken install. Fatal so the exit code is honest,
-    # with the uninstall-first repair as the fallback.
-    write_err "wiqd installed, but not yet on PATH. Restart your terminal."
-    write_hint "  Still failing? npm uninstall -g $WIQD_PACKAGE, then re-run this installer."
+    write_wiqd_launcher_repair
     exit 1
 fi
 
@@ -2426,7 +2426,7 @@ fi
 # only records the version-stamped acceptance so those steps run un-gated.
 # Non-fatal: the user can still accept manually if this write fails.
 if [ "$EULA_CHOICE" = "accepted" ]; then
-    wiqd eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
+    run_wiqd_installed eula accept wiqd --installer-stamp >/dev/null 2>&1 || true
 fi
 
 if ! record_install_provenance; then
@@ -2616,7 +2616,6 @@ if $install_success && ! $plugin_install_failed && ! $plugin_install_cancelled &
     printf "${GREEN} ║    ✓ wiqd installed successfully!    ║${RESET}\n"
     printf "${GREEN} ╚══════════════════════════════════════╝${RESET}\n"
     echo ""
-
 
     print_wiqd_quickstart
 elif $install_success && $plugin_install_cancelled; then

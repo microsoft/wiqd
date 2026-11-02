@@ -2,8 +2,8 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "35ec242307aa8da2c79eef2a4f89b07b5772fe65059ff8619885bf540adefdde",
-  "componentCount": 537,
+  "inputDigest": "6324d7cd8b27403fd8dabd9b1659de60a94d37f44ab7df50ada07b667482f23e",
+  "componentCount": 535,
   "components": [
     {
       "type": "npm",
@@ -554,13 +554,6 @@
     {
       "type": "npm",
       "name": "@microsoft/app-manifest",
-      "version": "1.1.3",
-      "license": "MIT",
-      "origin": "bundled"
-    },
-    {
-      "type": "npm",
-      "name": "@microsoft/app-manifest",
       "version": "1.1.4-alpha.36e30da2f6.0",
       "license": "MIT",
       "origin": "bundled"
@@ -604,13 +597,6 @@
       "type": "npm",
       "name": "@microsoft/m365-spec-parser",
       "version": "0.3.4-beta.2026101507.0",
-      "license": "MIT",
-      "origin": "bundled"
-    },
-    {
-      "type": "npm",
-      "name": "@microsoft/teamsfx-api",
-      "version": "0.24.3",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -1774,7 +1760,7 @@
     {
       "type": "npm",
       "name": "follow-redirects",
-      "version": "1.16.1",
+      "version": "1.16.2",
       "license": "MIT",
       "origin": "bundled"
     },
@@ -2827,8 +2813,8 @@
       "origin": "bundled",
       "patch": {
         "path": "patches/node-forge@1.4.0.patch",
-        "sha256": "b6876574a5de19521a766856b293aeae2689848c5d8dab03f93040be0a64b8b4",
-        "pnpmHash": "gbz7gprc6x3m5j5qxjtdw3c4ly"
+        "sha256": "3f05d19a25937d9504662367e40d6f27a83b0c67e9e38c91791362d4339129d6",
+        "pnpmHash": "gph6mhgzgwyfzqsb3zj5kgfibq"
       }
     },
     {

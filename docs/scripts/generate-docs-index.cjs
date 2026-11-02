@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { isHiddenDocument } = require('../src/discovery-policy.cjs');
 
 const DOCS_ROOT = path.resolve(__dirname, '..', 'src', 'content', 'docs');
 const BASE_URL = 'https://aka.ms/wiqd/docs';
@@ -206,6 +207,7 @@ function processFile(filePath) {
 
   // Skip binary or empty files
   if (!content || content.includes('\0')) return null;
+  if (isHiddenDocument(content)) return null;
 
   const { frontmatter, body } = parseFrontmatter(content);
   let title = frontmatter.title;

@@ -1,20 +1,29 @@
 ---
 title: Validate · Agent plugins
-description: Why the Validate extension has no dedicated Copilot skill scenario
+description: Source, package and Marketplace validation and authorized repair.
 ---
 
-# Validate · Agent plugins
+The Validate extension contributes the **validation** workflow to the existing wiqd skill in
+stable public and internal plugins. It owns explicit validation and identified-finding repair,
+not general authoring, account setup or publication.
 
-The Validate extension does **not** expose its own Copilot skill scenario. It is a **substrate** — a tool that other workflows use — not a user-facing intent on its own.
+| Request | Scope |
+| --- | --- |
+| “Validate my agent”, “check source”, “check my manifest” | Offline saved-source checks. |
+| “Validate this package”, “check this ZIP” | Final-package/TDP validation. |
+| “Marketplace validation”, “validate for Partner Center” | Package and Marketplace policy checks on the same ZIP. |
+| “Fix these validation findings”, “validate and fix” | Scoped repair when authorized, followed by same-mode revalidation. |
 
-When you ask Copilot to "validate my agent" or "fix my agent manifest", the wiqd orchestrator routes those phrases into the **wiqd Core workflow** (see [wiqd Core · Copilot skills](/extensions/provided/core/skills/)), which calls `wiqd agent validate` as part of its larger flow. The diagnostics come from this extension, but the user-facing routing is owned by wiqd Core.
+Source repair reruns source without a ZIP or HTML report. Package/Marketplace repair rebuilds an
+explicit new ZIP; Marketplace prepares fresh evidence in the current host session, never a nested
+model. Validation alone does not authorize edits. Actionable findings offer **Fix and revalidate**
+or **Not now**, unless repair was already requested or a report-only/no-questions scope applies.
 
-The editor-side surface — live diagnostics in VS Code — is described in the [VS Code extension concept](/concepts/vscode-extension/). It is also not a Copilot Chat skill — it runs inside your editor automatically.
+Core keeps general authoring and lifecycle ownership and explicitly uses `--mode source` for
+package/provision/edit prechecks. The audience's account and publishing workflows retain their
+onboarding, enrollment, approval and publication responsibilities. Update the CLI
+and host plugin to compatible releases and start a fresh host session: updating the CLI alone
+does not refresh host skills. No validation feature flag is required.
 
-## Trigger phrases
-
-The phrases below are caught by the [wiqd Core skill](/extensions/provided/core/skills/), which then invokes `wiqd agent validate` on your behalf:
-
-> validate my agent · fix my agent manifest
-
-There is no Validate-specific routing entry in the orchestrator.
+See the [command guide](/cli/agent/agent-validate/) and [workflow reference](/extensions/provided/validate/workflows/).
+Editor diagnostics still use the separate [LSP integration](/concepts/vscode-extension/).

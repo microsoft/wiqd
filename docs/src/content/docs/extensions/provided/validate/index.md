@@ -1,34 +1,36 @@
 ---
 title: Validate
-description: Offline MVL static validation and the VS Code LSP server
+description: Source diagnostics, final-package and Marketplace validation, and the VS Code LSP server
 ---
 
 # Validate
 
-**Extension ID:** `microsoft.validate` · **Package:** `@microsoft/wiqd-ext-validate` · **Upstream:** bundled `wiqd-validate` .NET binary
+**Extension ID:** `microsoft.validate` · **Package:** `@microsoft/wiqd-ext-validate`
 
 ## What it does
 
-The Validate extension provides the fastest feedback loop in Work IQ Dev Tools: **offline static validation** of declarative agent manifests against the current shipping schema. It also hosts the **Language Server Protocol (LSP)** server that powers the VS Code live-diagnostics experience.
+Validate checks **saved source**, **final packages**, and **Marketplace readiness**.
+Marketplace includes package and policy checks on the same captured ZIP. The extension
+also provides **Language Server Protocol (LSP)** editor diagnostics.
 
-Static validation runs the **Microsoft Validation Layer (MVL)** engine — the same one the M365 platform uses to accept a manifest. No network, no auth, sub-second on a normal project. Deep validation runs through the [wiqd Core](/extensions/provided/core/) validation surface for semantic checks.
-
-This is the only extension that ships a .NET binary. The MVL engine depends on `Microsoft.DeclarativeAgents.Manifest.dll`, a platform-owned .NET assembly with no TypeScript port. Everything else in the Work IQ Dev Tools ecosystem is TypeScript/Node.
+Source reuses the editor's diagnostics service for saved `appPackage/declarativeAgent.json`,
+without network, authentication, ZIPs or reports. Package is the default mode and may require
+sign-in; source must be selected explicitly. Validation never builds or publishes automatically.
 
 ## Workflow walkthrough
 
 ```bash
-# 1. Fast static validation — run before every commit
-wiqd agent validate --env dev
+# 1. Offline saved-source checks
+wiqd agent validate --mode source --path . --env local
 
-# 2. Deep validation including semantic checks
-wiqd agent validate --mode deep --env dev
+# 2. Validate an existing final package
+wiqd agent validate --mode package --package-file ./final.zip
 
 # 3. CI gate: machine-readable output
-wiqd agent validate --env dev --json | jq '.data.diagnostics'
+wiqd agent validate --mode source --path . --env local --json
 
 # 4. Editor integration — install the VS Code extension
-wiqd install --vscode
+wiqd component vscode install
 
 # 5. The LSP server starts automatically when you open a project with the VS Code extension
 #    No command to run manually, but if you want to debug it:
@@ -48,5 +50,5 @@ In VS Code, you'll see MVL diagnostics inline as you type — squigglies on sche
 
 - [CLI commands](/extensions/provided/validate/cli/) — every `wiqd ...` command this extension contributes.
 - [Agentic workflows](/extensions/provided/validate/workflows/) — how Validate plugs into other extensions' workflows.
-- [Copilot skills](/extensions/provided/validate/skills/) — why Validate has no dedicated skill scenario.
+- [Copilot skills](/extensions/provided/validate/skills/) — validation and authorized repair.
 - [VS Code extension concept](/concepts/vscode-extension/) — the editor-side surface this extension powers.
