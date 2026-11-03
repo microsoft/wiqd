@@ -46,7 +46,7 @@ If either file is missing → **STOP immediately.** Do NOT scaffold. Report clea
 
 ### Phase 4 — Validate & report
 
-11. Run `wiqd agent validate --skill wiqd`
+11. Run `wiqd agent validate --mode source --path "<project>" --env "<selected-environment>" --json --skill wiqd`
 12. Report summary: project path, files migrated, files skipped, new app id
 
 ## Instructions Handling — Core Contract

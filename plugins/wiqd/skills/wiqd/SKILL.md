@@ -1,6 +1,6 @@
 ---
 name: wiqd
-description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot declarative agents via the wiqd CLI. Triggers: CI/CD, pipeline authentication, automate agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, agent debugger, evaluate, test, run evals, check agent, generate evals, analyze results, compare runs, submit feedback, report a bug, request a feature, suggest an improvement, list my feedback, publish to partner center, submit to appsource, list in the store, certify my agent, create a plugin, cowork plugin, standalone plugin, reusable plugin, plugin project, build a plugin, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor, observe, ask, talk to agent, list agents, check health, ask Work IQ, organization context, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials, wiqd changelog"
+description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot declarative agents via the wiqd CLI. Triggers: CI/CD, pipeline authentication, automate agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, agent debugger, evaluate, test, run evals, check agent, generate evals, analyze results, compare runs, submit feedback, report a bug, request a feature, suggest an improvement, list my feedback, publish to partner center, submit to appsource, list in the store, certify my agent, create a plugin, cowork plugin, standalone plugin, reusable plugin, plugin project, build a plugin, validate my agent, check source, validate package, Marketplace validation, fix validation findings, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor, observe, ask, talk to agent, list agents, check health, ask Work IQ, organization context, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials, wiqd changelog"
 argument-hint: "create | validate | provision | test | eval | package | share | publish | monitor | feedback | partner-center"
 ---
 
@@ -35,13 +35,14 @@ Complex, stateful tasks with validation, safeguards, and multi-step logic. **Alw
 
 | Intent | Workflow | Commands | Examples |
 |--------|----------|----------|----------|
-| Creating, editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents | `workflows/wiqd-core.md` | `agent create`, `agent add`, `agent validate`, `agent provision`, `agent package`, `agent share`, `agent env`, `agent show`, `agent delete`, `agent publish` | "create agent", "new agent", "scaffold agent", "edit my agent", "update my agent", "modify my agent", "add a capability", "add a capability to this agent" |
+| Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, connecting Worker Agents, adding capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation | `workflows/wiqd-core.md` | `agent create`, `agent add`, `agent validate`, `agent provision`, `agent package`, `agent share`, `agent env`, `agent show`, `agent delete`, `agent publish` | "create agent", "new agent", "scaffold agent", "edit my agent", "update my agent", "modify my agent", "add a capability", "add a capability to this agent" |
 | Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export) | `workflows/plugin.md` | `plugin create`, `plugin import`, `plugin add skill`, `plugin add connector`, `connector list`, `connector show`, `plugin add agent`, `plugin validate`, `plugin show`, `plugin list`, `plugin provision`, `plugin package`, `plugin publish`, `plugin share`, `plugin export`, `plugin delete` | "create a plugin", "create a standalone plugin", "new plugin", "new plugin project", "build a plugin", "build a standalone plugin", "author a plugin", "make a reusable plugin" |
 | Running, generating, analyzing evals | `workflows/eval.md` | `agent eval`, `agent eval init` | "evaluate my agent", "test my agent", "run my evals", "run my tests", "check my agent", "is my agent correct", "my agent isn't working", "generate evals" |
 | Monitoring, asking, listing deployed agents | `workflows/workiq.md` | `agent monitor`, `agent ask`, `agent list` | "monitor my agent", "observe my agent", "how is my agent doing", "check agent health", "invoke my agent", "talk to my agent", "send a message", "ask my agent" |
 | Submitting or listing wiqd product feedback (bugs, feature requests, improvements) | `workflows/feedback.md` | `feedback submit`, `feedback list` | "submit feedback", "send feedback", "report a bug", "file a bug", "this is broken", "request a feature", "feature request", "suggest an improvement" |
 | Publishing a declarative agent to the Microsoft commercial marketplace via Partner Center | `workflows/partner-center.md` | `agent validate`, `agent package` | "how do I publish my agent", "publish to Partner Center", "submit to Partner Center", "submit my agent for review", "publish to AppSource", "submit to AppSource", "submit my agent to the store", "list my agent in the store" |
 | Launch the local DevUI web app, and ask an agent while watching the turn run live with full developer detail | `workflows/devui.md` | `devui start`, `devui ask` | "open devui", "launch devui", "start devui", "open the agent debugger", "debug my agent", "test my agent visually", "watch my agent run live", "see it run in the browser" |
+| Explicitly validate source, a final ZIP or Marketplace readiness, run live functional checks, or repair validation findings; not general authoring, account setup or publication | `workflows/validation.md` | `agent validate` | "validate my agent", "validate source", "check my manifest", "fix my agent manifest", "validate package", "validate this package", "validate this ZIP", "check this ZIP" |
 | Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands | `workflows/agent-ci-cd.md` | `agent validate`, `agent provision`, `agent package`, `agent publish` | "set up agent CI/CD", "create an agent pipeline", "GitHub Actions for my agent", "Azure Pipelines for my agent", "automate agent deployment", "unattended agent deployment" |
 ## References
 
@@ -123,6 +124,10 @@ Supporting utilities and detailed documentation. Read the matching reference and
 
 | Reference | Path |
 |-----------|------|
+| Fix and Revalidate a Validation Report | `references/validate/autofix.md` |
+| Prepare evidence and run Marketplace validation | `references/validate/current-agent-evidence.md` |
+| Prepare a development target for live functional checks | `references/validate/development-target.md` |
+| Collect Marketplace listing information | `references/validate/listing-collection.md` |
 | Store Ops Pre-Submission Audit | `references/validate/store-ops-validation.md` |
 | Policy References | `references/validate/store-ops/references.md` |
 | Report Template | `references/validate/store-ops/report-template.md` |
@@ -144,7 +149,13 @@ If any `wiqd` command reports a EULA gate (exit code `3`, or a JSON envelope wit
 
 ## Shared preflight
 
-Every workflow and reference depends on `references/preflight.md` (version check; broken, missing, or shell-unavailable CLI → continue with file-based alternatives) and `references/telemetry.md` (skill usage is captured only on ordinary `wiqd` CLI calls through the CLI's own disclosed telemetry pipeline). Pass `--skill wiqd` on every ordinary `wiqd` CLI call. Once you have matched the request to a workflow, also pass `--workflow <id>` — the workflow's id, i.e. its filename without `.md` (e.g. `--workflow wiqd-core` for `workflows/wiqd-core.md`) — on subsequent `wiqd` calls so the resolved routing is observable. Never run a command or make a network request solely for telemetry; CLI-free and file-only flows remain telemetry-free.
+Every workflow and reference depends on `references/preflight.md`: a missing or broken CLI
+requires the consented install/repair flow, then version verification and resuming the original
+request. Do not skip recovery in favor of file-based fallback or direct upstream CLI calls.
+If recovery is declined or blocked, use local evidence only where sufficient; live-data requests
+remain blocked. An unavailable shell is different from a missing executable.
+
+Read `references/telemetry.md` for skill attribution through the CLI's own disclosed telemetry pipeline. Pass `--skill wiqd` on every ordinary `wiqd` CLI call. Once you have matched the request to a workflow, also pass `--workflow <id>` — the workflow's id, i.e. its filename without `.md` (e.g. `--workflow wiqd-core` for `workflows/wiqd-core.md`) — on subsequent `wiqd` calls so the resolved routing is observable. Never run a command or make a network request solely for telemetry; CLI-free and file-only flows remain telemetry-free.
 
 ## Journey map
 
@@ -163,14 +174,14 @@ Every workflow and reference depends on `references/preflight.md` (version check
 
 - **Entry:** No `appPackage/` directory, or user wants to continue editing
 - **Goal:** Get a project on disk and define what the agent does
-- **Workflow:** read `workflows/wiqd-core.md` — handles create, edit, validate, migrate, localize
+- **Workflow:** read `workflows/wiqd-core.md` — handles create, edit with source prechecks, migrate, localize
 - **Exit:** `appPackage/manifest.json` and `declarativeAgent.json` exist and are structurally valid
 
 ### Phase 2 — Improve
 
 - **Entry:** Manifest is structurally valid
 - **Goal:** Confirm the agent works as intended; iterate until quality bar is met
-- **Workflow:** read `workflows/eval.md` for generate/run/analyze evals, read `workflows/wiqd-core.md` for validate
+- **Workflow:** read `workflows/eval.md` for generate/run/analyze evals, read `workflows/validation.md` for source, package and Marketplace validation and authorized repair
 - **Exit:** Evals pass at acceptable rate
 
 ### Phase 3 — Preview
@@ -230,11 +241,11 @@ When a user asks "am I ready to publish?":
 
 ```
 📋 Publish Readiness Checklist
-  ☐ Manifest validates clean     → wiqd agent validate
-  ☐ Evals pass quality bar       → evals/runs/ has recent passing run
-  ☐ Package builds successfully  → wiqd agent package
-  ☐ Preview deployment ready     → package + provision completed
-  ☐ Preview audience has access  → share completed for test users
+  ☐ Saved source validates clean  → wiqd agent validate --mode source
+  ☐ Evals pass quality bar        → evals/runs/ has recent passing run
+  ☐ Package builds successfully   → wiqd agent package
+  ☐ Preview deployment ready      → package + provision completed
+  ☐ Preview audience has access   → share completed for test users
 ```
 Check each item programmatically. Report ✅ or ❌ with what's needed. Drive the first ❌ item.
 

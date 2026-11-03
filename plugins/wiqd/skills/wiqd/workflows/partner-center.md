@@ -64,8 +64,8 @@ then drive it through the Partner Center submission and certification flow.
 | Detailed store-listing checklist, icon/URL requirements, per-field guidance | Read `references/wiqd-core/partner-center.md` → Store listing checklist |
 | "Certification failed", "my agent was rejected", troubleshooting a submission | Read `references/wiqd-core/partner-center.md` → Troubleshooting rejections |
 | Build the submittable `.zip` | Read `references/wiqd-core/package.md` — run `wiqd agent package` |
-| Fix manifest errors before submitting | Read `references/wiqd-core/validate.md` — run `wiqd agent validate` |
-| Pre-submission store-ops readiness check ("will my agent pass review?") | Read `references/validate/store-ops-validation.md` (skill lives in the `microsoft.validate` extension) |
+| Fix identified validation findings before submitting | Hand off to `workflows/validation.md` for authorized same-mode repair; return to this publishing journey afterward. |
+| Pre-submission readiness check ("will my agent pass review?") | Hand off to `workflows/validation.md` for Marketplace validation, including package checks on the same final ZIP. |
 
 ## The publishing journey at a glance
 
@@ -76,9 +76,9 @@ Build & validate → Package → Store Ops audit → Enroll in Partner Center �
 
 | Phase | Partner does | Tool / surface |
 |-------|--------------|----------------|
-| Build & validate | Finalize the agent, fix manifest errors | `wiqd agent validate` |
+| Build & validate | Finalize the agent, fix saved-source errors | `wiqd agent validate --mode source` with the packaging path/environment |
 | Package | Build the distributable `.zip` | `wiqd agent package` |
-| Store Ops audit | Gate the final `.zip` on Store policy Must-fix findings | `references/validate/store-ops-validation.md` |
+| Marketplace validation | Gate the final `.zip` on package and policy findings | `workflows/validation.md` |
 | Enroll | Get a verified Partner Center account | Partner Center |
 | Create offer | Start a Microsoft 365 and Copilot offer | Partner Center |
 | Upload | Upload the app package `.zip` | Partner Center |
@@ -94,8 +94,8 @@ Before touching Partner Center, confirm the partner has:
 1. **A working, tested agent.** Provision and preview it first ("provision my
    agent", "share my agent") so it behaves correctly before external users can
    install it.
-2. **A clean manifest.** Run `wiqd agent validate` and resolve every error — a
-   manifest that fails validation locally will fail certification.
+2. **Clean saved source.** Run `wiqd agent validate --mode source` with the same
+   project/environment as packaging and resolve errors. This checks source, not final ZIP acceptance.
 3. **Icons that meet store requirements:** color icon **192×192 px** PNG, outline
    icon **32×32 px** transparent monochrome PNG.
 4. **A publicly reachable Privacy Policy URL and Terms of Use URL** — both are
@@ -114,26 +114,32 @@ Use wiqd to produce the distributable `.zip` — this is the artifact uploaded t
 Partner Center.
 
 ```bash
-# Validate first — certification will reject an invalid manifest
-wiqd agent validate
+# Check saved source for the same project and environment before building
+wiqd agent validate --mode source --path "<project>" --env prod
 
 # Build the package (use the production environment)
-wiqd agent package --env prod
+wiqd agent package --path "<project>" --env prod --output "<final.zip>"
 ```
 
 The build produces an app package `.zip` under the project's `appPackage/`
 directory containing the manifest, icons, and declarative agent / plugin
 definitions. **This is the file the partner submits.** If `wiqd agent package`
-reports errors, resolve them first — re-run `wiqd agent validate` for
+reports errors, resolve them first — re-run `wiqd agent validate --mode source` with the same path/environment for
 manifest-level problems and use `--verbose` for the full upstream output. For
 packaging details, read `references/wiqd-core/package.md`.
 
 ## Step 2 — Run the Store Ops submission gate
 
-Before guiding any Partner Center upload or submission, read `references/validate/store-ops-validation.md` and run its **Partner Center workflow gate** against the final `.zip` produced in Step 1. Require the complete JSON report contract.
+Before guiding any Partner Center upload or submission, follow `workflows/validation.md` in
+`marketplace` mode against the exact final ZIP from Step 1. It performs TDP and StoreOps checks on
+the same captured bytes, preserves listing HTML confirmation and current-host evidence, and does
+not create an offer or submit. Read `data` or completed non-pass `error.data`.
 
-- Require every registry rule to be accounted for and every skip to include severity and applicability. If the report is missing or malformed, `data.result.mustFailCount > 0`, `data.result.blockingSkippedCount > 0`, or `data.result.label == "fail"`, show the findings and blocked checks and stop. Do not proceed to package upload or submission guidance.
-- Continue only when `data.result.label == "pass"`, `data.result.mustFailCount == 0`, and `data.result.blockingSkippedCount == 0`. Show Good-to-fix findings, non-blocking skips, and manual approvals before continuing.
+- Require `validation.result == "PASSED"` with complete selected checks. Missing/malformed results,
+  `FAILED` or `ERROR` stop upload/submission guidance; show findings and incomplete checks.
+- Surface warnings, suggestions and manual approvals without claiming official certification.
+  A pass is a workflow prerequisite, not publication authorization. If repair changes the ZIP,
+  rerun Marketplace validation before resuming this journey.
 
 This gate applies only to Partner Center / public Marketplace submission. It is not a prerequisite for tenant LOB or org-catalog publishing, sideloading, or ordinary audience/ring sharing.
 
@@ -203,15 +209,16 @@ AI-powered agents given the additional scrutiny.
 ## Troubleshooting
 
 When a submission is rejected, Partner Center returns specific reviewer feedback.
-Address **every** item, re-validate (`wiqd agent validate`), re-package if the
-manifest changed (`wiqd agent package`), and resubmit. For a symptom → cause → fix
+Address **every** item through authorized repair, source-check and re-package if the
+source changed, then rerun Marketplace validation on the new ZIP before resubmitting. For a symptom → cause → fix
 table covering the common rejections (duplicate version, icon format, missing
 privacy/terms URLs, consent/permission flags, responsible-AI feedback), read
 `references/wiqd-core/partner-center.md` → Troubleshooting rejections.
 
 ## Related commands
 
-- `wiqd agent validate` — must pass before packaging or submitting.
+- `wiqd agent validate --mode source` — same-path/environment pre-build workflow gate.
+- `wiqd agent validate --mode marketplace --package-file "<final.zip>"` — package plus policy submission gate through the canonical workflow.
 - `wiqd agent package` — builds the `.zip` uploaded to Partner Center.
 - `wiqd agent provision` / `wiqd agent share` — provision and preview with early
   users before publishing publicly.

@@ -34,15 +34,16 @@ wiqd agent ask --json --skill wiqd --agent-name "Sales Bot" -q "<message>"
 
 ## Options
 
-| Flag            | Description                                                            | Default      |
-| --------------- | ---------------------------------------------------------------------- | ------------ |
-| `-q, --query`   | Message to send (required)                                             | _(required)_ |
-| `--agent-id`    | Full agent ID (`{TitleID}.{DA_ID}`). Auto-resolved in project mode.    | _(auto)_     |
-| `--agent-name`  | Human-readable name (fuzzy-matched). Cannot combine with `--agent-id`. | —            |
-| `--env`         | Environment for project auto-resolution                                | `local`      |
-| `--path`        | Project directory for auto-resolution                                  | `.`          |
-| `-v, --verbose` | Show raw workiq output                                                 | `false`      |
-| `--json`        | Emit machine-readable JSON output (default: human-readable table)      | `false`      |
+| Flag            | Description                                                                                          | Default      |
+| --------------- | ---------------------------------------------------------------------------------------------------- | ------------ |
+| `-q, --query`   | Message to send (required)                                                                           | _(required)_ |
+| `--agent-id`    | Full agent ID (`{TitleID}.{DA_ID}`). Auto-resolved in project mode.                                  | _(auto)_     |
+| `--agent-name`  | Human-readable name (fuzzy-matched). Cannot combine with `--agent-id`.                               | —            |
+| `--env`         | Environment for project auto-resolution                                                              | `local`      |
+| `--path`        | Project directory for auto-resolution                                                                | `.`          |
+| `-v, --verbose` | Show raw workiq output                                                                               | `false`      |
+| `--json`        | Emit machine-readable JSON output (default: human-readable table)                                    | `false`      |
+| `--developer`   | Include native Work IQ developer metadata for this request; may contain sensitive execution details. | `false`      |
 
 ## Modes
 

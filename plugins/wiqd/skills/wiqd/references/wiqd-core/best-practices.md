@@ -78,6 +78,6 @@ Follow these best practices for successful M365 Copilot agent development.
 - **Name for Triggering:** Write `description` around the phrases a user would actually say, not a summary of the skill's purpose
 - **Keep Name and Folder in Lockstep:** The frontmatter `name` and the containing folder name are one value — rename both together
 - **Add `expose_skill_to_copilot`, Don't Hand-Author `agent_skills[]`:** `wiqd agent add skill` writes the DA `agent_skills[]` entry with `folder` only; add `expose_skill_to_copilot: true` to that entry when you want the DA skill exposed to Copilot directly. It does not write the root Cowork `agentSkills[]` registration; use `wiqd plugin add skill` for that independent surface
-- **Validate Before Packaging:** Run `wiqd agent validate` before `wiqd agent package`; after packaging, run `wiqd agent validate --mode deep` to catch `ASKILL-*` errors before upload (`wiqd plugin validate --mode deep` reaches the same check, but only for a plugin project with its own `wiqd.plugin.json`)
+- **Validate source, then the final ZIP:** Before `wiqd agent package`, run `wiqd agent validate --mode source` with the same project/environment. After packaging, use `--mode package --package-file "<zip>"`; Marketplace readiness uses `--mode marketplace`, including package checks. Source does not check skill contents or prove ZIP acceptance. `wiqd plugin validate --mode deep` retains its separate plugin-project contract.
 
 **Reference:** [agent-skills.md](agent-skills.md)

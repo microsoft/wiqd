@@ -14,7 +14,7 @@ look for or invoke dedicated `wiqd agent add worker` or `wiqd agent remove worke
    manifest's declared `$schema`; when `$schema` is absent, use the manifest's `version` as that
    procedure specifies. When both fields are present, extract the version from `$schema` and require
    it to exactly match `version`. If they conflict, stop before confirmation or mutation even when
-   `wiqd agent validate` reports success. Verify that the resolved version supports `worker_agents`.
+   `wiqd agent validate --mode source` reports success. Verify that the resolved version supports `worker_agents`.
    If the schema or property cannot be confirmed, stop and tell the author. Do not silently upgrade
    or replace the schema.
 4. If `worker_agents` exists but is not an array, stop and report the invalid shape without changing
@@ -23,7 +23,7 @@ look for or invoke dedicated `wiqd agent add worker` or `wiqd agent remove worke
 6. Before resolving or confirming a Worker change, run:
 
    ```bash
-   wiqd agent validate --path "<project-directory>" --json --skill wiqd --workflow <active-workflow-id>
+   wiqd agent validate --mode source --path "<project-directory>" --env "<selected-environment>" --json --skill wiqd --workflow <active-workflow-id>
    ```
 
    The Edit workflow's malformed-file gate forbids edits; it does not skip this Worker
@@ -127,7 +127,7 @@ Removing a reference never deletes the deployed Worker.
 Immediately after a changed manifest is saved, run:
 
 ```bash
-wiqd agent validate --path "<project-directory>" --json --skill wiqd --workflow <active-workflow-id>
+wiqd agent validate --mode source --path "<project-directory>" --env "<selected-environment>" --json --skill wiqd --workflow <active-workflow-id>
 ```
 
 If validation fails, report the diagnostics and do not provision. If validation succeeds, report the

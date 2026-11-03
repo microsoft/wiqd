@@ -193,18 +193,17 @@ see [Companion Files](#companion-files) for host-specific limits.
 ### Step 5: Validate and Package
 
 ```bash
-wiqd agent validate                # static MVL — does NOT check agentSkills[] or SKILL.md content
-wiqd agent package --env local     # builds the .zip
-wiqd agent validate --mode deep    # reaches AVL — this is what actually checks agentSkills[]
+wiqd agent validate --mode source --path . --env local
+wiqd agent package --path . --env local --output ./appPackage/build/skills.zip
+wiqd agent validate --mode package --package-file ./appPackage/build/skills.zip
 ```
 
-Use `wiqd agent validate --mode deep` — this is an **agent** project (there's no
+Use `wiqd agent validate --mode package` — this is an **agent** project (there's no
 `wiqd.plugin.json` here), so the sibling `wiqd plugin validate --mode deep` command exits `2`
-("not a plugin project") if you run it instead. The two commands reach the identical AVL check
-for their respective project types — `plugin validate` reuses `agent validate` verbatim under the
-hood — but `agent validate` is the one that actually works against a `wiqd agent add skill`
-project. See [Validation](#validation-the-askill--codes) for what's actually being checked and why
-static mode alone isn't enough.
+("not a plugin project") if you run it instead. Agent package validation submits the captured ZIP
+to TDP through Core; report actual returned platform diagnostics rather than promising a particular
+rule inventory. Source checks only the saved declarative-agent manifest, not top-level
+`agentSkills[]` or `SKILL.md` content. See [Validation](#validation-the-askill--codes).
 
 ## SKILL.md Frontmatter Contract
 
@@ -383,7 +382,7 @@ Grounded facts about this registration:
   unrecognized member, matching the published schema. That is a **schema-publication gap, not a
   toolchain gap**: the underlying toolchain fully implements `agent_skills[]`, including packaging
   the referenced skill folders into the built `.zip` when WIQD's `agent-skills` flag is enabled —
-  it just isn't in the published schema yet. Treat deep validation and the
+  it just isn't in the published schema yet. Treat captured-package validation and the
   platform itself as the authority on whether an entry is accepted, and re-check this reference
   once a schema that includes `agent_skills` is published.
 
@@ -391,13 +390,11 @@ Grounded facts about this registration:
 
 The `ASKILL-*` codes are the Microsoft 365 Copilot platform's own Agent Skills validation codes —
 emitted by **AVL** (App Validation Library) and at upload/submission time, not defined or
-implemented by wiqd. Static `wiqd agent validate` (no `--mode deep`) does not check `agentSkills[]`
-or `SKILL.md` content at all — you will only ever see these codes from `wiqd agent validate
---mode deep`, run against an already-built package. (The sibling `wiqd plugin validate --mode
-deep` reaches the identical AVL check, but only for a **plugin** project with its own
-`wiqd.plugin.json` — it exits `2` against an ordinary agent project, so it is not the command to
-reach for here.) If you only ever run static validation, an `ASKILL-*`-class mistake passes
-silently and surfaces later at upload — always run deep mode before publishing a skill.
+implemented by wiqd. `wiqd agent validate --mode source` does not check top-level `agentSkills[]`
+or `SKILL.md` content. Build first, then use `--mode package --package-file "<zip>"` and inspect
+the platform diagnostics actually returned. The sibling `wiqd plugin validate --mode deep`
+retains its separate contract for a plugin project with `wiqd.plugin.json`, not this agent project.
+A source pass is not skill-package acceptance; perform package validation before submission.
 
 ### Manifest-Level Codes
 
@@ -456,9 +453,9 @@ which flag state originally produced it.
 | Package/provision/publish refuses a DA-only skill folder | WIQD's `agent-skills` flag is disabled and no top-level `agentSkills[]` Cowork registration would include that exact archive path | Run `wiqd config flags set agent-skills true`, then retry. Do not add an unrelated top-level registration just to bypass the check. |
 | `wiqd agent add skill` fails or produces an incomplete manifest    | WIQD's `agent-skills` flag is disabled | Enable the flag — see [Enable the `agent-skills` Feature Flag First](#enable-the-agent-skills-feature-flag-first) — and re-run the command |
 | Skill never triggers in conversation                               | `description` is too generic, or doesn't contain the phrases users actually say | Rewrite `description` around real trigger phrases, not a summary of the skill's purpose             |
-| Static `wiqd agent validate` passes but the upload still fails     | Static mode (MVL) doesn't check `agentSkills[]` or `SKILL.md` content at all | Run `wiqd agent package` then `wiqd agent validate --mode deep` before publishing                    |
+| Source validation passes but the upload still fails | Source does not check top-level `agentSkills[]` or `SKILL.md` | Build, then run `wiqd agent validate --mode package --package-file "<zip>"`; inspect returned diagnostics |
 | Manifest edit didn't produce a working skill                       | A skill registration was hand-edited without also creating a matching `SKILL.md` folder | Use `wiqd agent add skill` for `agent_skills[]` or `wiqd plugin add skill` for root `agentSkills[]`; if you must hand-edit, create the folder and the matching entry together |
-| Imported skill (`--from`) behaves differently than expected        | `--from` registers existing content as-is; it does not validate or rewrite the imported `SKILL.md` | Run deep validation after import — the frontmatter contract still applies to imported skills        |
+| Imported skill (`--from`) behaves differently than expected | `--from` registers content as-is; it does not validate or rewrite `SKILL.md` | Build and validate the final package; the frontmatter contract still applies to imported skills |
 
 ## Best Practices
 
@@ -476,10 +473,10 @@ which flag state originally produced it.
    DA-only entry, keep the flag enabled before package/provision rather than adding an unrelated
    top-level registration. Add
    `expose_skill_to_copilot: true` only when that DA behavior is intended.
-5. **Run deep validation before publishing.** Static `wiqd agent validate` cannot see
+5. **Run package validation before publishing.** `wiqd agent validate --mode source` cannot see
    `agentSkills[]` or `SKILL.md` content — always follow `wiqd agent package` with
-   `wiqd agent validate --mode deep` before a submission. (`wiqd plugin validate --mode deep`
-   reaches the same check, but only for a plugin project with its own `wiqd.plugin.json` — not
+   `wiqd agent validate --mode package --package-file "<zip>"` before a submission. (`wiqd plugin validate --mode deep`
+   is only for a plugin project with its own `wiqd.plugin.json` — not
    this file's audience.)
 6. **Prefer the matching command over hand-editing.** `wiqd agent add skill` creates the folder and
    DA registration together; `wiqd plugin add skill` creates the folder and Cowork registration

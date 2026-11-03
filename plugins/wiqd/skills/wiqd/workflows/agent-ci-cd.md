@@ -72,7 +72,11 @@ the tenant owner; content tests or successful token bootstrap do not prove acces
 ## 3. Prepare the lifecycle sequence
 
 Use the reference's provider-neutral example:
-static validate -> provision -> revalidate -> package -> org-catalog publish.
+source validate -> provision -> source revalidate -> package -> explicit ZIP package validation
+-> org-catalog publish. Use `--mode source` with the same path/environment before lifecycle
+operations, not default validation. Package validation requires the successfully built ZIP and
+may need separately scoped TDP authentication. Provision/publish build their own uploads; these
+workflow checks do not establish that either uploads the exported ZIP bytes.
 Adapt only the operations the user needs. Share uses the same lifecycle
 credential but needs an explicitly approved audience; do not add destructive
 cleanup or perform all mutations merely because their authentication is supported.

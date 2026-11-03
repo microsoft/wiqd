@@ -7,7 +7,7 @@
       "id": "wiqd-core",
       "file": "workflows/wiqd-core.md",
       "routingLabel": "Agent lifecycle tasks",
-      "routingIntent": "Creating, editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents",
+      "routingIntent": "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, connecting Worker Agents, adding capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation",
       "order": 1,
       "triggers": [
         "create agent",
@@ -48,8 +48,6 @@
         "add environment",
         "migrate my agent",
         "localize my agent",
-        "validate my agent",
-        "fix my agent manifest",
         "update instructions",
         "add web search",
         "update manifest",
@@ -77,7 +75,6 @@
       ],
       "journeyPhases": [
         "Build",
-        "Improve",
         "Preview",
         "Publish"
       ]
@@ -329,6 +326,44 @@
       "journeyPhases": []
     },
     {
+      "id": "validation",
+      "file": "workflows/validation.md",
+      "routingLabel": "Agent source / package / Marketplace validation and repair",
+      "routingIntent": "Explicitly validate source, a final ZIP or Marketplace readiness, run live functional checks, or repair validation findings; not general authoring, account setup or publication",
+      "order": 10,
+      "triggers": [
+        "validate my agent",
+        "validate source",
+        "check my manifest",
+        "fix my agent manifest",
+        "validate package",
+        "validate this package",
+        "validate this ZIP",
+        "check this ZIP",
+        "validate package for marketplace",
+        "run live functional validation",
+        "live functional validation",
+        "functional validation",
+        "interpret my validation report",
+        "partner center validation",
+        "partner center validate",
+        "marketplace validation",
+        "marketplace validate",
+        "validate for partner center",
+        "validate for marketplace",
+        "fix validation findings",
+        "fix this validation report",
+        "validate and fix this package",
+        "validate and fix my agent"
+      ],
+      "requires": [
+        "agent validate"
+      ],
+      "journeyPhases": [
+        "Improve"
+      ]
+    },
+    {
       "id": "agent-ci-cd",
       "file": "workflows/agent-ci-cd.md",
       "routingLabel": "Agent development CI/CD setup",
@@ -539,16 +574,6 @@
     },
     {
       "phrase": "localize my agent",
-      "workflowId": "wiqd-core",
-      "workflowFile": "workflows/wiqd-core.md"
-    },
-    {
-      "phrase": "validate my agent",
-      "workflowId": "wiqd-core",
-      "workflowFile": "workflows/wiqd-core.md"
-    },
-    {
-      "phrase": "fix my agent manifest",
       "workflowId": "wiqd-core",
       "workflowFile": "workflows/wiqd-core.md"
     },
@@ -1316,6 +1341,121 @@
       "phrase": "open the debugger",
       "workflowId": "devui",
       "workflowFile": "workflows/devui.md"
+    },
+    {
+      "phrase": "validate my agent",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate source",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "check my manifest",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "fix my agent manifest",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate package",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate this package",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate this zip",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "check this zip",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate package for marketplace",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "run live functional validation",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "live functional validation",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "functional validation",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "interpret my validation report",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "partner center validation",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "partner center validate",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "marketplace validation",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "marketplace validate",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate for partner center",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate for marketplace",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "fix validation findings",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "fix this validation report",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate and fix this package",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
+    },
+    {
+      "phrase": "validate and fix my agent",
+      "workflowId": "validation",
+      "workflowFile": "workflows/validation.md"
     },
     {
       "phrase": "set up agent ci/cd",

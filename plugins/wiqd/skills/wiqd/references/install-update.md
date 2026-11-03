@@ -23,6 +23,12 @@ updates, not to an explicit request to install the VS Code extension.
 
 Install only the CLI prerequisite. Keep the marketplace-installed plugin and VS Code extension unchanged.
 
+For a missing or broken CLI discovered during another task, follow
+[Recovery approval](preflight.md#recovery-approval) before installation or repair.
+After approval, execute the matching installer below rather than only showing it.
+Follow [Verify recovery](preflight.md#procedure) to check the result and resume the original user request.
+Installation consent does not authorize authentication or EULA acceptance.
+
 ### Windows prerequisite: PowerShell 7+
 
 The Windows installer requires **PowerShell 7 or later** (`pwsh.exe`), not
@@ -83,5 +89,6 @@ wiqd update --skip-plugin --skip-extension --skill wiqd
 wiqd --version
 ```
 
-**Next steps after install:** read the core lifecycle workflow (`wiqd-core`)
-to create an agent or validate an existing project.
+**Next steps after install:** resume the original user request in its matched workflow;
+do not redirect a Work IQ query or another pending task into agent creation.
+For a standalone installation request with no pending workflow, report the verified CLI version.

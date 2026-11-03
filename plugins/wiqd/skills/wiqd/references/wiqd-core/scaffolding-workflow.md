@@ -139,7 +139,7 @@ For declarative-agent lifecycle tasks, invoke the `wiqd` skill before editing ag
 - Adding a new language to an already-localized agent
 - Writing or updating agent instructions
 - Deploying and provisioning with `wiqd agent provision`
-- Validating the project with `wiqd agent validate`
+- Checking saved source with `wiqd agent validate --mode source --path "<project>" --env "<selected-environment>"`
 - Fixing manifest errors or validation failures
 
 **Do NOT:**

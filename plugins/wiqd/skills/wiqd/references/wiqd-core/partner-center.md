@@ -24,8 +24,9 @@ back to a missed item here.
 
 | Area | Requirement | How to satisfy |
 |------|-------------|----------------|
-| Manifest | Validates with zero errors | `wiqd agent validate` — fix every error |
+| Source | Saved diagnostics have no errors | `wiqd agent validate --mode source --path "<project>" --env prod` |
 | Package | Built from the production env | `wiqd agent package --env prod` |
+| Marketplace readiness | Final ZIP package/policy checks pass | `workflows/validation.md` using `--mode marketplace` and the exact built ZIP |
 | Version | Unique, higher than any prior upload | Bump the manifest version before re-packaging |
 | Color icon | 192×192 px PNG | Matches the icon in the package |
 | Outline icon | 32×32 px transparent, monochrome PNG | Matches the icon in the package |
@@ -74,8 +75,8 @@ longer due to the additional responsible-AI scrutiny.
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Package upload rejected | Duplicate version, or invalid manifest | Bump the manifest version, re-run `wiqd agent validate` then `wiqd agent package` |
-| "Manifest failed validation" | Schema errors in the manifest | Run `wiqd agent validate`, fix every error, re-package |
+| Package upload rejected | Duplicate version, or invalid manifest | Authorize source repair, source-check with the packaging path/environment, rebuild, then rerun Marketplace on that exact ZIP |
+| "Manifest failed validation" | Schema errors in the manifest | Use `workflows/validation.md` for scoped repair and same-mode revalidation; do not patch the ZIP |
 | Icon rejected | Wrong size/format | Color icon 192×192 PNG; outline icon 32×32 transparent PNG |
 | Missing privacy / terms | No public Privacy Policy or Terms of Use URL | Add publicly reachable Privacy Policy and Terms of Use URLs to the listing |
 | Consent / permissions flagged | Requested scopes not justified in listing | Describe why each permission is needed; remove unused scopes |
@@ -92,14 +93,14 @@ To publish a new version after go-live:
 
 1. Make the change and bump the **`version` field in the app manifest**
    (`appPackage/manifest.json`).
-2. `wiqd agent validate` — resolve every error.
+2. `wiqd agent validate --mode source --path "<project>" --env prod` — resolve source errors.
 3. `wiqd agent package --env prod` — rebuild the `.zip`.
-4. In Partner Center, upload the new package to the existing offer, update the
+4. Run `workflows/validation.md` in Marketplace mode on the new ZIP, then in Partner Center, upload the package to the existing offer, update the
    listing if needed, and **Submit** for re-certification.
 
 ## Related references
 
 - `references/wiqd-core/package.md` — packaging behavior and `wiqd agent package`.
 - `references/wiqd-core/validate.md` — manifest validation and `wiqd agent validate`.
-- `references/validate/store-ops-validation.md` — pre-submission store-ops
-  readiness check (skill lives in the `microsoft.validate` extension).
+- `workflows/validation.md` and `references/validate/listing-collection.md` — package/Marketplace
+  readiness, listing review and authorized repair (`microsoft.validate`).
