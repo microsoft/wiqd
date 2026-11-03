@@ -302,12 +302,13 @@ and any requested provisioning has passed its canonical workflow.
 When provisioning is part of the request, validate the exact target first:
 
 ```bash
-wiqd agent validate --env "<requested-environment>" --path "<project-directory>" --json --skill wiqd --workflow wiqd-core
+wiqd agent validate --mode source --env "<requested-environment>" --path "<project-directory>" --json --skill wiqd --workflow wiqd-core
 ```
 
 For validation-only requests with no target environment, omit `--env`.
 
-Use static validation by default. Use `--mode deep` only when the user requests
+Use source validation for the edit gate. Hand explicit final-package validation to
+`workflows/validation.md` with the exact ZIP; use `--mode package` only when the user requests
 it or the owning validation guidance establishes that the required package or
 external-reference inputs are available.
 

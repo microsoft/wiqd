@@ -4,9 +4,9 @@ description: >
   Full lifecycle workflow for M365 Copilot declarative agents with wiqd.
   Covers creating, editing, adding capabilities, actions, skills, and authentication,
   coordinating Azure-hosted OpenAPI servers,
-  validating, provisioning, packaging, sharing, deleting,
+  source-checking edits, provisioning, packaging, sharing, deleting,
   managing environments, showing agent details, migrating, and localizing agents.
-trigger-summary: "Azure API, create/edit agent, capabilities, default response mode, worker agents, add plugin capability, add agent skill, authentication, validate, provision, deploy, package, share, delete, open, show, migrate, localize, environments"
+trigger-summary: "Azure API, create/edit agent, capabilities, default response mode, worker agents, add plugin capability, add agent skill, authentication, provision, deploy, package, share, delete, open, show, migrate, localize, environments"
 triggers: >
   create agent, new agent, scaffold agent, edit my agent, update my agent, modify my agent,
   add a capability, add a capability to this agent, add a named capability,
@@ -21,12 +21,12 @@ triggers: >
   provision my agent, deploy my agent, package my agent,
   share my agent, delete my agent, remove my agent, open my agent, show my agent,
   show my environments, manage environments, add environment, migrate my agent,
-  localize my agent, validate my agent, fix my agent manifest, update instructions,
+  localize my agent, update instructions,
   add web search, update manifest, set default response mode, change default response mode,
   set quick response mode, set think deeper mode, review instructions, add a worker agent, connect a worker agent,
   remove a worker agent, disconnect a worker agent
 routing-label: "Agent lifecycle tasks"
-routing-intent: "Creating, editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding Worker references, capabilities, actions, skills, and authentication, validating, provisioning, packaging, sharing, deleting, showing agents"
+routing-intent: "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, connecting Worker Agents, adding capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation"
 routing-order: 1
 contract-version: 1
 routing-requires: [agent create, agent add, agent validate, agent provision, agent package, agent share, agent env, agent show, agent delete, agent publish]
@@ -43,17 +43,12 @@ journey: |
   box-item: localize
   entry: No `appPackage/` directory, or user wants to continue editing
   goal: Get a project on disk and define what the agent does
-  workflow-desc: — handles create, edit, validate, migrate, localize
+  workflow-desc: — handles create, edit with source prechecks, migrate, localize
   exit: `appPackage/manifest.json` and `declarativeAgent.json` exist and are structurally valid
   signal: No `appPackage/` at all => **Build** (start with create/migrate)
   signal: `appPackage/` exists, no evals yet => **Build** or **Improve**
   plan-step: 10 | validate manifest
-  readiness: Manifest validates clean | wiqd agent validate
-
-  [Improve]
-  order: 2
-  box-item: validate
-  workflow-desc: for validate
+  readiness: Saved source validates clean | wiqd agent validate --mode source
 
   [Preview]
   order: 3
@@ -103,11 +98,11 @@ validate command. Only a successful validation permits the requested local provi
 This workflow handles two core flows directly and routes to reference files for other lifecycle operations:
 1. **Create** — scaffold a brand-new agent project from a template
 2. **Edit** — modify an existing agent's capabilities, instructions, starters, actions, skills, and authentication
-3. **Other lifecycle operations** — validate, provision, package, share, delete, open, env, show, migrate, localize → handled via reference files
+3. **Other lifecycle operations** — provision, package, share, delete, open, env, show, migrate, localize → handled via reference files. Explicit validation and identified-finding repair hand off to `workflows/validation.md`.
 
 ## Existing-Project Lifecycle Gate — MANDATORY BEFORE ROUTING
 
-Before **Edit**, **Validate**, **Provision/Deploy**, or **Package**, inspect the project root for
+Before **Edit**, **Provision/Deploy**, or **Package**, inspect the project root for
 `m365agents.yml`, `m365agents.local.yml`, `teamsapp.yml`, or `teamsapp.local.yml`, matching the
 filenames case-insensitively.
 
@@ -132,11 +127,11 @@ Determine which flow to follow based on user intent:
 | Add/connect/remove/disconnect a Worker Agent | Run the **Existing-Project Lifecycle Gate**, then read `../references/worker-agents.md`. Removing a Worker removes only its manifest reference; it never deletes the deployed agent. |
 | Set or change the agent's default response mode (`Auto`, `Quick response`, or `Think deeper`) | Run the **Existing-Project Lifecycle Gate**, then read **Setting the default response mode** before editing: live schema first, surgical edit second, full validation command third, provision only after success unless opted out. |
 | Add or change any capability in an existing agent — including “add [named capability] to this agent” | Run the **Existing-Project Lifecycle Gate**, then the **Edit** workflow (below) |
-| Edit, update, add, modify, change, rename, rewrite, fix, improve, configure | Run the **Existing-Project Lifecycle Gate**, then the **Edit** workflow (below) |
-| Validate | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/validate.md` — run `wiqd agent validate` |
+| General authoring: edit, update, add, modify, change, rename, rewrite, fix, improve, configure | Run the **Existing-Project Lifecycle Gate**, then **Edit**, except identified validation findings: those hand off to `workflows/validation.md` without entering Edit. |
+| Explicit validation or repair of identified validation findings | Hand off to `workflows/validation.md` with the known project/environment/result. That workflow selects source/package/marketplace and owns scoped repair; do not enter general Edit. |
 | Provision, deploy | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/provision.md` |
 | Package, build zip | Run the **Existing-Project Lifecycle Gate**, then read `references/wiqd-core/package.md` |
-| Store ops audit, pre-submission check, marketplace / Teams Store / AppSource validation, "will my agent pass review?", publish readiness | Read `references/validate/store-ops-validation.md` (skill lives in the `microsoft.validate` extension) |
+| Pre-submission check, Marketplace / Teams Store / AppSource validation, "will my agent pass review?" | Hand off to `workflows/validation.md` (`microsoft.validate`); Marketplace includes package validation and policy checks, not publication. |
 | Evaluate, test agent, run evals | Read `workflows/eval.md`; it selects the dataset and judge backend before checking only the prerequisites required for that path |
 | Share (with users, a security group, or the tenant), collaborator | Read `references/wiqd-core/share.md` |
 | Delete, remove agent | Read `references/wiqd-core/lifecycle.md` → Delete section |
@@ -641,14 +636,15 @@ otherwise add or replace only `behavior_overrides.default_response_mode`. Preser
 indentation, and newline style. Re-read the manifest and verify the exact nested value and
 preservation.
 
-Run:
+Select the user's target environment, defaulting to `local`, and use that same environment
+and project path for the source check and any authorized provision. Run:
 
 ```bash
-wiqd agent validate --path <project-directory> --json --skill wiqd --workflow wiqd-core
+wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core
 ```
 
 If validation fails, report the findings and do not provision. If validation succeeds, run
-`wiqd agent provision --env local --path <project-directory> --json --skill wiqd --workflow wiqd-core`
+`wiqd agent provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
 unless the user explicitly opted out of provision or deployment. An opt-out suppresses provision
 only; the valid edit and validation still happen. See
 [Default response mode](../references/wiqd-core/editing-workflow.md#default-response-mode) for the canonical
@@ -802,7 +798,7 @@ the generated frontmatter and replace the placeholder comments with the user's a
 instructions. Verify `appPackage/skills/<skill-name>/SKILL.md` and the matching
 `appPackage/declarativeAgent.json#agent_skills[]` entry.
 
-Then run `wiqd agent validate --path <project-directory> --json`. Static validation currently
+Then run `wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json`. Source validation currently
 checks only `declarativeAgent.json`, not the referenced `SKILL.md` or top-level `agentSkills[]`, and
 may report the preview `agent_skills` property as unrecognized even when the add command succeeded.
 Do not provision unless asked.

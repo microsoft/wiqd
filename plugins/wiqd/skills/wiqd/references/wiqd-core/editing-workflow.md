@@ -156,10 +156,17 @@ If you are about to respond to the user and you have NOT deployed, **STOP and de
 
 **⛔ PRE-DEPLOY CHECK:** Before running the command below, verify the JSON files are syntactically correct and have the required fields. If there are known errors → fix them first before deploying.
 
+Run `wiqd agent validate --mode source --path "<project-directory>" --env local --json --skill wiqd --workflow wiqd-core`
+and require a completed passing result before the local provision below. Use the same selected
+project and environment for both calls. A source failure stops deployment; authorized finding-bound
+repair belongs to `workflows/validation.md`. Never use default validation for this precheck: it
+requires a built ZIP and would create a build/validate cycle. This is a workflow gate, not proof
+of final-package acceptance or a new backend-enforced source check.
+
 **Action:** Provision required Azure resources and register the agent:
 
 ```bash
-wiqd agent provision --env local
+wiqd agent provision --path "<project-directory>" --env local
 ```
 
 **Result:** Returns a test URL like `https://m365.cloud.microsoft/chat?titleId=T_abc123xyz`
@@ -466,9 +473,9 @@ already exists, add or replace only `default_response_mode`. Preserve `special_i
 Every fail-closed path leaves the original manifest byte-identical.
 
 After the edit, re-read the manifest, verify the exact nested value and preservation, and run
-`wiqd agent validate --path <project-directory> --json --skill wiqd --workflow wiqd-core`.
+`wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core`.
 Provision only after validation succeeds. Run
-`wiqd agent provision --env local --path <project-directory> --json --skill wiqd --workflow wiqd-core`
+`wiqd agent provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
 unless the author explicitly asked not to deploy or provision; that opt-out does not skip the edit
 or validation.
 

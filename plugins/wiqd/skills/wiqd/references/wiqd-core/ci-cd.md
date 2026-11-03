@@ -84,17 +84,22 @@ if (Test-Path Env:M365_REFRESH_TOKEN) {
   }
 }
 $common = @('--path', $project, '--env', $environment, '--json', '--skill', 'wiqd', '--workflow', 'agent-ci-cd')
-Invoke-WiqdJson 'validate' (@('agent', 'validate') + $common) | Out-Null
+Invoke-WiqdJson 'validate-source' (@('agent', 'validate', '--mode', 'source') + $common) | Out-Null
 Invoke-WiqdJson 'provision' (@('agent', 'provision') + $common) | Out-Null
-Invoke-WiqdJson 'validate-provisioned' (@('agent', 'validate') + $common) | Out-Null
+Invoke-WiqdJson 'validate-provisioned-source' (@('agent', 'validate', '--mode', 'source') + $common) | Out-Null
 Invoke-WiqdJson 'package' (@('agent', 'package', '--output', "$PWD/agent.zip") + $common) | Out-Null
 if (-not (Test-Path -LiteralPath agent.zip -PathType Leaf)) { throw 'Package output is missing.' }
+Invoke-WiqdJson 'validate-package' (@('agent', 'validate', '--mode', 'package', '--package-file', "$PWD/agent.zip") + $common) | Out-Null
 Invoke-WiqdJson 'publish' (@('agent', 'publish') + $common) | Out-Null
 ```
 
-For secret-free static checks, run only `agent validate` with the explicit project,
-environment and `--json` flags, without deployment credentials. Static validation
-is not deep validation, eval or permission to publish.
+For secret-free offline checks, run only `agent validate --mode source` with the explicit project,
+environment and `--json` flags, without deployment credentials. Source diagnostics are one-shot,
+not LSP or final-ZIP validation. Package validation follows the successful build and uploads the
+explicit captured ZIP to TDP; missing authentication/service results block, not pass.
+Neither check is eval or permission to publish. Source prechecks here are workflow gates, not
+new forced backend checks. Provision and publish build their own artifacts; package validation
+does not prove either operation uploads the previously validated bytes.
 
 The selected lifecycle credential also serves supported core-backed share and
 corresponding plugin provision/publish/share operations. Add only explicitly

@@ -78,6 +78,15 @@ to prepare a shared environment. For help-only requests, explain this flow
 without running it. For read-only access requests, follow the listing section
 below without provisioning.
 
+Direct `wiqd agent share` and `wiqd plugin share` also enforce this prerequisite
+in the CLI: the selected environment file must contain `AGENT_SCOPE=shared`.
+Missing, invalid, duplicate, or non-shared scope returns `INVALID_AGENT_SCOPE`
+(exit `1`) before fx-core sharing. The CLI does not provision automatically or
+accept process environment values as deployment evidence. Correct the shared
+deployment configuration, then validate and provision with the same explicit
+project path and environment before retrying; do not relabel an existing
+personal deployment.
+
 ## Commands
 
 ### Share with specific users (recommended starting point)

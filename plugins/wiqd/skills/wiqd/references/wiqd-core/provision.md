@@ -24,13 +24,16 @@ applicable version handling, but use `wiqd plugin validate` and
 
 ## Validation Gate — MANDATORY
 
-Provisioning is **blocked** until the manifest validates clean. Complete any
-authorized shared-version preparation below before this validation:
+In this workflow, provisioning is **blocked** until saved source validates clean.
+Complete any authorized shared-version preparation below before this validation:
 
-1. Run `wiqd agent validate --json --skill wiqd --env <environment> [--path <path>]` as a precondition, using the same environment and project path that will be provisioned.
+1. Run `wiqd agent validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be provisioned.
 2. **PASS** → proceed. **FAIL** → stop, surface diagnostics, do NOT provision.
-3. On failure, report the diagnostics and stop this provisioning flow. Route
-   repairs through agent-validate rather than editing or retrying here.
+3. For authorized repairs, use `workflows/validation.md` and return only after same-mode source revalidation passes. Do not build a ZIP merely to run this gate.
+
+This is a workflow gate, not a new mandatory backend gate on direct provision calls. Source
+validation has no ZIP identity; provision builds its own upload and is not claimed to upload any
+previously validated ZIP. Missing deployment IDs that provision creates are not pre-provision inputs.
 
 ## Command
 

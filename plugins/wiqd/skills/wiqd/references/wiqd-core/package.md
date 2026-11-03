@@ -6,11 +6,15 @@ Build a distributable .zip app package for publishing or sideloading.
 
 ## Validation Gate — MANDATORY
 
-Packaging is **blocked** until the manifest validates clean. Before running the package command:
+In this workflow, packaging is **blocked** until saved source validates clean. Before running the package command:
 
-1. Run `wiqd agent validate --json --skill wiqd --env <environment> [--path <path>]` as a precondition, using the same environment and project path that will be packaged.
+1. Run `wiqd agent validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be packaged.
 2. **PASS** → proceed to package. **FAIL** → stop, surface diagnostics, do NOT package.
-3. Do not re-run validation or interpret diagnostics from this context.
+3. For authorized repairs, use `workflows/validation.md` and return only after same-mode source revalidation passes. Do not call default package validation before building or recurse through packaging.
+
+This is a workflow gate, not a new mandatory backend gate on direct package calls. Source checks
+do not prove final ZIP acceptance; validate the returned ZIP with `--mode package` or
+`--mode marketplace` when requested. No validation mode builds automatically.
 
 ## Command
 

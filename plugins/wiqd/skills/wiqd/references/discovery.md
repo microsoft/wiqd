@@ -49,13 +49,13 @@ See `references/extensions.md` for full extension management.
 
 wiqd covers the full agent lifecycle. The key phases are:
 
-| Phase        | What to Say                            | Commands Involved                |
-| ------------ | -------------------------------------- | -------------------------------- |
-| **Build**    | "create an agent", "add a capability"  | `agent create`, `agent add`      |
-| **Validate** | "validate my agent"                    | `agent validate`                 |
-| **Improve**  | "run my evals", "evaluate my agent"    | `agent eval`                     |
-| **Preview**  | "provision my agent", "share my agent" | `agent provision`, `agent share` |
-| **Publish**  | "publish my agent"                     | `agent publish`                  |
+| Phase        | What to Say                            | Commands Involved                                                                                        |
+| ------------ | -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Build**    | "create an agent", "add a capability"  | `agent create`, `agent add`                                                                              |
+| **Validate** | "validate my agent"                    | `validation` workflow: source for saved source, package for ZIP, Marketplace for package + policy checks |
+| **Improve**  | "run my evals", "evaluate my agent"    | `agent eval`                                                                                             |
+| **Preview**  | "provision my agent", "share my agent" | `agent provision`, `agent share`                                                                         |
+| **Publish**  | "publish my agent"                     | `agent publish`                                                                                          |
 
 For the full lifecycle map, see:
 
