@@ -42,7 +42,7 @@ core-backed `wiqd agent share` commands below.
 
 This checkpoint applies to **direct sharing**, not command-help or read-only
 collaborator-list requests. For a standalone plugin, use the same checks with
-`wiqd plugin validate`, `wiqd plugin provision`, and `wiqd plugin share`; do not
+`wiqd plugin validate --mode source`, `wiqd plugin provision`, and `wiqd plugin share`; do not
 substitute agent commands or invent plugin collaborator/list subcommands.
 
 1. Resolve the existing project path and intended environment. Explain the

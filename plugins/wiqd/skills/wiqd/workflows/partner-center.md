@@ -70,7 +70,7 @@ then drive it through the Partner Center submission and certification flow.
 ## The publishing journey at a glance
 
 ```
-Build & validate → Package → Store Ops audit → Enroll in Partner Center → Create offer
+Build & validate → Package → Package validation + policy advice → Enroll in Partner Center → Create offer
    → Upload package → Complete listing → Submit → Certification → Go live
 ```
 
@@ -78,7 +78,8 @@ Build & validate → Package → Store Ops audit → Enroll in Partner Center �
 |-------|--------------|----------------|
 | Build & validate | Finalize the agent, fix saved-source errors | `wiqd agent validate --mode source` with the packaging path/environment |
 | Package | Build the distributable `.zip` | `wiqd agent package` |
-| Marketplace validation | Gate the final `.zip` on package and policy findings | `workflows/validation.md` |
+| Package validation | Require the final `.zip` to pass package validation | `wiqd agent validate --mode package --package-file "<final.zip>"` |
+| Marketplace readiness | Show policy findings as non-blocking warnings | `workflows/validation.md` when listing/evidence inputs are available |
 | Enroll | Get a verified Partner Center account | Partner Center |
 | Create offer | Start a Microsoft 365 and Copilot offer | Partner Center |
 | Upload | Upload the app package `.zip` | Partner Center |
@@ -111,7 +112,7 @@ Before touching Partner Center, confirm the partner has:
 ## Step 1 — Build the submittable package
 
 Use wiqd to produce the distributable `.zip` — this is the artifact uploaded to
-Partner Center.
+Partner Center. Require source validation to pass before building.
 
 ```bash
 # Check saved source for the same project and environment before building
@@ -128,20 +129,35 @@ reports errors, resolve them first — re-run `wiqd agent validate --mode source
 manifest-level problems and use `--verbose` for the full upstream output. For
 packaging details, read `references/wiqd-core/package.md`.
 
-## Step 2 — Run the Store Ops submission gate
+## Step 2 — Validate the package and show Marketplace advice
 
-Before guiding any Partner Center upload or submission, follow `workflows/validation.md` in
-`marketplace` mode against the exact final ZIP from Step 1. It performs TDP and StoreOps checks on
-the same captured bytes, preserves listing HTML confirmation and current-host evidence, and does
-not create an offer or submit. Read `data` or completed non-pass `error.data`.
+Before guiding any Partner Center upload or submission, run:
 
-- Require `validation.result == "PASSED"` with complete selected checks. Missing/malformed results,
-  `FAILED` or `ERROR` stop upload/submission guidance; show findings and incomplete checks.
-- Surface warnings, suggestions and manual approvals without claiming official certification.
-  A pass is a workflow prerequisite, not publication authorization. If repair changes the ZIP,
-  rerun Marketplace validation before resuming this journey.
+```bash
+wiqd agent validate --mode package --package-file "<final.zip>" --json
+```
 
-This gate applies only to Partner Center / public Marketplace submission. It is not a prerequisite for tenant LOB or org-catalog publishing, sideloading, or ordinary audience/ring sharing.
+Require `validation.result == "PASSED"` from this independent package run on the
+exact final ZIP. Missing, malformed, mismatched, `FAILED` or `ERROR` package
+results stop upload/submission guidance. Read successful results from `data` and
+completed non-pass results from `error.data`.
+
+Marketplace policy checks are advisory for publishing. When listing/evidence
+inputs are available, follow `workflows/validation.md` in Marketplace mode on
+the same ZIP. Otherwise warn that policy readiness is unverified and continue
+after the package gate passes; do not make listing/evidence collection a new
+publishing prerequisite. Surface policy findings, skipped checks, missing/malformed
+reports and `FAILED`/`ERROR` policy outcomes as warnings, not publication blockers.
+Do not require policy repair, a passing Marketplace result or a waiver. Preserve
+actual results and report links; this is not official certification or publication
+authorization.
+
+Marketplace mode also runs package/TDP checks. Do not treat its combined result
+as policy-only or let an actual package failure/incomplete check be hidden by
+this advisory rule. Do not change the ZIP between validation and upload. If
+source/ZIP changes, rerun applicable source/package validation before resuming.
+Marketplace policy checks are not a prerequisite for tenant LOB or org-catalog
+publishing, sideloading, or ordinary audience/ring sharing.
 
 ## Step 3 — Enroll in and set up Partner Center
 
@@ -203,14 +219,15 @@ AI-powered agents given the additional scrutiny.
 - Apps go live **globally after certification** (subject to market selection) —
   there is no ring-based rollout on the 3P path.
 - To ship an update, repeat Steps 1, 2, and 5–7 with a **bumped manifest version**
-   so the newly built package passes the Store Ops gate before upload and
-   certification.
+   so the newly built package passes package validation before upload and
+   certification; Marketplace policy findings remain advisory.
 
 ## Troubleshooting
 
 When a submission is rejected, Partner Center returns specific reviewer feedback.
 Address **every** item through authorized repair, source-check and re-package if the
-source changed, then rerun Marketplace validation on the new ZIP before resubmitting. For a symptom → cause → fix
+source changed, then rerun package validation on the new ZIP before resubmitting.
+Marketplace policy findings remain advisory. For a symptom → cause → fix
 table covering the common rejections (duplicate version, icon format, missing
 privacy/terms URLs, consent/permission flags, responsible-AI feedback), read
 `references/wiqd-core/partner-center.md` → Troubleshooting rejections.
@@ -218,7 +235,8 @@ privacy/terms URLs, consent/permission flags, responsible-AI feedback), read
 ## Related commands
 
 - `wiqd agent validate --mode source` — same-path/environment pre-build workflow gate.
-- `wiqd agent validate --mode marketplace --package-file "<final.zip>"` — package plus policy submission gate through the canonical workflow.
+- `wiqd agent validate --mode package --package-file "<final.zip>"` — required final ZIP package gate.
+- `wiqd agent validate --mode marketplace --package-file "<final.zip>"` — package plus policy readiness through the canonical workflow; policy findings are advisory for publishing.
 - `wiqd agent package` — builds the `.zip` uploaded to Partner Center.
 - `wiqd agent provision` / `wiqd agent share` — provision and preview with early
   users before publishing publicly.

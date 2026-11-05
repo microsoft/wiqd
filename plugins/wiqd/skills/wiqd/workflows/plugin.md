@@ -240,8 +240,8 @@ DevOps connector to my plugin"**:
    selector, then ask the user to choose one. Never choose by response order.
 6. If no result matches, report that the catalog did not return the named connector. Only then offer the
    manual `plugin add connector` paths.
-7. After successful composition, run `wiqd plugin validate --path <plugin-dir>` and report the actual
-   validation result.
+7. After successful composition, run `wiqd plugin validate --mode source --path <plugin-dir> --env <env>`
+   and report the actual validation scope and result.
 
 The selector is the only discovery value the user needs to copy. Catalog title IDs remain provenance
 inside the list/show output and are encoded into composite selectors only when needed for
@@ -252,16 +252,28 @@ user or discovered from a catalog result. Do not ask for or invent a URL, OpenAP
 credentials, or a connection instance id: the platform resolves those from `ConnectionVault` at
 runtime. Do not route this request to the declarative-agent `actions[]` OpenAPI-plugin surface; that
 is a different artifact. The preview authoring path does not prove public schema documentation,
-numbered-manifest support, or Store/Partner Center acceptance. Package and deep-validate the result,
+numbered-manifest support, or Store/Partner Center acceptance. Package and package-validate the result,
 and report any upstream rollout failure rather than rewriting the connector.
 
 ### 3. Validate
 
 ```bash
-wiqd plugin validate [--path <dir>]
+wiqd plugin validate --mode source --path <dir> --env <env> --json
 ```
 
-Validates the descriptor and component artifacts. Fix any reported errors and re-run until clean before packaging.
+Use explicit `source` before provisioning/packaging, with the same project and environment.
+It reuses agent saved-source diagnostics plus plugin project guards, not full descriptor/schema,
+skill, connector or app-package validation. A skill-only/connector-only plugin has no
+declarative-agent source coverage; report that limitation, not a fully validated plugin.
+A declared but missing DA blocks validation. Fix reported errors and re-run the same mode.
+
+After packaging, use `wiqd plugin validate --mode package --package-file <zip> --json`;
+for Marketplace readiness use `--mode marketplace` with the applicable listing/evidence options.
+These share the agent validation runtime, final-ZIP checks and immutable JSON/HTML reports.
+**The default is now `package`, not offline validation:** it uploads the ZIP to TDP and may
+require sign-in. Validation never builds a ZIP, signs in or prepares deployment implicitly.
+ZIP-only requests do not require source guards. Old `static`/`deep`/`manifest` modes fail
+with migration guidance rather than silently changing scope.
 
 ### 4. Inspect / lifecycle (as needed)
 
@@ -311,7 +323,7 @@ For a standard project whose `dev` configuration is confirmed shared, the
 authorized preparation sequence is:
 
 ```bash
-wiqd plugin validate --path <dir> --env dev --json --skill wiqd --workflow plugin
+wiqd plugin validate --mode source --path <dir> --env dev --json --skill wiqd --workflow plugin
 wiqd plugin provision --path <dir> --env dev --json --skill wiqd --workflow plugin
 wiqd plugin share --path <dir> --env dev --scope users --email <recipient> --json --skill wiqd --workflow plugin
 ```
@@ -339,12 +351,12 @@ describe that skip as full skill or connector runtime validation. A successful
 normal publish means **submitted for tenant admin approval**; it does not mean
 approved, immediately tenant-wide, shared, or public-store published.
 
-For an OpenAPI custom connector, static validation does not inspect the top-level connector.
-Package first, then run `wiqd plugin validate --mode deep`. Local packaging and server-side AVL
+For an OpenAPI custom connector, source validation does not inspect the top-level connector.
+Package first, then run `wiqd plugin validate --mode package`. Local packaging and server-side AVL
 support are separate: the bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview
 packaging of OpenAPI and remote MCP connectors using `ConnectionVault`, preserving their fields
 in the ZIP and leaving the source manifest unchanged. Do not infer server acceptance from local
-packaging success. Supply a built ZIP with `--package-file` for deep validation and report its actual server verdict;
+packaging success. Supply a built ZIP with `--package-file` for package validation and report its actual server verdict;
 validation alone does not prove connector invocation or publication acceptance. `wiqd plugin export`
 intentionally fails for this connector kind because Open Plugin has no verified
 `ConnectionVault` representation.
@@ -411,7 +423,8 @@ Pick `--format` from the user's stated destination: "for Claude" → `claude-plu
 
 **Round-tripping is lossless.** The Open Plugin standard has no slot for a declarative agent, so wiqd carries the DA manifest and its instructions file under `<export>/agent/` and records them in a wiqd-owned `x-wiqd` key in the exported manifest. Hosts that don't know the key ignore it and still see a valid standard plugin; `wiqd plugin import` reads it back and restores the agent. So `export` → `import` returns an equivalent project — but **only if the whole export directory is kept together**. If the user copies just the manifest, the agent is lost and import fails loudly rather than producing an agent-less project.
 
-Validate before exporting — a plugin that doesn't pass `wiqd plugin validate` will export its problems.
+Run `wiqd plugin validate --mode source` before exporting and report its limited DA coverage;
+this is not full skill/connector or export-format validation.
 
 ## Authoring a skill that calls an MCP server
 
@@ -431,7 +444,7 @@ A common request is _"build a skill that calls the MCP server at `https://…`."
 
    Then edit the generated `appPackage/skills/<slug>/SKILL.md` to describe the end-to-end workflow — how the agent should use the connector's tools, the steps, inputs, and guardrails.
 
-**Inspect the MCP server first.** Before designing the skill, inspect the server's advertised tools (fetch its tool list / manifest from the `--url`) so the SKILL.md instructions reference real tool names and shapes. Iterate on the SKILL.md until the plugin is coherent, then run `wiqd plugin validate` and resolve every finding before declaring it ready.
+**Inspect the MCP server first.** Before designing the skill, inspect the server's advertised tools (fetch its tool list / manifest from the `--url`) so the SKILL.md instructions reference real tool names and shapes. Iterate on the SKILL.md until the plugin is coherent, then run `wiqd plugin validate --mode source` and resolve every finding. Report the scope limitation: source success does not validate skill/connector content or deployment readiness.
 
 **If the server requires authentication.** `agentConnectors` supports `OAuthPluginVault`, `ApiKeyPluginVault`, and `DynamicClientRegistration` — all of which reference a credential stored elsewhere by id. The credential itself must be registered first, either in the Teams Developer Portal (**Tools → OAuth client registration**) or by an `oauth/register` step in `m365agents.yml` — see [authentication.md](../references/wiqd-core/authentication.md). Then wire the id in:
 
@@ -454,7 +467,7 @@ After each step, report the outcome and suggest the logical next action:
 
 - After `create` **or `import`** → "Add a skill", "Add a connector", "Add a declarative agent".
 - After `add …` → "Add another capability", or "Validate the plugin".
-- After a clean `validate` → "Provision the plugin" or "Export it for Claude/Cursor". If the manifest contains `openApiConnector`, omit the export suggestion and explain that Open Plugin cannot represent its `ConnectionVault` reference; static validation does not establish packaging or deployment readiness.
+- After clean source validation → "Provision the plugin" or "Export it for Claude/Cursor". If the manifest contains `openApiConnector`, omit the export suggestion and explain that Open Plugin cannot represent its `ConnectionVault` reference; source validation does not establish packaging or deployment readiness.
 - After personal `provision` → present the returned Cowork install/test link so
   the user can install and test the plugin; explain that sharing needs a shared
   deployment and offer preparation without starting it.
@@ -468,7 +481,7 @@ After each step, report the outcome and suggest the logical next action:
 - ❌ Don't scaffold a `wiqd agent` when the user asked for a **standalone plugin** — that produces an agent, not a reusable plugin.
 - ❌ Don't tell the user a **Cowork plugin** needs a different platform, SDK, or toolchain — it is the same Microsoft 365 app package this workflow builds (see Terminology). Treating a host surface as a separate product is never a reason to decline.
 - ❌ Don't hand-author plugin manifest files — always go through `wiqd plugin add …` so `manifest.json` and `wiqd.plugin.json` stay in sync.
-- ❌ Don't declare a plugin "ready" without a clean `wiqd plugin validate`.
+- ❌ Don't declare a plugin "ready" from source validation alone; disclose unvalidated skill/connector content and require the appropriate final-ZIP checks.
 - ❌ Don't silently enable the alpha flag — tell the user first (Preflight step 2).
 - ❌ Don't `create` and then hand-copy an existing Open Plugin's files into it — use `plugin import`, which is the supported entry point and preserves round-trip data.
 - ❌ Don't promise that importing a plugin merges its capabilities into an existing agent. The supported import flow creates a new plugin project from a foreign-format source.

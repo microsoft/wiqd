@@ -209,6 +209,17 @@
         "monitor my agent",
         "observe my agent",
         "how is my agent doing",
+        "how's my agent doing",
+        "how is my agent performing",
+        "is anyone using my agent",
+        "how many people use my agent",
+        "show my agent usage",
+        "agent usage stats",
+        "agent analytics",
+        "agent insights",
+        "what are users saying about my agent",
+        "user feedback on my agent",
+        "user ratings for my agent",
         "check agent health",
         "invoke my agent",
         "talk to my agent",
@@ -1029,6 +1040,61 @@
     },
     {
       "phrase": "how is my agent doing",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "how's my agent doing",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "how is my agent performing",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "is anyone using my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "how many people use my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "show my agent usage",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "agent usage stats",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "agent analytics",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "agent insights",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "what are users saying about my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "user feedback on my agent",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "user ratings for my agent",
       "workflowId": "workiq",
       "workflowFile": "workflows/workiq.md"
     },

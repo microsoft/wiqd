@@ -6,11 +6,11 @@ Observe, test, and monitor deployed agents — covers all observe scenarios thro
 
 ## Command Routing
 
-| User Intent                                    | Command              | Reference                      |
-| ---------------------------------------------- | -------------------- | ------------------------------ |
-| "Send a message to my agent" / "test my agent" | `wiqd agent ask`     | `references/workiq/ask.md`     |
-| "How is my agent doing?" / "show me analytics" | `wiqd agent monitor` | `references/workiq/monitor.md` |
-| "List all deployed agents"                     | `wiqd agent list`    | `references/workiq/list.md`    |
+| User Intent                                                                                       | Command              | Reference                      |
+| ------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------ |
+| "Send a message to my agent" / "test my agent"                                                    | `wiqd agent ask`     | `references/workiq/ask.md`     |
+| "How is my agent doing?" / "is anyone using it?" / "what are users saying?" / "show me analytics" | `wiqd agent monitor` | `references/workiq/monitor.md` |
+| "List all deployed agents"                                                                        | `wiqd agent list`    | `references/workiq/list.md`    |
 
 ## Agent Ask — Send Test Messages
 
@@ -40,7 +40,7 @@ wiqd agent ask --json --skill wiqd --agent-name "Sales Bot" -q "<message>"
 
 ## Agent Monitor — Usage Insights & Analytics
 
-Query the Insights Agent for usage metrics, performance data, and trends about a specific agent.
+Query the Insights Agent for usage metrics, performance data, trends, and user feedback about a specific agent. Run it for any natural-language question about how the agent is used or received — the user does not need to say "monitor".
 
 ```bash
 # Project mode (query computed from resolved agent name)
