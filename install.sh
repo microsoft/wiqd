@@ -90,7 +90,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.23.0"
+WIQD_INSTALLER_VERSION="0.24.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -1033,6 +1033,12 @@ wiqd_plugin_run() (
     return "$code"
 )
 
+wiqd_plugin_recovery_guidance() {
+    if printf '%s\n' "$1" | grep -Eiq '(^|[^[:alnum:]_])(EBUSY|EPERM|EACCES)([^[:alnum:]_]|$)|being used by another process|resource busy|file.*locked|access (is )?denied|permission denied|operation not permitted|os error (5|32)([^[:alnum:]_]|$)|ERROR_ACCESS_DENIED|ERROR_SHARING_VIOLATION|read-only file system'; then
+        printf '%s\n' 'Plugin files may be locked or inaccessible. Close other running Copilot or Claude sessions, then retry from a regular terminal. If the error persists, check write access to the path reported above.'
+    fi
+}
+
 wiqd_plugin_failure() {
     local code="$1"
     shift
@@ -1045,6 +1051,9 @@ wiqd_plugin_failure() {
     printf '%s\n' 'Error:' >&2
     if [[ -s "$wiqd_plugin_directory/stderr" ]]; then cat "$wiqd_plugin_directory/stderr" >&2; else printf 'Native command exited with code %s.\n' "$code" >&2; fi
     if [[ -s "$wiqd_plugin_directory/stdout" ]]; then cat "$wiqd_plugin_directory/stdout" >&2; fi
+    if [[ "$code" -ne 124 && ! -f "$wiqd_plugin_directory/timed-out" ]]; then
+        wiqd_plugin_recovery_guidance "$(cat "$wiqd_plugin_directory/stderr" "$wiqd_plugin_directory/stdout")" >&2
+    fi
     printf '%s\n' 'Resolve the reported error, then rerun this installer.' >&2
 }
 

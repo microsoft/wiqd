@@ -12,7 +12,7 @@ The Validate extension contributes validation, listing helpers and the hidden ed
 | [`wiqd agent validate`](/cli/agent/agent-validate/) | Source, package (default), or Marketplace including package checks. |
 | `wiqd agent validate add-market-listing` / `get-market-listing` / `preview-market-listing` | Save/read listing data and generate the whole-listing HTML review; no validation or publication. |
 | `wiqd agent lsp` | Language Server Protocol server for editor integration (hidden from `--help`). |
-| `wiqd plugin validate` | Standalone-plugin `static`/`deep` checks. |
+| `wiqd plugin validate` | The same source, package (default), and Marketplace modes, with plugin-specific source guards. |
 
 `--mode source` runs offline one-shot diagnostics on saved source through the shared diagnostics
 service. It does not start LSP, require a ZIP/sign-in, or write reports. Package uploads captured
@@ -22,11 +22,14 @@ same-mode repair and upgrade notes.
 
 ## Plugin validation JSON
 
-Static mode (default) checks a plugin's declarative-agent surface; a plugin without
-that surface passes vacuously. Read `data.diagnostics` on success or
-`error.data.diagnostics` on a completed failure. Each item has `message` and `severity`;
-mock results are marked `simulated`. Older unwrapped JSON consumers must use these
-envelope paths and lowercase keys. Deep mode uses Core package validation.
+Plugin and agent validation share the same JSON shape, reports and exit semantics.
+Read success `data` or completed non-pass `error.data`, and use `validation.result`
+for the verdict; warnings do not block and unavailable checks do not pass.
+Source includes checked files and located diagnostics but writes no reports.
+Plugin source checks `wiqd.plugin.json` and `appPackage/manifest.json` guards;
+no declarative-agent component means explicit empty coverage, not full plugin acceptance.
+Package/Marketplace accept ZIP-only inputs and preserve JSON/HTML reports.
+Mock results are marked `simulated`. Retired `static`/`deep` modes are rejected.
 
 ## Editor protocol entry
 

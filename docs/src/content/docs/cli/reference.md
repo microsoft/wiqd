@@ -42,6 +42,41 @@ of WIQD CLI installation and extension activation. See
 WIQD does not compose, refresh, or remove a host plugin. Managed extension CLIs
 remain available through normal first-use resolution and `wiqd doctor`.
 
+## Local diagnostic evidence
+
+Before changing a failing installation, collect its existing local state:
+
+```bash
+wiqd diagnostics collect --output ./incident.json.gz --json
+wiqd diagnostics collect --output ./incident-with-log.json.gz --log ./incident.ndjson
+```
+
+The output directory must already exist, and existing destinations are never
+overwritten. Collection needs neither sign-in nor EULA acceptance. It does not
+run health checks, execute upstream tools, repair the installation, change
+configuration, send telemetry, or upload evidence.
+
+The gzip JSON archive contains runtime/OS versions and architecture, installation
+fingerprints without absolute paths, registered extension participation and
+available managed-tool metadata. It omits credentials, configuration contents,
+environment values, project/customer content, plugin/VSIX inventory and installer
+history. Optional logs must be selected explicitly (up to four regular files);
+only typed timestamps, levels, exit/HTTP codes and redacted correlation markers
+are retained. Messages, stacks and arbitrary fields are excluded. Each log is
+limited to its last 64 KiB, 100 records and the preceding two hours.
+
+Acquisition has a 10-second budget; both uncompressed JSON and the archive are
+limited to 1 MiB. Output is private to the current user (POSIX mode 0600 or a
+protected Windows DACL); filesystems unable to protect or exclusively publish the
+file fail explicitly. Ctrl+C cancels collection. Exit 0 means an archive was
+written, **not** that the installation is healthy. Inspect `partial`, each source's
+`status`, `errors`, `omissions` and `truncated` before interpreting missing evidence.
+If the CLI or runtime cannot start, retain manual version and component intake.
+
+Review and redact the archive before sharing. Transfer it only through your
+organization's approved restricted incident channel and follow its retention
+policy; do not attach it to public issues or paste raw content into chat.
+
 <!-- BEGIN: command-reference -->
 
 ## Global options
@@ -86,7 +121,7 @@ per-command tables below.
 | [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the Insights Agent about a provisioned agent's performance and usage. |
 | [`wiqd agent package`](#wiqd-agent-package) | wiqd Core | Package the agent into a deployable .zip after validating bundled DA skill and Worker references. |
 | [`wiqd agent provision`](#wiqd-agent-provision) | wiqd Core | Provision a declarative agent after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
-| [`wiqd agent provision package`](#wiqd-agent-provision-package) | wiqd Core | Personally sideload a final DA ZIP, converting a standalone supported MCP connector into a DA host when needed. Use --dry-run to prepare locally without authentication or network. |
+| [`wiqd agent provision package`](#wiqd-agent-provision-package) | wiqd Core | Personally sideload a final DA ZIP, converting a supported single MCP connector into a minimal DA test host when needed. Unrelated skills, tabs and compose extensions are omitted from the host, not the original ZIP. Use --dry-run to prepare locally without authentication or network. |
 | [`wiqd agent publish`](#wiqd-agent-publish) | wiqd Core | Publish an agent to the org catalog. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent share`](#wiqd-agent-share) | wiqd Core | Share an agent with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login`. |
 | [`wiqd agent share collaborator`](#wiqd-agent-share-collaborator) | wiqd Core | collaborator |
@@ -164,6 +199,13 @@ per-command tables below.
 | [`wiqd devui start`](#wiqd-devui-start) | Work IQ DevUI | Start (or reuse) the local Work IQ DevUI and open it in the browser. |
 | [`wiqd devui stop`](#wiqd-devui-stop) | Work IQ DevUI | Stop the running local Work IQ DevUI (release its server and the install-directory lock). |
 
+**wiqd diagnostics**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd diagnostics`](#wiqd-diagnostics) | wiqd (core) | Collect local diagnostics without changing the installation |
+| [`wiqd diagnostics collect`](#wiqd-diagnostics-collect) | wiqd (core) | Write a private, read-only diagnostic evidence archive |
+
 **wiqd doctor**
 
 | Command | Extension | Description |
@@ -221,7 +263,7 @@ per-command tables below.
 | [`wiqd plugin publish`](#wiqd-plugin-publish) | wiqd Core | Submit a provisioned plugin to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin share`](#wiqd-plugin-share) | wiqd Core | Share a plugin with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin show`](#wiqd-plugin-show) | wiqd Core | Show a summary of a standalone plugin project. |
-| [`wiqd plugin validate`](#wiqd-plugin-validate) | Validation & LSP | Validate a standalone plugin project; deep checks its built package through Core. |
+| [`wiqd plugin validate`](#wiqd-plugin-validate) | Validation & LSP | Validate plugin source offline, a final package with TDP (default), or package and Marketplace readiness. Package/Marketplace upload the ZIP and may require Core sign-in. |
 
 **wiqd update**
 
@@ -418,7 +460,8 @@ wiqd agent create [options] <command>
 | `-n, --name <value>` | Project name |
 | `-o, --output <value>` | Output directory |
 | `--mcp-server-url <value>` | Remote MCP server URL; enables MCP scaffold mode |
-| `--mcp-auth-type <value>` | MCP authentication mode (choices: "none", "oauth", "entra-sso", default: "none") |
+| `--connector-package <value>` | Original single-MCP connector ZIP; prepare a minimal source host with explicit oauth-dynamic and runtime tool discovery, without registration or installation |
+| `--mcp-auth-type <value>` | MCP authentication mode (choices: "none", "oauth", "oauth-dynamic", "entra-sso", default: "none") |
 | `--mcp-client-id <value>` | OAuth or Microsoft Entra application client ID |
 | `--mcp-client-secret <value>` | Custom OAuth client secret |
 | `--mcp-scopes <value>` | Space-separated custom OAuth scopes |
@@ -764,7 +807,7 @@ wiqd agent provision --help
 
 ### wiqd agent provision package
 
-Personally sideload a final DA ZIP, converting a standalone supported MCP connector into a DA host when needed. Use --dry-run to prepare locally without authentication or network.
+Personally sideload a final DA ZIP, converting a supported single MCP connector into a minimal DA test host when needed. Unrelated skills, tabs and compose extensions are omitted from the host, not the original ZIP. Use --dry-run to prepare locally without authentication or network.
 
 **Extension:** wiqd Core
 
@@ -776,10 +819,11 @@ wiqd agent provision package [options]
 
 | Option | Description |
 | --- | --- |
-| `--package-file <value>` | Final DA or standalone MCP connector ZIP |
+| `--package-file <value>` | Final DA or supported single MCP connector ZIP, optionally with skills, tabs or compose extensions |
 | `--output <value>` | Private preparation directory; reuse the same directory after reviewing --dry-run |
 | `--connector-auth-type <value>` | Explicitly confirm anonymous access only for omitted connector authorization; cannot replace declared auth (choices: "None") |
 | `--dry-run` | Prepare and inspect artifacts locally; do not authenticate or install |
+| `--reconcile` | Check the retained sideload status with the same preparation and identity; never upload again |
 | `--preparation-sha256 <value>` | Require the exact preparation-record hash returned by --dry-run |
 | `--expected-tenant <value>` | Require this currently signed-in tenant ID; never switch tenants |
 | `--expected-account <value>` | Require this currently signed-in account; never switch accounts |
@@ -1786,6 +1830,49 @@ wiqd devui stop --port <value>
 wiqd devui stop --json
 ```
 
+## wiqd diagnostics
+
+Collect local diagnostics without changing the installation
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd diagnostics <command>
+```
+
+**Examples**
+
+```bash
+wiqd diagnostics
+wiqd diagnostics collect
+wiqd diagnostics --help
+```
+
+### wiqd diagnostics collect
+
+Write a private, read-only diagnostic evidence archive
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd diagnostics collect [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--output <archive.json.gz>` | New local gzip JSON archive (existing parent required) |
+| `--log <file>` | Existing structured JSON-lines log (repeat up to four times) (default: []) |
+
+**Examples**
+
+```bash
+wiqd diagnostics collect
+wiqd diagnostics collect --output <archive.json.gz> --log <file>
+wiqd diagnostics collect --json
+```
+
 ## wiqd doctor
 
 Check environment health (Node.js, extensions, auth)
@@ -2468,7 +2555,7 @@ wiqd plugin show --json
 
 ### wiqd plugin validate
 
-Validate a standalone plugin project; deep checks its built package through Core.
+Validate plugin source offline, a final package with TDP (default), or package and Marketplace readiness. Package/Marketplace upload the ZIP and may require Core sign-in.
 
 **Extension:** Validation & LSP
 
@@ -2480,16 +2567,28 @@ wiqd plugin validate [options]
 
 | Option | Description |
 | --- | --- |
-| `--path <value>` | Plugin project directory |
-| `--env <value>` | Target environment (default: "local") |
-| `--mode <value>` | Plugin validation mode (choices: "static", "deep", default: "static") |
-| `--package-file <value>` | Built ZIP for deep mode |
+| `--mode <value>` | source (offline project), package (default; uploads ZIP), or marketplace (package and policy checks) (default: "package") |
+| `--path <value>` | Project root for package discovery (defaults to CWD) |
+| `--env <value>` | Project environment context; does not select a marketplace package (default: "local") |
+| `--package-file <value>` | Exact ZIP to audit, relative to CWD; otherwise require one appPackage/build/*.zip |
+| `--listing-file <value>` | Package-bound AppSource listing evidence JSON |
+| `--ai-mode <value>` | StoreOps AI evidence mode (default auto; off still permits deterministic network checks) (choices: "auto", "copilot", "off") |
+| `--ai-timeout <value>` | Planner and independent audit acquisition/AI budgets in seconds, 1–1200 each (default 240); collection is separately bounded |
+| `--ai-evidence-file <value>` | Request-bound AI evidence JSON; requires --ai-mode off |
+| `--agent-id <value>` | Exact deployed target for automatic read-only functional collection; up to 12 scenarios, default 180 seconds total (marketplace only) |
+| `--functional-timeout <value>` | Overall functional collection budget in seconds, 1–900 (default 180); requires --agent-id and marketplace |
+| `--functional-request-timeout <value>` | Per-request collection timeout in seconds, 1–900 (default 60); requires --agent-id and marketplace, bounded by the overall budget |
+| `--connector-scenario <value>` | Approve one bounded public-example read-only connector test using existing access; requires --agent-id and marketplace, never signs in or modifies data (choices: "public-example") |
+| `--functional-batch` | Collect independent conversational questions in one shared structured request; requires --agent-id and marketplace, with no retry or fallback |
+| `--functional-batch-allow-duplicate-json` | Allow two identical complete batch JSON documents, preserving raw evidence and marking normalization; requires --functional-batch (default off) |
+| `--functional-evidence-file <value>` | Replay package-bound observations without target calls; mutually exclusive with --agent-id |
+| `--repair-context <value>` | Explicit previous report/hash, original modes and authorized changes JSON for cumulative repair history (Marketplace required) |
 
 **Examples**
 
 ```bash
 wiqd plugin validate
-wiqd plugin validate --path <value> --env <value>
+wiqd plugin validate --mode <value> --path <value>
 wiqd plugin validate --json
 ```
 

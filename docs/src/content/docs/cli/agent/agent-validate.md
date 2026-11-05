@@ -146,6 +146,15 @@ policy data remains in `report.json`. Filenames and their schemas are unchanged.
 “Validate my agent” selects source; a supplied ZIP selects package; Marketplace readiness
 selects Marketplace, including package checks. Account setup and publication are separate workflows.
 
+When Marketplace readiness leaves live-testing scope unspecified, the coding agent
+first offers **Package and Marketplace checks without live target calls.** or
+**Include live functional/connector testing, subject to eligibility.** and waits
+before listing commands or evidence preparation. Explicit selections and supplied
+evidence replay are not reconfirmed; missing confirmation stops instead of defaulting.
+Choosing live does not replace eligibility checks, bounded-call approval or any
+required upload, installation, authentication and connector Allow handoffs.
+Direct CLI commands do not gain this interactive prompt.
+
 Marketplace listing reuse/collection includes one complete HTML review before validation. The
 current coding-agent session prepares request-bound evidence and replays with AI off.
 Without an authorized target ID, preparation never starts a model or target collector.
@@ -166,6 +175,18 @@ badges retain their meaning through text, not just color or decorative emoji.
 After showing actionable findings, the coding agent offers **Fix and revalidate** /
 **Not now** using its native choice tool. Decline/dismissal leaves files unchanged.
 Report-only requests skip the choice. Explicit repair needs no repeated authorization.
+
+Before making any repair, the coding agent reviews all selected findings and collects
+all missing repair inputs together. Shared values are asked once; applicable answers
+already supplied are reused. A single questionnaire lets you fill each field before
+submitting the group. If the host cannot show that form, it presents the full question
+list and collects your replies without making changes between answers.
+Only after every required input is supplied and usable does it apply the fixes one by
+one, then run the original mode's verification sequence for the group. Direct fixes
+also wait for this input collection to finish. Missing or cancelled answers leave the
+round blocked and files unchanged. A genuinely new dependency can require a follow-up,
+but known questions are not deferred until after editing.
+
 Source-build repair requires the actual project/environment and source precheck.
 ZIP-only authors can instead prepare explicit replacements and create a new ZIP
 without a fabricated project/environment; original source is not synchronized:
@@ -205,5 +226,6 @@ migration guidance, not treated as aliases:
 
 Upgrade the CLI and host plugin to compatible releases, update the plugin through its native
 marketplace, and start a **fresh host session**. A CLI update/extension registration alone does
-not refresh host guidance. `wiqd plugin validate` retains its separate `static`/`deep` syntax;
+not refresh host guidance. `wiqd plugin validate` shares these modes, options, runtime and reports;
+its source mode adds plugin project guards and explicitly reports when no DA source is present.
 `wiqd agent lsp` retains the editor protocol entry.

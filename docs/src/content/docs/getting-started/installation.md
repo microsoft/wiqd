@@ -276,6 +276,14 @@ guidance and rerun the installer to retry the optional setup. Use `-SkipPlugin`
 or `-SkipVSCode` (Bash: `--skip-plugin` or `--skip-vscode`) if you do not need
 those integrations.
 
+For plugin file-lock or access-denied errors, the installer provides this guidance:
+
+> Plugin files may be locked or inaccessible. Close other running Copilot or Claude sessions, then retry from a regular terminal. If the error persists, check write access to the path reported above.
+
+A failed native operation does not establish whether the plugin is still
+installed or was removed; inspect the host's plugin settings if needed, then
+rerun the installer.
+
 ### Examples
 
 **PowerShell (Windows):**

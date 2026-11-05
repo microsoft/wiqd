@@ -2,8 +2,8 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "6324d7cd8b27403fd8dabd9b1659de60a94d37f44ab7df50ada07b667482f23e",
-  "componentCount": 535,
+  "inputDigest": "29975895f2ad22d79ebb05b5f5f15e60323a87ae29a44dfb3fcb79833c61e8f6",
+  "componentCount": 537,
   "components": [
     {
       "type": "npm",
@@ -554,6 +554,13 @@
     {
       "type": "npm",
       "name": "@microsoft/app-manifest",
+      "version": "1.1.4-alpha.1ba10daa01.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/app-manifest",
       "version": "1.1.4-alpha.36e30da2f6.0",
       "license": "MIT",
       "origin": "bundled"
@@ -603,6 +610,13 @@
     {
       "type": "npm",
       "name": "@microsoft/teamsfx-api",
+      "version": "0.24.4-alpha.1ba10daa01.0",
+      "license": "MIT",
+      "origin": "bundled"
+    },
+    {
+      "type": "npm",
+      "name": "@microsoft/teamsfx-api",
       "version": "0.24.4-alpha.36e30da2f6.0",
       "license": "MIT",
       "origin": "bundled"
@@ -610,7 +624,7 @@
     {
       "type": "npm",
       "name": "@microsoft/teamsfx-core",
-      "version": "3.1.5-alpha.36e30da2f6.0",
+      "version": "3.1.5-alpha.1ba10daa01.0",
       "license": "MIT",
       "origin": "bundled"
     },

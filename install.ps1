@@ -139,7 +139,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.23.0"
+$script:WiqdVersion = "0.24.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -366,6 +366,13 @@ function Invoke-WiqdPluginHost {
     }
 }
 
+function Get-WiqdPluginRecoveryGuidance {
+    param([string]$Diagnostic)
+    if ($Diagnostic -match '(?i)\b(EBUSY|EPERM|EACCES)\b|being used by another process|resource busy|file.*locked|access (is )?denied|permission denied|operation not permitted|os error (5|32)\b|ERROR_ACCESS_DENIED|ERROR_SHARING_VIOLATION|read-only file system') {
+        return 'Plugin files may be locked or inaccessible. Close other running Copilot or Claude sessions, then retry from a regular terminal. If the error persists, check write access to the path reported above.'
+    }
+}
+
 function Assert-WiqdPluginHostSuccess {
     param($Result, [string]$InventoryCli)
     if ($Result.ExitCode -ne 0) {
@@ -373,6 +380,10 @@ function Assert-WiqdPluginHostSuccess {
         if ($Result.ExitCode -eq 130) { $message = "Plugin setup cancelled:`n  $($Result.Command)" }
         else {
             if ($InventoryCli) { $message += "`nCannot read $InventoryCli inventory. Inspect the native command output before retrying." }
+            if ($Result.ExitCode -ne 124) {
+                $guidance = Get-WiqdPluginRecoveryGuidance "$($Result.StdErr)`n$($Result.StdOut)"
+                if ($guidance) { $message += "`n$guidance" }
+            }
             $message += "`nResolve the reported error, then rerun this installer."
         }
         $failure = [InvalidOperationException]::new($message)

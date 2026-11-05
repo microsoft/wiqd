@@ -46,7 +46,7 @@ When `--agent-id` is set, the title ID is sourced from the option rather than fr
 | `--output`, `-o` | `string` | `.evals/results.json` | Result file path relative to `--path`. Use a timestamped `.html` path for a human-readable scorecard.              |
 | `--agent-id`     | `string` | _(none)_             | Title ID of a deployed agent to evaluate directly (e.g. `T_xxx`). When set, sources the title ID from this option instead of `env/.env.<env>`. |
 | `--account`      | `string` | _(none)_             | Optional email/UPN used by the Eval CLI to select a cached MSAL account or prefill interactive sign-in.           |
-| `--judge-backend` | `string` | `github-copilot`    | LLM judge backend for `Relevance`/`Coherence`/`Groundedness`/`Similarity`: `github-copilot` (zero-setup, `gh auth login`/`GITHUB_TOKEN`) or `azure` (Azure OpenAI). Custom `.prompty` evaluators always need `azure`. |
+| `--judge-backend` | `string` | `github-copilot`    | LLM judge backend for `Relevance`/`Coherence`/`Groundedness`/`Similarity`: `github-copilot` (`gh auth login --hostname github.com` for GitHub.com, or `GITHUB_TOKEN`) or `azure` (Azure OpenAI). Custom `.prompty` evaluators always need `azure`. |
 | `--log-level`    | `string` | `debug`              | Verbosity forwarded to `runevals`: `debug`, `info`, `warning`, `error`.                                             |
 | `--concurrency`  | `int`    | Eval CLI default     | Optional concurrent scenario override (1-5)                                                                        |
 | `--threshold`    | `float`  | _(none)_             | Minimum pass-rate (0-1) to succeed. Exit 1 if score falls below this.                                              |
@@ -140,10 +140,10 @@ Choose a judge based on the suite:
 
 | Judge | Best for | Setup |
 | ----- | -------- | ----- |
-| GitHub Copilot | Default, zero-Azure setup for built-in evaluators | `gh auth login` or `GITHUB_TOKEN` |
+| GitHub Copilot | Default, zero-Azure setup for built-in evaluators | `gh auth login --hostname github.com` for GitHub.com, or `GITHUB_TOKEN` |
 | Azure | Custom `.prompty` evaluators or your own Azure deployment | Azure OpenAI/Foundry endpoint, model, tenant, and authentication |
 
-For GitHub Copilot, verify an existing session with `gh auth status`; run `gh auth login` only in an interactive user session.
+For GitHub.com-backed Copilot judge authentication, verify an existing session with `gh auth status --hostname github.com`; run `gh auth login --hostname github.com` only in an interactive user session. Specifying the hostname makes the login target explicit and limits the status check to GitHub.com rather than all configured enterprise hosts. A successful status check confirms GitHub authentication, not Copilot entitlement or access to a particular judge model.
 
 The skill validates evaluator/backend compatibility before execution and never prints credential values. It does not block a GitHub Copilot run when Azure variables are absent.
 
