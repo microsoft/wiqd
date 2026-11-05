@@ -125,17 +125,30 @@ The Markdown is rendered to stdout by default. All three files are also written 
 - **Pass** — no Must-fix failures and no blocking Must-fix skips. Output: `READY FOR SUBMISSION (with N good-to-fix notes)`.
 - **Fail** — ≥1 Must-fix failure or blocking Must-fix skip. Output: `NOT READY — fix the Must-fix items or complete/approve the blocked checks, then re-run`.
 
-### Partner Center workflow gate
+### Partner Center publishing advice
 
-When this audit is invoked from a Copilot workflow immediately before a **Partner Center / public Marketplace submission**, it is a fail-closed workflow gate:
+When invoked before **Partner Center / public Marketplace submission**, this
+audit is advisory. Its audit verdict and report integrity checks remain truthful,
+but do not determine permission to publish:
 
 1. Audit the final packaged `.zip` that would be submitted, not project source or an earlier package.
 2. Produce the JSON report defined in `store-ops/report-template.md`. Derive the authoritative rule-ID set from the bold IDs in `store-ops/rules.md`; require `data.rulesVersion`, `data.rulesCount`, and `data.rulesIdentity` to match that registry, and require every registry ID to appear exactly once across `data.passed`, `data.findings`, and `data.skipped`. Unknown, missing, or duplicate IDs make the report incomplete. Require every skipped record to include `severity`, `applicability`, and `reason`, and verify all result counts are internally consistent.
 3. Treat a skipped Must-fix rule as blocking when `applicability` is `applicable` or `unknown`, unless its `approval.status` is `approved` and its approver, timestamp, and evidence are all recorded. A Must-fix skip is non-blocking without approval only when `applicability` is `not-applicable` and the reason explains why the rule's activation condition is absent.
-4. Stop the Partner Center workflow when the report is missing, malformed, or incomplete; when `data.result.mustFailCount > 0`; when `data.result.blockingSkippedCount > 0`; or when `data.result.label == "fail"`. Present the Must-fix findings and blocked checks, then offer to re-run the audit after correction or approval.
-5. Continue only when `data.result.label == "pass"`, `data.result.mustFailCount == 0`, and `data.result.blockingSkippedCount == 0`. Surface every Good-to-fix finding, non-blocking skip, and manual approval before the user confirms the submission.
+4. Surface Must-fix/Good-to-fix findings, skipped checks and manual approvals.
+   A missing, malformed or incomplete report, `data.result.mustFailCount > 0`,
+   `data.result.blockingSkippedCount > 0`, or `data.result.label == "fail"` is a
+   warning for publishing, not a publication blocker. Never relabel the audit as
+   passed or require policy repair/approval merely to continue publishing.
+5. Return to the publishing caller. It must independently require source
+   validation before building and `wiqd agent validate --mode package` to pass
+   on the exact final ZIP before upload/submission guidance or publishing mutation.
+   This legacy audit cannot satisfy that package gate. Missing, malformed,
+   mismatched, failed or incomplete package validation still stops publication.
 
-This gate applies only to Partner Center / public Marketplace submission. Do not run it as a prerequisite for tenant LOB or org-catalog publish, sideloading, or ordinary audience/ring sharing. The gate protects agent-mediated workflows; direct CLI and portal actions remain outside this Phase 1 guardrail.
+Do not run Marketplace policy checks as a prerequisite for tenant LOB or
+org-catalog publish, sideloading, or ordinary audience/ring sharing. Required
+reviews, publisher access, consent and human-only submission remain unchanged.
+Direct CLI/portal actions do not acquire a new validation gate from this advice.
 
 When invoked from a script wrapper, exit codes follow the wiqd conventions:
 

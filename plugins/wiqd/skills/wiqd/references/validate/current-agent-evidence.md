@@ -1,6 +1,12 @@
 # Prepare evidence and run Marketplace validation
 
-Continue after compatibility checks and whole-listing confirmation.
+Continue after compatibility checks, the workflow's
+[Marketplace live-testing choice](../../workflows/validation.md#marketplace-live-testing-choice)
+and whole-listing confirmation. If live/no-live scope is still unconfirmed, return
+to that choice before request preparation; never infer no-live from a missing ID.
+Reuse the recorded selection without asking again. No-live and supplied-evidence
+replay never enter development preparation or add target calls; live selection
+still requires the applicable eligibility and separate target approvals.
 Keep that confirmation and its input hashes; do not restart listing review for unchanged inputs.
 Marketplace always includes package checks on the same captured ZIP.
 
@@ -27,6 +33,34 @@ this helper. If not confirmed, return to that handoff without collection or anot
 provisioning call. The user's manual sample answer is setup, not validation evidence.
 Existing caller-preauthenticated targets and supplied-evidence replay retain their
 existing paths without this new handoff.
+For a newly prepared existing-vault connector, preserve the original ZIP's auth
+and use the verified wrapper ID only after the user completes required provider
+authentication with the same M365 identity used by `wiqd agent ask`. Carry the
+already approved `--connector-scenario public-example` scope into this helper.
+An inaccessible vault registration, auth-required reply or account mismatch is
+a blocker, not permission to recreate auth, reprovision or silently recollect.
+If authentication is unresolved, return to
+[Choose connector authentication](development-target.md#choose-connector-authentication)
+before either host-generation command or this helper. Preserve valid ZIP-provided
+auth; omitted auth requires the user's choice of confirmed no-auth, confirmed
+OAuth DCR, a ZIP with valid auth information, or unknown/pause. A public-example
+lookup approval does not select authentication. Do not infer the choice from a
+vendor name or example, or ask a DCR-only confirmation instead.
+For an explicitly selected omitted-auth DCR connector, development preparation
+instead creates a native minimal source host, then performs registration and
+personal installation only with separate scoped approval. Carry its retained
+original ZIP/hash and the verified public `data.titleId`/built-DA-ID mapping
+into this helper. Source provision's public JSON has `environment`, `titleId`,
+`deepLink` and `isUpdate`, not the internal adapter result. Verify the app/OAuth
+identities against the retained environment and built manifest in development
+preparation; do not require extra adapter-only fields or rerun successful
+provision to obtain them. The generated OAuth reference must match its DCR
+lifecycle output.
+The original ZIP's auth remains `unspecified`; do not rewrite it or substitute
+the generated DA package as the validation subject. User-owned publisher
+sign-in/Allow and explicit readiness still precede collection. DCR is setup,
+never automatic collection-error recovery; no source-provision retry or ZIP
+reconciliation occurs here.
 The CLI internally plans
 bounded scenarios from the package/listing, collects real answers and returns
 `functionalEvidencePath` and `functionalEvidenceSha256`. It may use Copilot for
@@ -37,6 +71,17 @@ a target; this collector path never deploys. A missing target for an explicit
 live request returns to development preparation before invoking this helper.
 For explicit live checks without a supplied or verified target, default to local
 development-target preparation rather than asking for an agent ID first.
+That branch prepares a separate DA host for an eligible MCP connector; the user
+does not need to author a DA first. Support for collecting against packages with
+skills, tabs or compose extensions below uses the explicitly approved public-example
+scenario. Development preparation can create a separate minimal MCP DA host,
+omitting those unrelated surfaces without changing the original ZIP.
+Its MCP endpoint/tool description and declared auth or explicitly selected DCR
+setup must match the verified preparation; the host and its
+answers do not establish that the omitted skills/tabs/compose functionality works.
+Retain genuine target blockers while independent listing collection continues;
+do not invoke this helper
+until the required target and approvals are ready.
 Passing the ID authorizes at most 12 read-only conversation calls, a default
 180-second collection budget and no automatic retry. Only when the user explicitly
 selects another budget, add `--functional-timeout <seconds>` (integer 1-900) to
@@ -66,6 +111,11 @@ Omitted auth remains `unspecified`, not inferred anonymous. Let the deployed
 service report missing access/input; never sign in or grant consent as test
 recovery. A returned answer can verify responsiveness, not connector invocation.
 Missing service receipts remain Needs reviewer assessment with a specific reason.
+The fixed public-example prompt treats `readOnlyHint` as optional: an operation
+description explicitly guaranteeing read-only behavior can support selection,
+but contradictory effects disqualify it. Missing safe metadata or public examples
+still mean no invocation. Do not loosen the prompt, retry the collector, or treat
+a refusal answer as proof of connector execution.
 
 When the user explicitly selects single-request batching for independent
 conversational questions, add `--functional-batch` during preparation only.

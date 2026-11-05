@@ -81,7 +81,7 @@ Then hand the exact returned ZIP to `workflows/validation.md` for `--mode packag
 
 Use `workflows/validation.md` for `--mode marketplace`: it owns listing confirmation, current-host evidence and TDP plus StoreOps checks on the same captured ZIP. Do not add Marketplace checks to an offline source gate. Validation does not publish, and a passing result is not official approval.
 
-Old agent `static`, `deep`, `manifest`, comma-combined modes and `--provider` are unsupported, not aliases. `wiqd plugin validate` retains its separate `static`/`deep` interface. Use compatible CLI/plugin releases and a fresh host session; CLI installation alone does not refresh plugin guidance. No validation experiment flag is required.
+Both `wiqd agent validate` and `wiqd plugin validate` use `source`, `package` (default), and `marketplace`. Old `static`, `deep`, `manifest`, comma-combined modes and `--provider` are unsupported, not aliases. Plugin source additionally requires readable `wiqd.plugin.json` and `appPackage/manifest.json`; no declarative-agent source means empty coverage, not whole-plugin acceptance. Package/Marketplace can validate a ZIP without source-project guards. Use compatible CLI/plugin releases and a fresh host session; CLI installation alone does not refresh plugin guidance. No validation experiment flag is required.
 
 ## Validation Providers
 

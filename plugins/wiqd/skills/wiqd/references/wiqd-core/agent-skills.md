@@ -198,9 +198,9 @@ wiqd agent package --path . --env local --output ./appPackage/build/skills.zip
 wiqd agent validate --mode package --package-file ./appPackage/build/skills.zip
 ```
 
-Use `wiqd agent validate --mode package` — this is an **agent** project (there's no
-`wiqd.plugin.json` here), so the sibling `wiqd plugin validate --mode deep` command exits `2`
-("not a plugin project") if you run it instead. Agent package validation submits the captured ZIP
+Use `wiqd agent validate --mode package` for this **agent** authoring workflow.
+Plugin validation uses the same mode contract; only plugin source mode requires
+`wiqd.plugin.json` and `appPackage/manifest.json`. Package validation submits the captured ZIP
 to TDP through Core; report actual returned platform diagnostics rather than promising a particular
 rule inventory. Source checks only the saved declarative-agent manifest, not top-level
 `agentSkills[]` or `SKILL.md` content. See [Validation](#validation-the-askill--codes).
@@ -392,8 +392,8 @@ The `ASKILL-*` codes are the Microsoft 365 Copilot platform's own Agent Skills v
 emitted by **AVL** (App Validation Library) and at upload/submission time, not defined or
 implemented by wiqd. `wiqd agent validate --mode source` does not check top-level `agentSkills[]`
 or `SKILL.md` content. Build first, then use `--mode package --package-file "<zip>"` and inspect
-the platform diagnostics actually returned. The sibling `wiqd plugin validate --mode deep`
-retains its separate contract for a plugin project with `wiqd.plugin.json`, not this agent project.
+the platform diagnostics actually returned. Plugin package validation uses the same captured-ZIP
+runtime and does not require a plugin source project.
 A source pass is not skill-package acceptance; perform package validation before submission.
 
 ### Manifest-Level Codes
@@ -475,9 +475,7 @@ which flag state originally produced it.
    `expose_skill_to_copilot: true` only when that DA behavior is intended.
 5. **Run package validation before publishing.** `wiqd agent validate --mode source` cannot see
    `agentSkills[]` or `SKILL.md` content — always follow `wiqd agent package` with
-   `wiqd agent validate --mode package --package-file "<zip>"` before a submission. (`wiqd plugin validate --mode deep`
-   is only for a plugin project with its own `wiqd.plugin.json` — not
-   this file's audience.)
+   `wiqd agent validate --mode package --package-file "<zip>"` before a submission.
 6. **Prefer the matching command over hand-editing.** `wiqd agent add skill` creates the folder and
    DA registration together; `wiqd plugin add skill` creates the folder and Cowork registration
    together.

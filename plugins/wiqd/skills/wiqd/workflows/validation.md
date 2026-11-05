@@ -30,8 +30,8 @@ Use plain language with the customer; keep internal schema/evidence mechanics ou
 ## 1. Check compatibility
 
 Use compatible CLI and host-plugin releases and a fresh host session after plugin updates.
-CLI installation/registration does not refresh host skills. No validation feature flag is required
-or queried. Missing commands or rejected current modes are upgrade blockers: report them, do not
+CLI installation/registration does not refresh host skills.
+Missing commands or rejected current modes are upgrade blockers: report them, do not
 install, publish, change config or fall back to old modes automatically.
 
 ## 2. Select scope and inputs
@@ -65,16 +65,75 @@ call default validation as a pre-build gate. Use the exact returned package path
 Old `static`, `deep`, `manifest` and comma-combined modes are rejected with migration guidance;
 do not retry them or invent aliases.
 
-**Live functional intent:** Only explicitly requested live functional checks need a runtime
+### Marketplace live-testing choice
+
+Before any Marketplace listing command, evidence preparation or validation, resolve
+live/no-live scope. For a Marketplace or Partner Center readiness request that does
+not explicitly select live or no-live checks, use the native choice tool
+(`ask_user` in Copilot) with these two choices and **wait for the answer**:
+
+```json
+{
+  "message": "Which Marketplace validation scope should run? Live testing remains subject to eligibility and separate required approvals; neither option publishes.",
+  "requestedSchema": {
+    "properties": {
+      "scope": {
+        "type": "string",
+        "title": "Validation scope",
+        "enum": [
+          "Package and Marketplace checks without live target calls.",
+          "Include live functional/connector testing, subject to eligibility."
+        ]
+      }
+    }
+  }
+}
+```
+
+Do not silently default to no-live checks. Readiness-only wording, "do not publish",
+an unpublished app, a missing agent ID or a missing listing do not resolve this choice.
+If the native tool or confirmation is unavailable, or the user dismisses or cancels
+the choice, stop before listing commands, evidence preparation or validation and
+report that scope remains unconfirmed.
+
+Reuse explicit live/no-live instructions or a choice already recorded for this
+request; do not ask again. Source/package-only, offline, explicit AI-off, mock and
+supplied functional-evidence replay requests retain their explicit scope without
+this prompt. Repair continuation keeps the original selection unless the user
+explicitly changes it.
+
+The first choice keeps Marketplace mode, including package uploads, without new
+target calls or development-target preparation. The second choice establishes
+live intent only, not eligibility or permission to upload/install, change auth or
+complete connector Allow. Preserve the separate bounded-call and target approvals
+below. If live checks are ineligible or blocked, report the blocker; do not silently
+substitute no-live validation.
+
+**Live functional intent:** Only explicitly requested live functional checks, including
+the confirmed live choice above, need a runtime
 target. Marketplace validation alone, an unpublished app, static/offline checks and supplied
 functional-evidence replay do not authorize deployment. Explicit AI-off or mock requests do not
-prepare a target; report incompatible live options instead of overriding them. If intent is ambiguous, ask whether the
-user wants live functional checks or validation without new target calls. Preserve the selected
+prepare a target; report incompatible live options instead of overriding them. Preserve the selected
 modes, original ZIP/hash, listing and requested call/time budgets. A missing store listing is
 not proof that a personal development target is absent.
 For explicit live checks, an existing agent ID is optional: reuse one already supplied or
 verified; otherwise default to local development-target preparation. Do not ask for an
 agent ID or whether the user has one as an initial required field.
+Choosing live means preparing a missing execution target, not requiring the user
+to create a DA first: reuse a DA package or create a separate DA host for an
+eligible MCP connector through development-target preparation. This is not a
+generic conversion of every non-DA plugin.
+For an explicitly approved public-example connector test, a single root MCP
+connector with skills, tabs or compose extensions can use a separate minimal DA
+host. Include its equivalent MCP action and required metadata/icons/tool file,
+not unrelated app surfaces or assets; keep the original ZIP unchanged.
+Do not ask the user to author a DA or strip package features. The connector test
+does not cover omitted functionality. Unsupported or ambiguous input, missing
+auth prerequisites and refused approvals remain target blockers, not a
+requirement to publish first.
+A target blocker does not prevent collecting and confirming the Marketplace
+listing. Continue that independent work with the user, retaining the selected live
+scope; do not run validation without its required target or imply readiness.
 
 ### Marketplace listing
 
@@ -128,14 +187,53 @@ target already supplied or verified; otherwise default to local preparation with
 agent-ID question or a provisioning-choice gate. Only with scoped authorization may Core sideload the selected DA ZIP,
 or convert a supported MCP connector ZIP into a separate DA host and sideload it. Store
 publication and a source project are not prerequisites for that ZIP lifecycle.
+Before either connector host-generation command, follow
+[Choose connector authentication](../references/validate/development-target.md#choose-connector-authentication).
+Preserve valid ZIP-provided auth. If auth is omitted and unresolved, ask one
+neutral question offering confirmed no-auth, confirmed OAuth DCR, a replacement
+ZIP with valid auth information, or unknown/pause, and wait for the answer.
+Do not offer only DCR because an example uses it, including Success.co.
+Keep this choice separate from public-example lookup and installation approvals.
+Standalone connectors with a concrete existing `OAuthPluginVault` or
+`ApiKeyPluginVault` reference may use the authenticated preparation branch.
+Preserve the reference and obtain approval for the bounded public-example scope;
+do not collect credentials, infer DCR, create registrations or replace declared
+auth with `None`. Registration compatibility and service access remain external
+prerequisites, not results established by conversion.
+For an explicitly selected omitted-auth OAuth-DCR connector,
+follow the distinct native `agent create --connector-package` source-host branch
+in development target preparation. It preserves the original ZIP and generates
+only the required DA/MCP pieces. Separate approval names app creation, DCR
+registration, validation uploads and personal installation before source provision.
+Never infer DCR from missing auth, replace declared auth or downgrade to `None`.
+Source-provision failure retains state without automatic retries or ZIP reconciliation.
+For successful source provision, use public `data.titleId` and `data.deepLink`;
+verify the app/OAuth identity from the retained environment and actual built
+manifest as described in development target preparation. Do not require the
+internal adapter's fields or reprovision to obtain them. A prior successful
+result blocked only by that field mismatch resumes from saved evidence after
+the same read-only verification, never from another installation.
 After provisioning a connector DA host, show its returned clickable Copilot link
 and a safe sample prompt, then follow development target preparation's
 **connector Allow handoff**: the user opens Microsoft 365 Copilot, sends the
 sample prompt and completes any Allow/input steps themselves. Wait for explicit
 readiness confirmation through the native question tool before request preparation
 or live collection. Installation approval alone is not readiness confirmation.
+For authenticated connectors, the user also completes provider sign-in/consent
+under the same M365 identity used by the collector. Missing keys or application
+registration cannot be repaired merely by signing in through Copilot.
+For the finalized-ZIP branch only, include development target preparation's bounded read-only status recovery in
+the scoped installation approval. If the first status check has a retained
+transport/read or invalid-JSON/object/missing-body failure, follow that reference's
+three-attempt recovery in this
+session without another recovery question; never upload again. Continue on
+verified success, preserving the connector Allow handoff; exhaustion and
+non-retryable errors stop the live branch.
+Require the reference's status-phase/error-code match and 10/20/30-second
+recovery delays. Environment/upload failures and oversized status responses
+remain stops, not reasons to enter or restart recovery.
 When the user supplies a deployed agent ID for read-only functional testing,
-or authorized ZIP provisioning returns its exact verified target and any required
+or authorized ZIP/source provisioning returns its exact verified target and any required
 connector Allow handoff is confirmed, pass it to request preparation
 only. The CLI generates the plan and captures
 observations internally; final validation reuses its returned evidence file.
@@ -149,7 +247,8 @@ compose extensions without rewriting their descriptions. It tests the connector
 only; other packaged surfaces are not covered. Preserve all development-target
 upload, authentication and Allow confirmations; missing auth is not permission
 to assume anonymous access. A ZIP-only request without live approval remains no-call.
-Auth failures, denial, cancellation and inconclusive target state stop this live branch; never
+Auth failures, denial, cancellation and target state still inconclusive after
+the bounded status recovery stop this live branch; never
 provision again as a collection-error recovery. Source repair/revalidation is not new deployment consent.
 Keep the host job handle, report running honestly, and retrieve that same job's output on completion;
 do not start a duplicate run to check status. Let the CLI report execution errors.
@@ -168,7 +267,8 @@ model classification. Say **AI-fixable**, **AI-fixable - needs your input**, or
 means **Repairability not recorded**, not unsupported. Show missing inputs/current blockers
 separately from capability. Put incomplete/error checks in a separate table: they are
 unverified, not confirmed defects, even when the policy supports repair. Never edit an
-app to hide an evaluator error. Combine questions for policies sharing one field.
+app to hide an evaluator error. When repair is authorized, collect all known missing
+repair inputs together before any fixes; combine policies sharing one field.
 Use `[Open HTML report](file:///...)` with a standard URL-encoded file URI as the target.
 Do not show only a bare path/URI or wrap the link in code formatting.
 Completed FAILED/ERROR runs can still have saved reports; do not guess paths after execution failure.
@@ -185,6 +285,14 @@ next lifecycle/publishing workflow with prerequisites unchanged, not an automati
 A recommendation alone does not authorize edits or publishing.
 
 ## 5. Collect the repair decision
+
+When called by a publishing workflow for advisory Marketplace policy checks,
+return the actual result, report links and warnings to that caller after step 4.
+Do not make policy repair or this repair-choice prompt a publishing prerequisite.
+The caller still owns its independent source/package gates, authorization and
+submission requirements; combined Marketplace results never hide package errors.
+If the user explicitly requests repair, continue with the normal decision below.
+Standalone validation keeps the same result and repair-decision behavior.
 
 For actionable findings, this decision is part of completing the validation workflow. Show the
 result and report link when produced in a progress message, then invoke the native choice tool before ending the
@@ -214,8 +322,9 @@ finish with the findings instead of opening a choice prompt.
     this report/project/environment. Do not ask the user to type the choice or confirm again.
   - “Not now”, dismissal or cancellation: finish with the report available and files unchanged.
     Do not start repairs, choose on the user's behalf or repeatedly ask.
-  - Collect source project/build environment only when using the source-build path.
-    For ZIP-only or listing-only repair, ask only for required business information/assets.
+  - Include required source project/build environment in step 6's grouped input collection
+    only when using the source-build path. For ZIP-only or listing-only repair, include
+    only required business information/assets; do not collect inputs policy by policy here.
   - Only if the tool is unavailable or interaction is disabled, and the user's requested response scope permits it,
     end with a localized text fallback: “Reply ‘Fix and revalidate’ to continue.”
     This fallback does not authorize repair. Do not imitate an interactive selector
@@ -238,5 +347,8 @@ and any confirmed source-project/build-environment context for a follow-up. Vali
 not authorize source edits; use step 5's native choice when repair is actionable.
 
 When repair is authorized, read [autofix](../references/validate/autofix.md) and execute its entire loop:
-scoped source edits → source recheck, or explicit new ZIP → fresh Marketplace evidence → same-mode
-`agent validate` → verified progress and remaining findings. `validation` owns that loop.
+inspect all selected findings → collect all required repair inputs together → wait for
+completed input collection → apply the planned fixes one by one → source recheck, or
+explicit new ZIP → fresh Marketplace evidence → same-mode `agent validate` → verified
+progress and remaining findings. Do not edit or revalidate between user answers,
+including for direct fixes that need no input. `validation` owns that loop.

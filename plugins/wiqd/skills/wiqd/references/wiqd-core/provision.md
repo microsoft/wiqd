@@ -19,7 +19,7 @@ For a share request, first follow **Shared deployment readiness** in
 `references/wiqd-core/share.md`: confirm additional cloud preparation when
 needed and do not re-provision an already-ready shared deployment.
 For standalone plugins, retain these environment/confirmation rules and
-applicable version handling, but use `wiqd plugin validate` and
+applicable version handling, but use `wiqd plugin validate --mode source` and
 `wiqd plugin provision` throughout. Keep the same explicit `--path` and `--env`.
 
 ## Validation Gate — MANDATORY
