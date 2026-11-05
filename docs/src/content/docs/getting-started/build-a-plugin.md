@@ -106,10 +106,10 @@ declarative agent.
 adding another capability, or validating what you have so far.
 
 **You say:** "Validate my plugin in dev."
-**wiqd does:** runs `wiqd plugin validate --env dev` (the offline static check). On a clean result, it
+**wiqd does:** runs `wiqd plugin validate --mode source --env dev` (the offline source check). On a clean result, it
 suggests provisioning the plugin or exporting it for another tool. There is no shipped command
 that merges a whole plugin into an existing agent. For an OpenAPI custom connector, it omits export because that format cannot represent the
-`ConnectionVault` reference, and explains that static validation does not establish packaging or
+`ConnectionVault` reference, and explains that source validation does not establish packaging or
 deployment readiness.
 
 **You say:** "Provision it in dev, then package and share it with my team using dev."
@@ -179,7 +179,7 @@ wiqd plugin add connector --kind openapi --name "Contoso Kusto" \
   --auth-reference-id shared_kusto --dev-preview
 
 # 3. Validate offline before you provision or package
-wiqd plugin validate --env dev
+wiqd plugin validate --mode source --env dev
 
 # 4. Provision first — it writes the env file package/share both depend on
 wiqd plugin provision --env dev
@@ -187,8 +187,8 @@ wiqd plugin provision --env dev
 # 5. Build the deployable .zip
 wiqd plugin package --env dev
 
-# 6. Run the full package-first deep validation against AVL
-wiqd plugin validate --env dev --mode deep
+# 6. Validate the built ZIP through Core/TDP (uploads the ZIP; sign-in may be required)
+wiqd plugin validate --env dev --mode package
 
 # 7. Share it
 wiqd plugin share --env dev --scope users --email you@contoso.com
@@ -220,7 +220,7 @@ the `m365agents.yml` `environmentFolderPath` (default `./env`), which `package` 
 manifest variables and which `share` requires as a preflight. Re-provision detection and
 project-mode delete use that same configured folder. The folder must remain inside the plugin
 project, and `--env` must be one portable filename segment (for example `dev` or `test-west`, not
-a path). `wiqd plugin validate --mode deep` is itself package-first, so it needs Step 5's `.zip`
+a path). `wiqd plugin validate --mode package` is package-first, so it needs Step 5's `.zip`
 to already exist.
 :::
 
@@ -234,6 +234,29 @@ connector. It writes a `ConnectionVault` pointer to an existing custom connector
 connection instance, or OAuth registration id. This connector shape is currently available only
 through explicit `devPreview` authoring; wiqd does not assume a tentative numbered manifest version
 supports it.
+
+## Publishing and existing projects
+
+The walkthrough above ends in **sharing**: granting people access to a shared deployment.
+**Publishing** is a separate step that submits your plugin to your organization's catalog.
+Even `share --scope tenant` is sharing, not catalog publication.
+
+After provisioning and validating your plugin, publish using the same explicit environment:
+
+```bash
+wiqd plugin publish --env dev
+```
+
+The command runs the selected environment's YAML `publish:` lifecycle. Before publishing
+an existing project, check that block: updating wiqd does not rewrite your project files.
+For plugin tenant publication, use `copilotAgent/publish` with `scope: tenant`, mapping
+`titleId` to `M365_PUBLISHED_TITLE_ID` and `appId` to `M365_PUBLISHED_APP_ID`.
+These keep publication IDs separate from the provisioning IDs used by the install/test
+link above. Tenant publishing does not generate a share link.
+
+If you use `--manifest`, its path must match every `teamsApp/zipAppPackage` manifest path
+in the selected `publish:` block. A mismatch or an unresolved environment token in those
+paths fails before submission with `UNSUPPORTED_PACKAGING_MANIFEST`.
 
 ## Import / export (interop)
 
@@ -261,9 +284,9 @@ writes the selected format layout; FxCore always writes `plugin.json` at the exp
 
 The imported project is ready for the full lifecycle. The TeamsFx importer creates its deployment
 environment (currently `dev`), and wiqd binds the package manifest to that environment's
-`TEAMS_APP_ID`. For a default import with no app ID, continue with `wiqd plugin validate`, then run
+`TEAMS_APP_ID`. For a default import with no app ID, continue with `wiqd plugin validate --mode source --env dev`, then run
 `wiqd plugin provision --env dev` **before** `wiqd plugin package --env dev`,
-`wiqd plugin publish --env dev`, `wiqd plugin share --env dev`, or package-first deep validation. Packaging through either backend
+`wiqd plugin publish --env dev`, `wiqd plugin share --env dev`, or package validation. Packaging through either backend
 fails closed while the selected environment file is missing or its `TEAMS_APP_ID` is empty,
 unresolved, or malformed, instead of allowing a random package-only ID.
 
@@ -282,25 +305,28 @@ sharing a newly imported app.
 Rather than assembling a package and hoping upload-time validation passes, validate continuously as
 you build:
 
-- **Static (default)** — `wiqd plugin validate` runs the offline MVL (Manifest Validation Library)
-  engine over the **declarative-agent surface only**: `declarativeAgent.json` plus any referenced
-  API-plugin manifest or OpenAPI specs. It does **not** inspect the top-level Teams manifest or the
-  content of `agentSkills[]`/`SKILL.md` files — so a skill-only or connector-only plugin passes
-  static validation vacuously. This is expected, not a gap: it's an inner-loop check, not full
-  coverage.
-- **Deep (`--mode deep`)** — package-first: after `wiqd plugin package` builds a `.zip`,
-  `wiqd plugin validate --mode deep` validates that built package against AVL (App Validation
-  Library) through the Teams Developer Portal, via deep validation. This is where manifest-schema rejections
-  and skill-content issues actually surface. See the
-  [Plugin authoring reference](/getting-started/plugin-reference/#validation-codes) for the full validation-code
-  tables and how they map to static vs. deep.
+- **Source (`--mode source`)** — offline saved declarative-agent diagnostics, using the same native
+  engine, codes, locations and selected environment as agent validation. It also checks plugin
+  project guards (`wiqd.plugin.json` and `appPackage/manifest.json` must be readable JSON objects).
+  It does not fully validate those schemas, skill/connector content or referenced API/OpenAPI
+  content. A skill-only/connector-only plugin reports no DA source coverage; a declared but missing
+  DA fails. Use this explicitly before provisioning or packaging.
+- **Package (default, `--mode package`)** — checks the final ZIP through Core/TDP. It uploads the
+  ZIP and may require sign-in; it does not build the ZIP or sign in automatically.
+- **Marketplace (`--mode marketplace`)** — package checks plus the same StoreOps policy/evidence
+  checks as agent validation. Missing evidence is not a pass, and a report is not official Store approval.
 
-Static validation does not inspect root `agentConnectors[]`, including `openApiConnector`.
-For a preview custom connector, package before deep validation. The bundled fx-core
+All modes share the agent validation options and result envelope. Package/Marketplace write
+immutable JSON/HTML reports and accept a ZIP without a source project. Supply `--package-file <zip>`
+or a project containing exactly one `appPackage/build/*.zip`. Old `static`/`deep`/`manifest` modes
+are rejected with migration guidance; the default is no longer offline.
+
+Source validation does not inspect root `agentConnectors[]`, including `openApiConnector`.
+For a preview custom connector, package before package validation. The bundled fx-core
 `3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of OpenAPI and remote MCP
 connectors using `ConnectionVault`, preserving their fields and leaving the source manifest
 unchanged. Local packaging success is not a server verdict. Check the built ZIP with
-`wiqd plugin validate --mode deep --package-file <zip>`. Report the returned findings rather than
+`wiqd plugin validate --mode package --package-file <zip>`. Report the returned findings rather than
 assuming every rejection is a rollout issue. Runtime invocation and Store/Partner Center acceptance
 remain separate checks. `wiqd plugin export` also fails explicitly for this connector kind
 because Open Plugin has no verified representation for the `ConnectionVault` logical reference.

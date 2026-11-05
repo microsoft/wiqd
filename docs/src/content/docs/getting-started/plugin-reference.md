@@ -198,8 +198,9 @@ An agent connector that fronts a remote MCP server must satisfy:
 `--tool-description`, because the 1.29 schema marks `mcpToolDescription` optional.
 
 > **Copilot Cowork treats `mcpToolDescription` as required anyway.** Its published connector
-> validation rules list a missing one as an **Error**, and a URL-only connector will pass
-> `validate`, pass `validate --mode deep`, provision cleanly, and *then* show
+> validation rules list a missing one as an **Error**. Source validation does not check this
+> connector content, and even a package validation pass does not prove runtime connectivity.
+> A provisioned connector can still show
 > **"Could not verify connection"** in the Cowork UI with nothing in the authoring loop
 > having warned you. If you are targeting Cowork, capture the server's `tools/list` output
 > to a file under `appPackage/` and pass `--tool-description <file>`. `add connector` warns
@@ -256,12 +257,12 @@ This shape is currently **devPreview-only**. A fresh 1.29 project must use `--de
 updates both app-manifest version fields explicitly. A numbered version such as 1.30 or a tentative
 future version is not treated as support without a confirmed platform contract. The same explicit
 opt-in can repair those fields for an identical existing connector without duplicating it; the
-command reports a manifest update, while a later unchanged invocation is a no-op. Package-first deep
-validation is the relevant check; static validation does not inspect root connectors. The
+command reports a manifest update, while a later unchanged invocation is a no-op. Package
+validation is the relevant check; source validation does not inspect root connectors. The
 bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of OpenAPI
 and remote MCP connectors using `ConnectionVault`, preserving their fields in the ZIP without
 changing the source manifest. Local packaging does not establish whether server-side
-AVL accepts the package. With a built ZIP, use `wiqd plugin validate --mode deep
+AVL accepts the package. With a built ZIP, use `wiqd plugin validate --mode package
 --package-file <zip>` and inspect the actual server verdict. Do not rewrite or drop the connector
 to bypass the local schema. Public schema docs, runtime invocation, and Store/Partner Center
 acceptance are separate checks. Open Plugin export fails explicitly because that format has no verified
@@ -308,12 +309,15 @@ in the manifest. wiqd does not create the app registration or discover OAuth end
 
 ## Validation codes
 
-Static `wiqd plugin validate` covers only the declarative-agent (MVL) surface. Everything below
-surfaces only at `wiqd plugin validate --mode deep` (package-first AVL) or at upload/submission
+`wiqd plugin validate --mode source` covers saved declarative-agent diagnostics and plugin project
+guards, not full API/OpenAPI, skill, connector or app-manifest content. Everything below
+surfaces at `wiqd plugin validate --mode package` (Core/TDP) or at upload/submission
 time — knowing which layer owns which code tells you where in your workflow a given failure will
 actually appear. The `ASKILL-*` codes are the Microsoft 365 Copilot platform's own Agent Skills
 validation codes (emitted by AVL and at upload), not wiqd-defined — wiqd surfaces them by running
-deep validation against that platform.
+package validation against that platform. `--mode marketplace` adds StoreOps policy/evidence
+checks and uses the same package validation first. The default is `package` and uploads the ZIP;
+choose `source` explicitly for offline checks. Old `static`/`deep` modes are rejected.
 
 ### Manifest-level codes
 
@@ -369,9 +373,9 @@ platform rules rather than numbered `ASKILL-*` codes:
 
 | Failure class                                                                | Surfaces at                                                                        |
 | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Declarative-agent manifest / API-plugin manifest / OpenAPI errors             | `wiqd plugin validate` (static, MVL)                                                |
-| `ASKILL-*` codes, connector validation rules                                  | `wiqd plugin validate --mode deep` (package-first, AVL), and at upload/submission    |
-| Top-level manifest `additionalProperties` rejections (a field the Cowork plugin schema doesn't define, under manifest 1.28) | `wiqd plugin validate --mode deep`, and at upload/submission — a separate, unnumbered schema rejection, not an `ASKILL-*` code |
+| Saved declarative-agent schema, syntax and file-reference errors | `wiqd plugin validate --mode source` (offline shared native diagnostics) |
+| Full API/OpenAPI content, `ASKILL-*` codes and connector platform rules | `wiqd plugin validate --mode package` (Core/TDP), and at upload/submission |
+| Top-level manifest `additionalProperties` rejections (a field the Cowork plugin schema doesn't define, under manifest 1.28) | `wiqd plugin validate --mode package`, and at upload/submission — a separate, unnumbered schema rejection, not an `ASKILL-*` code |
 
 ## Cross-platform SKILL.md portability
 
@@ -429,4 +433,4 @@ equivalent:
 - [Build a Plugin](/getting-started/build-a-plugin/) — the step-by-step walkthrough (agentic and CLI paths)
 - [What is a plugin?](/concepts/plugins/) — the mental model and the three meanings of "skill"
 - [`wiqd plugin`](/cli/reference/#wiqd-plugin) — the full command reference
-- [`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) — static vs. deep validation
+- [`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) — source, package and Marketplace validation

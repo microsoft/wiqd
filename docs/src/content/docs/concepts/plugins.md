@@ -100,10 +100,10 @@ wiqd plugin add agent                               # add a declarative agent co
 wiqd plugin add skill --name "Triage Issues"        # add a SKILL.md skill
 wiqd plugin add connector --name "Tools" \
   --description "Toolbelt over MCP" --url https://tools.contoso.com/mcp
-wiqd plugin validate --env dev                      # static MVL check of the DA surface
+wiqd plugin validate --mode source --env dev        # offline check of the DA surface
 wiqd plugin provision --env dev                     # register with Microsoft 365 (writes env/.env.dev)
 wiqd plugin package --env dev                       # build a deployable .zip
-wiqd plugin validate --mode deep --env dev          # full app-package validation via MVL/deep validation
+wiqd plugin validate --mode package --env dev --package-file "<zip>" # validate the final captured ZIP
 wiqd plugin publish --env dev                       # submit to the org catalog for tenant admin approval
 wiqd plugin share --scope users --email you@contoso.com --env dev
 ```
@@ -167,6 +167,6 @@ user installs or activates the CLI extension. They have nothing to do with
 
 - [`wiqd plugin`](/cli/reference/#wiqd-plugin) — the full command reference
 - [Build a plugin](/getting-started/build-a-plugin/) — a step-by-step walkthrough
-- [`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) — static MVL vs. package-first deep validation
+- [`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) — source, package (default) and Marketplace validation
 - [Declarative agents](/concepts/declarative-agents/) — the agent capability a plugin can compose
 - [Host vs extensions](/concepts/host-vs-extensions/) — how wiqd itself is structured (a different use of "extension")

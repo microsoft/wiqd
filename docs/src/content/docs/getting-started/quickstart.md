@@ -101,10 +101,10 @@ instead of scaffolding a second one.
 ## Step 3: Validate and improve
 
 ```bash
-wiqd plugin validate --env dev
+wiqd plugin validate --mode source --env dev
 ```
 
-Static validation is offline and checks the declarative-agent surface and its
+Source validation is offline and checks the declarative-agent surface and its
 references. It does not establish that root skills, connectors, or the entire
 app package are valid. Ask WIQD to explain findings and help you repair them,
 then validate again.
@@ -122,20 +122,21 @@ wiqd plugin provision --env dev
 Provisioning registers the plugin and writes the selected environment file.
 Run it before packaging or sharing, which depend on that environment.
 
-## Step 5: Package and validate deeply
+## Step 5: Package and validate the final ZIP
 
 ```bash
 wiqd plugin package --env dev
-wiqd plugin validate --mode deep --env dev
+wiqd plugin validate --mode package --env dev --package-file "<zip>"
 ```
 
-Packaging produces the distributable `.zip`. Deep validation checks the built
-app package through Microsoft 365's validation service; it requires that ZIP
+Packaging produces the distributable `.zip`; substitute its returned path for
+`<zip>`. Package validation uploads a captured copy to Microsoft 365's validation service; it requires that ZIP
 and is not a substitute for trying the plugin's behavior.
 
-Inspect the returned findings before continuing. In JSON automation, also check
-`data.valid`: deep validation can complete with exit code `0` while reporting
-`data.valid: false`. See [Validation & MVL](/concepts/validation-mvl/).
+Inspect the returned findings before continuing. Exit `0` means passed; findings
+or incomplete checks fail. In JSON automation, read success `data` or completed
+non-pass `error.data` and use `validation.result` for the verdict.
+See [Validation & MVL](/concepts/validation-mvl/).
 
 ## Step 6: Share for preview, then publish
 

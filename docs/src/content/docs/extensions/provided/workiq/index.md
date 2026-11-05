@@ -29,18 +29,11 @@ Doctor never removes global packages automatically.
 `wiqd ext list` remains read-only. An explicit `WORKIQ_PATH` override is shown there as
 unvalidated and is checked by `wiqd doctor` or immediately before command execution.
 
-These commands need authentication to the Work IQ service (covered by `wiqd auth login`). Because the surface is still evolving, every command in this extension requires `experimental=true` in your wiqd config:
-
-```bash
-wiqd config set experimental true
-```
+These commands need authentication to the Work IQ service (covered by `wiqd auth login`).
 
 ## Workflow walkthrough
 
 ```bash
-# 0. One-time: enable experimental features
-wiqd config set experimental true
-
 # 1. List every declarative agent deployed in the tenant
 wiqd agent list
 
@@ -54,7 +47,7 @@ wiqd agent ask --agent-id "T_b6bd...declarativeAgent" -q "Hello, summarize the l
 wiqd agent ask --agent-name "Sales Copilot Assistant" -q "..."
 
 # 5. Ask the Insights Agent how a specific agent is doing
-wiqd agent monitor --path ./my-agent --env dev --query "How often was this agent askd last week?"
+wiqd agent monitor --path ./my-agent --env dev --query "How often was this agent asked last week?"
 ```
 
 `wiqd agent monitor` is the most useful command in this extension day-to-day — it lets you ask natural-language questions about an agent's metrics rather than digging through a dashboard.

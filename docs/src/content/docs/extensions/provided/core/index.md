@@ -23,15 +23,15 @@ wiqd plugin create --name my-plugin
 cd my-plugin
 wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add agent
-wiqd plugin validate --env dev
+wiqd plugin validate --mode source --env dev
 wiqd plugin provision --env dev
 wiqd plugin package --env dev
-wiqd plugin validate --mode deep --env dev
+wiqd plugin validate --mode package --env dev --package-file "<zip>"
 wiqd plugin share --scope users --email dev@example.com --env dev
 ```
 
-Static validation checks the declarative-agent surface, not the entire plugin.
-Deep validation checks the built package. For publishing and tenant
+Source validation checks the declarative-agent surface, not the entire plugin.
+Package validation checks the captured ZIP and is the default mode. For publishing and tenant
 administrator approval, follow [Build a Plugin](/getting-started/build-a-plugin/).
 
 ## Where to look in the codebase

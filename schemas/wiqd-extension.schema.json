@@ -261,6 +261,19 @@
       "required": ["name", "binary", "rules"],
       "description": "A manifest-declared health check run by `wiqd doctor`. The host resolves `binary`, probes it with `args`, and maps the result to a row via the declarative outcomes — it never branches on the extension's identity. The shape is rich enough to express a tri-state probe (the workiq `--json` check): `missing` (binary absent), `onError` (probe threw), and an ordered `rules` list (first match wins) over the completed probe."
     },
+    "CommandTelemetryConfig": {
+      "type": "object",
+      "properties": {
+        "titleId": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Own-property path to the resolved customer title, rooted at computed or transform. Computed targets are captured before execution; response targets after a successful transform. Collection requires host approval and existing telemetry consent. Missing targets are omitted.",
+          "pattern": "^(?:computed|transform)(?:\\.(?!(?:constructor|prototype)(?:\\.|$))[A-Za-z][A-Za-z0-9_-]*)+(?![\\s\\S])"
+        }
+      },
+      "required": ["titleId"],
+      "additionalProperties": false
+    },
     "CommandWithoutProtocolProcess": {
       "not": {
         "required": ["protocolProcess"]
@@ -1136,6 +1149,9 @@
         "hidden": {
           "type": "boolean"
         },
+        "telemetry": {
+          "$ref": "#/definitions/CommandTelemetryConfig"
+        },
         "aliases": {
           "type": "array",
           "items": {
@@ -1389,6 +1405,70 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "required": ["telemetry"]
+          },
+          "then": {
+            "not": {
+              "properties": {
+                "container": {
+                  "const": true
+                }
+              },
+              "required": ["container"]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["telemetry"],
+            "properties": {
+              "telemetry": {
+                "required": ["titleId"],
+                "properties": {
+                  "titleId": {
+                    "type": "string",
+                    "pattern": "^computed\\."
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": ["computed"],
+            "properties": {
+              "computed": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["telemetry"],
+            "properties": {
+              "telemetry": {
+                "required": ["titleId"],
+                "properties": {
+                  "titleId": {
+                    "type": "string",
+                    "pattern": "^transform\\."
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": ["transform"],
+            "properties": {
+              "transform": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            }
+          }
+        },
         {
           "if": {
             "required": ["protocolProcess"]

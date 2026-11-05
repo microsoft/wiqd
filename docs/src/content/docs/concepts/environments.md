@@ -28,7 +28,7 @@ definitions with `wiqd agent env add --name <name>`.
 ## How environments enter every command
 
 Plugin lifecycle commands accept `--env <name>`. Use the same explicit
-environment when provisioning, packaging, validating deeply, sharing, and
+environment when provisioning, packaging, validating source or packages, sharing, and
 publishing. Defaults and supported options remain command-specific.
 
 The documentation uses **`dev` as its standard example environment** and
@@ -38,7 +38,7 @@ that currently default to `local` still do so when the option is omitted.
 ```bash
 wiqd plugin provision --env dev
 wiqd plugin package --env dev
-wiqd plugin validate --mode deep --env dev
+wiqd plugin validate --mode package --env dev --package-file "<zip>"
 wiqd plugin publish --env dev
 ```
 
@@ -68,10 +68,14 @@ provide agent-focused views for existing agent projects:
 validation checks captured ZIP bytes; `--env` does not choose or rebuild that ZIP.
 `provision`, `package`, `publish`, `eval`, `monitor`, `share` and `delete` need the intended slot.
 
-Static `wiqd plugin validate` checks the declarative-agent source surface
-offline without provisioning. Deep validation uses the selected environment's
-built package. Agent evaluation targets a deployed declarative-agent component,
-not all capabilities in a plugin.
+`wiqd plugin validate --mode source` checks the declarative-agent source surface
+offline without provisioning; use the same explicit project/environment context.
+Bare `wiqd plugin validate` defaults to package mode and uploads an existing ZIP.
+For package or Marketplace, pass `--package-file "<exact.zip>"` to select the
+intended artifact. Otherwise exactly one nonrecursive ZIP must exist in the
+selected project's `appPackage/build/`; missing or ambiguous ZIPs fail.
+`--env` never selects or rebuilds a ZIP. Agent evaluation targets a deployed
+declarative-agent component, not all capabilities in a plugin.
 
 ## Go deeper
 

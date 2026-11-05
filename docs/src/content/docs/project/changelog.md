@@ -2,6 +2,30 @@
 title: Changelog
 ---
 
+## 0.24.0 — 2026-11-05
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Breaking Changes
+
+- align validation with canonical agent runtime
+
+### Features
+
+- collect autofix inputs before applying repairs
+- scope monitor requests to resolved project title
+- fall back to Insights Agent v1 when v2 is unavailable
+- add read-only incident diagnostics collection
+
+### Fixes
+
+- point agent monitor at Insights Agent v2 and route usage questions
+- address monitor review findings
+- preserve sanitized installer failure diagnostics
+- preserve scoped monitoring when merging main
+- isolate Windows diagnostics modules and sync main
+- make Marketplace policy checks advisory
+
 ## 0.23.0 — 2026-11-02
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
