@@ -120,6 +120,8 @@ per-command tables below.
 | [`wiqd agent list`](#wiqd-agent-list) | Work IQ | List declarative agents deployed in the tenant. |
 | [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the Insights Agent about a provisioned agent's performance and usage. |
 | [`wiqd agent package`](#wiqd-agent-package) | wiqd Core | Package the agent into a deployable .zip after validating bundled DA skill and Worker references. |
+| [`wiqd agent policy`](#wiqd-agent-policy) | wiqd Core | Work IQ maker-policy operations |
+| [`wiqd agent policy publish`](#wiqd-agent-policy-publish) | wiqd Core | Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in. |
 | [`wiqd agent provision`](#wiqd-agent-provision) | wiqd Core | Provision a declarative agent after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent provision package`](#wiqd-agent-provision-package) | wiqd Core | Personally sideload a final DA ZIP, converting a supported single MCP connector into a minimal DA test host when needed. Unrelated skills, tabs and compose extensions are omitted from the host, not the original ZIP. Use --dry-run to prepare locally without authentication or network. |
 | [`wiqd agent publish`](#wiqd-agent-publish) | wiqd Core | Publish an agent to the org catalog. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
@@ -244,6 +246,13 @@ per-command tables below.
 | [`wiqd feedback list`](#wiqd-feedback-list) | GitHub | List feedback you submitted through wiqd. |
 | [`wiqd feedback submit`](#wiqd-feedback-submit) | GitHub | Submit feedback about wiqd as a GitHub issue. |
 
+**wiqd marketplace**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd marketplace`](#wiqd-marketplace) | wiqd (core) | Install the public WIQD plugin through a supported host's native marketplace. |
+| [`wiqd marketplace setup`](#wiqd-marketplace-setup) | wiqd Core | Install the public wiqd@wiqd plugin from microsoft/wiqd, or keep a verified existing public Copilot installation. This does not configure your complete WIQD environment. |
+
 **wiqd plugin**
 
 | Command | Extension | Description |
@@ -258,7 +267,7 @@ per-command tables below.
 | [`wiqd plugin export`](#wiqd-plugin-export) | wiqd Core | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
 | [`wiqd plugin import`](#wiqd-plugin-import) | wiqd Core | Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project. |
 | [`wiqd plugin list`](#wiqd-plugin-list) | wiqd Core | List standalone plugin projects under a directory. |
-| [`wiqd plugin package`](#wiqd-plugin-package) | wiqd Core | Package the plugin into a deployable .zip after validating bundled DA skill and Worker references. |
+| [`wiqd plugin package`](#wiqd-plugin-package) | wiqd Core | Package the plugin into a .zip. Use --offline for a local-only preview connector/skill package without provisioning or server validation. |
 | [`wiqd plugin provision`](#wiqd-plugin-provision) | wiqd Core | Provision a plugin to an environment after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin publish`](#wiqd-plugin-publish) | wiqd Core | Submit a provisioned plugin to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin share`](#wiqd-plugin-share) | wiqd Core | Share a plugin with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
@@ -780,6 +789,50 @@ wiqd agent package --env <value> --output <value>
 wiqd agent package --json
 ```
 
+### wiqd agent policy
+
+Work IQ maker-policy operations
+
+**Extension:** wiqd Core
+
+```bash
+wiqd agent policy <command>
+```
+
+**Examples**
+
+```bash
+wiqd agent policy
+wiqd agent policy publish
+wiqd agent policy --help
+```
+
+### wiqd agent policy publish
+
+Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd agent policy publish [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--title-id <value>` | Explicit existing MOS title ID |
+| `--file <value>` | Policy JSON file validated and captured by the native SDK |
+| `--caller-id <value>` | Explicit runtime App ID used for Work IQ policy binding |
+
+**Examples**
+
+```bash
+wiqd agent policy publish
+wiqd agent policy publish --title-id <value> --file <value>
+wiqd agent policy publish --json
+```
+
 ### wiqd agent provision
 
 Provision a declarative agent after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
@@ -1044,6 +1097,7 @@ wiqd agent validate [options] <command>
 | `--agent-id <value>` | Exact deployed target for automatic read-only functional collection; up to 12 scenarios, default 180 seconds total (marketplace only) |
 | `--functional-timeout <value>` | Overall functional collection budget in seconds, 1–900 (default 180); requires --agent-id and marketplace |
 | `--functional-request-timeout <value>` | Per-request collection timeout in seconds, 1–900 (default 60); requires --agent-id and marketplace, bounded by the overall budget |
+| `--connector-plan-file <value>` | Use a reviewed, package-bound read-only operation and concrete public or synthetic-fixture inputs; requires --agent-id and marketplace |
 | `--connector-scenario <value>` | Approve one bounded public-example read-only connector test using existing access; requires --agent-id and marketplace, never signs in or modifies data (choices: "public-example") |
 | `--functional-batch` | Collect independent conversational questions in one shared structured request; requires --agent-id and marketplace, with no retry or fallback |
 | `--functional-batch-allow-duplicate-json` | Allow two identical complete batch JSON documents, preserving raw evidence and marking normalization; requires --functional-batch (default off) |
@@ -2158,6 +2212,50 @@ wiqd feedback submit --type <value> --title <value>
 wiqd feedback submit --json
 ```
 
+## wiqd marketplace
+
+Install the public WIQD plugin through a supported host's native marketplace.
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd marketplace <command>
+```
+
+**Examples**
+
+```bash
+wiqd marketplace
+wiqd marketplace setup
+wiqd marketplace --help
+```
+
+### wiqd marketplace setup
+
+Install the public wiqd@wiqd plugin from microsoft/wiqd, or keep a verified existing public Copilot installation. This does not configure your complete WIQD environment.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd marketplace setup [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--host <value>` | Select one supported host: copilot or claude (default: detect both) |
+| `--marketplace <value>` | Public acquisition source (default and only accepted value: microsoft/wiqd) |
+| `--dry-run` | Inspect native state and report planned actions without changing it (default: false) |
+
+**Examples**
+
+```bash
+wiqd marketplace setup
+wiqd marketplace setup --host <value> --marketplace <value>
+wiqd marketplace setup --json
+```
+
 ## wiqd plugin
 
 Build, validate, package, and publish standalone plugins (agent + skills + connector)
@@ -2240,9 +2338,9 @@ wiqd plugin add connector [options]
 | `--kind <value>` | Connector kind (choices: "remote-mcp", "openapi", default: "remote-mcp") |
 | `--url <value>` | Remote MCP server https:// URL (required for remote-mcp) |
 | `--tool-description <value>` | Existing tool-description file, relative to appPackage/ |
-| `--auth-type <value>` | Remote MCP authorization type (omission means none; dcr omits the block) (choices: "none", "oauth", "api-key", "dcr") |
-| `--auth-reference-id <value>` | Remote MCP credential reference id, or OpenAPI custom-connector logical name |
-| `--dev-preview` | Explicitly move the manifest to devPreview for an OpenAPI connector |
+| `--auth-type <value>` | Remote MCP authorization type (omission with a reference uses devPreview-only ConnectionVault; otherwise none) (choices: "none", "oauth", "api-key", "dcr") |
+| `--auth-reference-id <value>` | Existing connector reference (devPreview-only ConnectionVault when auth-type is omitted), explicit MCP credential reference, or OpenAPI logical name |
+| `--dev-preview` | Explicitly move the manifest to devPreview for OpenAPI or inferred remote MCP ConnectionVault |
 | `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
 
 **Examples**
@@ -2419,7 +2517,7 @@ wiqd plugin list --json
 
 ### wiqd plugin package
 
-Package the plugin into a deployable .zip after validating bundled DA skill and Worker references.
+Package the plugin into a .zip. Use --offline for a local-only preview connector/skill package without provisioning or server validation.
 
 **Extension:** wiqd Core
 
@@ -2431,7 +2529,8 @@ wiqd plugin package [options]
 
 | Option | Description |
 | --- | --- |
-| `--env <value>` | Environment to resolve variables from (default: "local") |
+| `--offline` | Build a local-only devPreview connector/skill ZIP; automatically persist a local package ID without provisioning (default: false) |
+| `--env <value>` | Environment to resolve variables from; output label only with --offline (default: "local") |
 | `--output <value>` | Output path for the zip package |
 | `--include-file <value>` | Include one regular project file unchanged at the ZIP root |
 | `--path <value>` | Plugin project path (defaults to CWD) |
@@ -2578,6 +2677,7 @@ wiqd plugin validate [options]
 | `--agent-id <value>` | Exact deployed target for automatic read-only functional collection; up to 12 scenarios, default 180 seconds total (marketplace only) |
 | `--functional-timeout <value>` | Overall functional collection budget in seconds, 1–900 (default 180); requires --agent-id and marketplace |
 | `--functional-request-timeout <value>` | Per-request collection timeout in seconds, 1–900 (default 60); requires --agent-id and marketplace, bounded by the overall budget |
+| `--connector-plan-file <value>` | Use a reviewed, package-bound read-only operation and concrete public or synthetic-fixture inputs; requires --agent-id and marketplace |
 | `--connector-scenario <value>` | Approve one bounded public-example read-only connector test using existing access; requires --agent-id and marketplace, never signs in or modifies data (choices: "public-example") |
 | `--functional-batch` | Collect independent conversational questions in one shared structured request; requires --agent-id and marketplace, with no retry or fallback |
 | `--functional-batch-allow-duplicate-json` | Allow two identical complete batch JSON documents, preserving raw evidence and marking normalization; requires --functional-batch (default off) |

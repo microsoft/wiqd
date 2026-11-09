@@ -41,10 +41,11 @@ upload fails with an HTTP 400. Authoring against wiqd's pinned 1.29 schema sides
 failure — but not the platform one: Cowork requires `mcpToolDescription` regardless of what 1.29
 permits, so a URL-only connector still fails to verify in the product. Supply one.
 
-The numbered 1.29 pin remains the default. `wiqd plugin add connector --kind openapi
---dev-preview` is an explicit exception for referencing an existing OpenAPI custom connector: it
-updates both `manifestVersion` and `$schema` to the canonical devPreview values. wiqd does not
-assume a tentative numbered manifest version supports that connector.
+The numbered 1.29 pin remains the default. `wiqd plugin add connector --dev-preview` is an
+explicit exception for referencing an existing OpenAPI custom connector or inferring remote MCP
+`ConnectionVault` authorization: it updates both `manifestVersion` and `$schema` to the canonical
+devPreview values. wiqd does not assume a tentative numbered manifest version supports either
+preview capability. Explicit OAuth/API-key and anonymous remote MCP behavior is unchanged.
 
 ## SKILL.md frontmatter rules
 
@@ -221,7 +222,7 @@ manifest in the first place:
 | `displayName` (from `--name`)    | ≤ 128 characters           |
 | `description` (from `--description`) | ≤ 4000 characters       |
 | `mcpServerUrl` (from `--url`)    | ≤ 2048 characters          |
-| `ConnectionVault.referenceId` (OpenAPI logical name) | ≤ 128 characters |
+| `ConnectionVault.referenceId` (remote MCP reference or OpenAPI logical name) | ≤ 128 characters |
 
 ### Existing OpenAPI custom connectors
 
@@ -270,9 +271,10 @@ representation for the `ConnectionVault` logical reference.
 
 ## Remote MCP auth types
 
-A remote MCP connector or API plugin can declare one of these authentication types:
+A remote MCP connector can declare these authentication types (API plugins have a separate contract):
 
 - **`None`** — no authentication.
+- **`ConnectionVault`** — an existing connector reference, inferred when `--auth-reference-id` is supplied without `--auth-type`. **DevPreview-only:** use an already canonical preview manifest or opt in with `--dev-preview`. The command writes the supplied URL and reference; it does not create or look up the connector.
 - **`OAuthPluginVault`** — OAuth, with tokens managed by the plugin vault.
 - **`ApiKeyPluginVault`** — API-key authentication, with the key managed by the plugin vault. Note
   that API-key auth is **not yet available in Cowork** — use OAuth or Dynamic Client Registration
@@ -286,8 +288,9 @@ A remote MCP connector or API plugin can declare one of these authentication typ
   authorization server is `login.microsoftonline.com`, skip DCR and register a client by hand.
 
 There is deliberately **no `microsoftEntra` type here.** `composeExtensions` has one; `agentConnectors`
-does not, so there is no SSO path for a connector. Every OAuth-protected MCP server therefore needs a
-client ID you own — including first-party Microsoft APIs. And because Entra publishes no RFC 7591
+does not. The explicit `OAuthPluginVault` registration path needs a
+client ID you own — including first-party Microsoft APIs. An existing `ConnectionVault` connector
+reference does not require a new OAuth registration through this command. Because Entra publishes no RFC 7591
 `registration_endpoint`, DCR is not a workaround for that: an Entra-protected server always costs a
 hand-registered app.
 
@@ -299,10 +302,33 @@ wiqd plugin add connector --name "GitHub MCP" --description "Authenticated GitHu
   --auth-type oauth --auth-reference-id <reference-id>
 ```
 
-`--auth-type` accepts `none` (default), `oauth`, `api-key`, and `dcr`. `oauth` and `api-key`
-require `--auth-reference-id`; `none` and `dcr` write no authorization node and reject one.
+To reference an existing remote MCP connector without registering another credential:
 
-**Register the credential first.** The reference id comes from the Teams Developer Portal
+```bash
+wiqd plugin add connector --kind remote-mcp --name "Contoso MCP" \
+  --description "Existing Contoso connector" --url "https://contoso.example.com/mcp" \
+  --auth-reference-id "shared_contoso" --dev-preview
+```
+
+This writes `remoteMcpServer.authorization` with `type: "ConnectionVault"` and
+`referenceId: "shared_contoso"`. `--dev-preview` explicitly updates both `manifestVersion` and
+`$schema` to canonical DevPreview values. Without it, numbered or inconsistent manifests fail
+before any writes; an already canonical DevPreview manifest needs no flag. An identical re-add
+is unchanged, while explicit opt-in can repair noncanonical version/schema fields without
+duplicating the connector. This uses the published DevPreview schema and does not establish
+live schema deployment, runtime acceptance, or packaging readiness.
+Open Plugin export refuses remote MCP `ConnectionVault` because the pinned exporter would
+otherwise lose its reference. Explicit OAuth/API-key and anonymous connectors retain their
+existing numbered-schema and export behavior.
+Replace both the example URL and reference with the actual values for your connector.
+The reference is trimmed, must be nonblank, and has a 128-character limit.
+
+`--auth-type` accepts `none`, `oauth`, `api-key`, and `dcr`. With neither auth option, no
+authorization node is written. With only `--auth-reference-id`, `ConnectionVault` is inferred.
+Explicit `oauth` and `api-key` remain authoritative and require a credential reference;
+explicit `none` and `dcr` write no authorization node and reject a reference.
+
+**For explicit OAuth/API-key authentication, register the credential first.** The reference id comes from the Teams Developer Portal
 (**Tools → OAuth client registration**) or from an `oauth/register` step in `m365agents.yml`.
 `add connector` writes only that **pointer** — a client ID, client secret, or token must never appear
 in the manifest. wiqd does not create the app registration or discover OAuth endpoints for you.

@@ -151,6 +151,7 @@ export default defineConfig({
           label: 'CLI Reference',
           items: [
             { label: 'Command reference', slug: 'cli/reference' },
+            { label: 'Marketplace setup', slug: 'cli/marketplace-setup' },
             { label: 'Agent package', slug: 'cli/agent/agent-package' },
             { label: 'Connectors', slug: 'cli/connector' },
           ],

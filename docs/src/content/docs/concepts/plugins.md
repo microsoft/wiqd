@@ -88,6 +88,37 @@ the local schema. See the
 [plugin authoring reference](/getting-started/plugin-reference/#existing-openapi-custom-connectors)
 for the current limitations.
 
+### Local packaging without registration
+
+For a **devPreview connector/skill-only plugin**, build a ZIP for manual upload testing
+without provisioning or Teams registration:
+
+```bash
+wiqd plugin package --offline --path ./my-plugin --output ./plugin.zip
+```
+
+No app ID input or Teams setup is needed. A literal manifest GUID is reused; otherwise
+WIQD generates a GUID once and saves it in `wiqd.plugin.id` at the project root.
+Keep this file with your project so later packages use the same identity. It is local
+package metadata, not a Teams or Entra registration, and is never included in the ZIP.
+A malformed saved ID fails rather than being replaced. The ID may remain after a later
+packaging failure so retries keep the same identity. No source manifest or environment
+file is changed.
+Only `${{TEAMS_APP_ID}}` and `${{APP_NAME_SUFFIX}}` are resolved in the archived manifest;
+other unresolved placeholders fail. `--env` labels the output, not a credential environment.
+
+Offline packaging preserves remote MCP and OpenAPI connectors, including ConnectionVault
+references, and includes registered top-level skill folders, icons and explicit tool-description
+JSON files. Declarative agents, bots, tabs, localization and TypeSpec/generated manifests are
+not supported in this mode. Unsafe paths, symlinks, secret-like filenames and duplicate ZIP
+members fail; input/archive limits are 64 MiB, 1 MiB per JSON, 2,000 visited entries and
+32 directory levels. An existing ZIP is preserved if packaging fails.
+
+The local validator uses the unmodified DevPreview schema packaged with the SDK, including
+both connector types, without fetching the live schema URL. **A successful local ZIP is not
+proof of Cowork, AVL or Store acceptance.** No upload or server validation occurs.
+Normal provisioned packaging and `plugin validate` remain unchanged.
+
 ## The build loop
 
 Capabilities compose into a single app package, in any combination, through one lifecycle — the
