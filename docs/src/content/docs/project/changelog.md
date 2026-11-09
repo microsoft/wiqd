@@ -2,6 +2,34 @@
 title: Changelog
 ---
 
+## 0.25.0 — 2026-11-09
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Features
+
+- infer ConnectionVault for remote MCP references
+- package preview connectors locally without provisioning
+- add native marketplace setup command
+- implement extension-owned marketplace setup
+- make validation summaries concise and actionable
+- add standalone Work IQ policy publication
+
+### Fixes
+
+- gate ConnectionVault authoring on DevPreview
+- persist automatic offline package identity
+- default marketplace setup to detected hosts
+- address marketplace review findings
+- preserve first-run scope and signal boundaries
+- align marketplace setup with latest specification
+- preserve public marketplace deployment boundaries
+- align marketplace setup with public receipt contract
+- retain container command constraints
+- retain cleanup ownership and refresh setup verification
+- avoid cmdlet loading during diagnostics protection
+- preserve offline package path safety and Windows casing
+
 ## 0.24.0 — 2026-11-05
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

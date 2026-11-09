@@ -148,7 +148,7 @@ Order 12345
 | `2`   | Config / connection / auth error: unknown backend, malformed transport, unresolved stdio command, unreachable server, handshake failure, timeout, or any failure to establish an authenticated connection |
 | `130` | Cancelled (Ctrl+C) — the transport is closed and the stdio child is reaped                                                  |
 
-See [Exit codes & output](../concepts/exit-codes-output.md).
+See [Exit codes & output](/concepts/exit-codes-output/).
 
 ## Authentication
 

@@ -30,10 +30,10 @@ https://github.com/microsoft/wiqd/blob/main/NOTICE.provenance.json.
 
 ------------------------------------------------------------------------------
 
-Package:    @apidevtools/json-schema-ref-parser@11.7.2
+Package:    @apidevtools/json-schema-ref-parser@15.3.6
 License:    MIT
 Repository: https://github.com/APIDevTools/json-schema-ref-parser
-Publisher:  James Messinger
+Publisher:  JonLuca DeCaro
 
 The MIT License (MIT)
 
@@ -117,10 +117,9 @@ THE SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    @apidevtools/swagger-parser@10.1.1
+Package:    @apidevtools/swagger-parser@13.0.0
 License:    MIT
 Repository: https://github.com/APIDevTools/swagger-parser
-Publisher:  James Messinger
 
 The MIT License (MIT)
 
@@ -2271,67 +2270,6 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    @jsdevtools/ono@7.1.3
-License:    MIT
-Repository: https://github.com/JS-DevTools/ono
-Publisher:  James Messinger
-
-The MIT License (MIT)
-
-Copyright (c) 2015 James Messinger
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-.
-
-------------------------------------------------------------------------------
-
-Package:    @microsoft/app-manifest@1.1.4-alpha.1ba10daa01.0
-License:    MIT
-Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
-
-Microsoft 365 Agents Toolkit for Visual Studio Code and Microsoft 365 Agents Toolkit CLI
-
-Copyright (c) Microsoft Corporation.
-
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-------------------------------------------------------------------------------
-
 Package:    @microsoft/app-manifest@1.1.4-alpha.36e30da2f6.0
 License:    MIT
 Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
@@ -2362,7 +2300,7 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    @microsoft/app-manifest@1.1.4-beta.2026101507.0
+Package:    @microsoft/app-manifest@1.1.5-alpha.32048d0654.0
 License:    MIT
 Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
 
@@ -2484,38 +2422,10 @@ EFFET JURIDIQUE. Le présent contrat décrit certains droits juridiques. Vous po
 
 ------------------------------------------------------------------------------
 
-Package:    @microsoft/m365-spec-parser@0.3.4-beta.2026101507.0
+Package:    @microsoft/m365-spec-parser@0.3.5-alpha.32048d0654.0
 License:    MIT
 Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
 Publisher:  Microsoft Corporation
-
-Copyright (c) Microsoft Corporation.
-
-MIT License
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-------------------------------------------------------------------------------
-
-Package:    @microsoft/teamsfx-api@0.24.4-alpha.1ba10daa01.0
-License:    MIT
-Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
 
 Copyright (c) Microsoft Corporation.
 
@@ -2569,7 +2479,35 @@ SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    @microsoft/teamsfx-core@3.1.5-alpha.1ba10daa01.0
+Package:    @microsoft/teamsfx-api@0.24.5-alpha.32048d0654.0
+License:    MIT
+Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
+
+Copyright (c) Microsoft Corporation.
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+------------------------------------------------------------------------------
+
+Package:    @microsoft/teamsfx-core@3.1.6-alpha.32048d0654.0
 License:    MIT
 Repository: https://github.com/OfficeDev/microsoft-365-agents-toolkit
 

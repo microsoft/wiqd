@@ -134,6 +134,24 @@ inputs under `~/.wiqd/validation/reports/<run-id>/`. Use returned `validation.re
 `validation.inputPaths`, not guessed paths. Package data remains in `manifest.json`; Marketplace
 policy data remains in `report.json`. Filenames and their schemas are unchanged.
 
+### Concise human-readable results
+
+The terminal and coding-agent summary show the first **five failed policies** and,
+independently, the first **five incomplete policies**, in the report's existing order.
+Passing policies remain in the full counts rather than filling the table. When a
+category exceeds five, the summary gives its full count and exact omitted count.
+For example, six failed policies show five rows and **1 omitted**.
+
+The table starts with **Issue → Severity → AI repair → Next action**, followed by
+**Validation status → Policy/check → Description/location**. Completed failures and
+incomplete checks share the table but have distinct statuses; an incomplete check
+is not a confirmed defect. Package diagnostics keep their actual codes, severities
+and locations and are not hidden by the policy limit.
+
+**Open the HTML report** for every finding, its AI repairability explanation and
+next steps. JSON output and both report formats keep all policies/checks. The
+preview does not reduce validation or the scope of authorized repairs.
+
 | Exit | Meaning |
 | --- | --- |
 | 0 | Passed. |
@@ -165,6 +183,9 @@ Validation alone does not authorize repair. “Fix and revalidate” permits
 targeted changes and same-mode verification. Source repair reruns source without building
 or demanding HTML; package repair builds an explicit new ZIP, and Marketplace refreshes evidence.
 Missing input/service access stays blocked, not a fabricated pass.
+The coding agent reports the verification outcome without exposing internal
+evidence/revalidation commands or asking you to repeat completed work. Exact
+commands are available on request, or when needed for an actual next action.
 
 Findings show **AI-fixable**, **AI-fixable · Needs your input**, or **External action
 required**, with policy-specific reasons. Capability is not consent, readiness or a

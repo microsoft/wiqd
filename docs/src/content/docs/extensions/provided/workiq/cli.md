@@ -13,6 +13,13 @@ The Work IQ extension contributes three commands, all under `wiqd agent`. Every 
 | [`wiqd agent ask`](/cli/reference/#wiqd-agent-ask) | Send a message directly to a declarative agent by ID or name. |
 | [`wiqd agent list`](/cli/reference/#wiqd-agent-list) | List declarative agents deployed in the tenant. |
 
+## Policy publication
+
+The core extension provides `wiqd agent policy publish` for an existing MOS title
+without requiring the original source, app package or project. See
+[Policy publication](/cli/agent/agent-policy/) for required inputs,
+authentication, publication outcomes and mock behavior.
+
 ## Monitor request scope
 
 `wiqd agent monitor` always asks the **Insights Agent**, not the project's agent

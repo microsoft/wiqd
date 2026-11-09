@@ -1152,6 +1152,13 @@
         "telemetry": {
           "$ref": "#/definitions/CommandTelemetryConfig"
         },
+        "publicCommandId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Stable public identity matching the actual canonical namespace and path.",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
         "aliases": {
           "type": "array",
           "items": {
@@ -1405,6 +1412,21 @@
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "container": {
+                "const": true
+              }
+            },
+            "required": ["container"]
+          },
+          "then": {
+            "not": {
+              "required": ["publicCommandId"]
+            }
+          }
+        },
         {
           "if": {
             "required": ["telemetry"]
