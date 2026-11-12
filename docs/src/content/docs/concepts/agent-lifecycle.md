@@ -29,10 +29,13 @@ create ─▶ edit ─▶ validate ─▶ provision ─▶ package ─▶ publis
 Scaffold a new project from a template.
 
 ```bash
-wiqd agent create --name my-agent
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add agent --name my-agent
 ```
 
-You get a directory with the `appPackage/` files described in [Declarative agents](/concepts/declarative-agents/), plus a `m365agents.yml` driver file for the lifecycle commands.
+The first command creates the marked container; the second adds the referenced
+declarative-agent files without flattening root plugin skills or connectors.
 
 ### 2. Edit
 
@@ -62,18 +65,21 @@ not implicitly provision.
 Catch problems before deploying.
 
 ```bash
-wiqd agent validate --mode source --path . --env local  # offline saved-source diagnostics
-wiqd agent validate --mode package --package-file ./final.zip  # existing final ZIP through TDP
+wiqd plugin validate --mode source --path . --env local  # offline saved-source diagnostics
+wiqd plugin validate --mode package --package-file ./final.zip  # existing final ZIP through TDP
 ```
 
-Static mode runs the Microsoft Validation Layer (MVL) engine offline — no network, no auth, sub-second. Deep mode adds semantic project checks through the validation/core extension boundary. See [Validation & MVL](/concepts/validation-mvl/).
+Source mode runs saved-source diagnostics offline through the same service as the editor.
+Package mode uploads an existing ZIP to Teams Developer Portal; Marketplace adds StoreOps checks
+on that same captured ZIP. Neither mode builds automatically. Source is not whole-plugin
+or final-package acceptance. See [Validation & MVL](/concepts/validation-mvl/).
 
 ### 4. Provision
 
 Deploy the agent to an [environment](/concepts/environments/). The first run creates the M365 app registration; subsequent runs update it.
 
 ```bash
-wiqd agent provision --env dev
+wiqd plugin provision --env dev
 ```
 
 Provision validates the package references it is about to upload. DA-only
@@ -87,15 +93,15 @@ favor of published `worker_agents[].id` references. WIQD follows the DA file pat
 Build the distributable `.zip` for sideloading or upload.
 
 ```bash
-wiqd agent package --env dev
+wiqd plugin package --env dev
 ```
 
-Package applies the same fail-fast reference checks before fx-core starts. Top-level
+Package checks referenced files before building the ZIP. Top-level
 `agentSkills[]` Cowork skills and DA-manifest `agent_skills[]` Chat skills remain separate sets;
-dual registration is not required. See [`wiqd agent package`](/cli/agent/agent-package/) for the
+dual registration is not required. See [`wiqd plugin package`](/cli/plugin-package/) for the
 full contract. Package fails closed when `appPackage/.generated/manifest.json` exists or the active
-lifecycle configuration contains `typeSpec/compile`, because the pinned SDK can otherwise replace
-the manifest WIQD validated.
+lifecycle configuration contains `typeSpec/compile`; use a supported source manifest
+so the checked manifest is the one packaged.
 
 ### 6. Publish
 
@@ -103,10 +109,10 @@ Submit the package to the org catalog for tenant administrator approval.
 Other users can discover it only after approval; submission is not approval.
 
 ```bash
-wiqd agent publish --env dev
+wiqd plugin publish --env dev
 ```
 
-Publish applies the same package-reference checks because fx-core builds the
+Publish applies the same package-reference checks because it builds the
 package before catalog submission. Enable `agent-skills` for DA-only skill
 folders, and use published `worker_agents[].id` references instead of local
 Worker files. With `--manifest`, validation and packaging both use that exact
@@ -120,7 +126,7 @@ Once the agent is live, query its usage and health, then loop back to step 2.
 
 ```bash
 wiqd agent monitor --env dev     # ask the Insights Agent
-wiqd agent ask -q "..."  # send a test prompt
+wiqd plugin ask --component agent -q "..." # send a test prompt
 wiqd agent eval --env dev        # run quality evaluations
 ```
 
@@ -128,14 +134,15 @@ wiqd agent eval --env dev        # run quality evaluations
 
 A few commands sit outside the linear pipeline but you'll use them often:
 
-- **`wiqd agent show`** — glanceable summary of what's in a project (local) or a deployed agent (remote).
-- **`wiqd agent env`** — manage environment definitions.
-- **`wiqd agent share`** — give other users access during development.
-- **`wiqd agent delete`** — tear down cloud resources.
+- **`wiqd plugin show`** — complete local project inspection.
+- **`wiqd agent show --id|--name`** — the deployed agent's Work IQ card.
+- **`wiqd plugin list environments` / `add environment` / `reset environment`** — manage environment definitions.
+- **`wiqd plugin share`** — give other users access during development.
+- **`wiqd plugin delete`** — tear down cloud resources.
 
 ## Go deeper
 
 - [Environments](/concepts/environments/) — `local`, `dev`, `staging`, `prod`
-- [`wiqd agent create`](/cli/reference/#wiqd-agent-create), [`provision`](/cli/reference/#wiqd-agent-provision), [`package`](/cli/reference/#wiqd-agent-package), [`publish`](/cli/reference/#wiqd-agent-publish)
+- [`wiqd plugin create`](/cli/reference/#wiqd-plugin-create), [`plugin add agent`](/cli/reference/#wiqd-plugin-add-agent), [`provision`](/cli/reference/#wiqd-plugin-provision), [`package`](/cli/reference/#wiqd-plugin-package), [`publish`](/cli/reference/#wiqd-plugin-publish)
 - [wiqd Core extension](/extensions/provided/core/) — implements most of these phases
 - [Eval extension](/extensions/provided/eval/) — quality evaluations on deployed agents

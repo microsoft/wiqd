@@ -37,7 +37,7 @@ wiqd agent eval init --env dev
 $EDITOR evals/prompts.json
 
 # 3. Provision the agent (eval needs a deployed target)
-wiqd agent provision --env dev
+wiqd plugin provision --env dev
 
 # 4. Run the full suite
 wiqd agent eval --env dev

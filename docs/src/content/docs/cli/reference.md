@@ -101,41 +101,17 @@ per-command tables below.
 
 | Command | Extension | Description |
 | --- | --- | --- |
-| [`wiqd agent`](#wiqd-agent) | wiqd (core) | Build, validate, provision, publish, and monitor declarative agents |
+| [`wiqd agent`](#wiqd-agent) | wiqd (core) | Configure embedded agents and inspect deployed declarative agents |
 | [`wiqd agent add`](#wiqd-agent-add) | wiqd Core | Augment an existing declarative agent with an action, skill, or auth config. |
 | [`wiqd agent add action`](#wiqd-agent-add-action) | wiqd Core | Add an OpenAPI or remote MCP action to a declarative agent. |
 | [`wiqd agent add auth`](#wiqd-agent-add-auth) | wiqd Core | Add an auth configuration to a plugin manifest. |
 | [`wiqd agent add skill`](#wiqd-agent-add-skill) | wiqd Core | Add a skill to a declarative agent. |
-| [`wiqd agent ask`](#wiqd-agent-ask) | Work IQ | Send a message directly to a declarative agent. |
-| [`wiqd agent create`](#wiqd-agent-create) | wiqd Core | Scaffold a new declarative agent project. |
-| [`wiqd agent create list`](#wiqd-agent-create-list) | wiqd Core | List available declarative agent templates. |
-| [`wiqd agent delete`](#wiqd-agent-delete) | wiqd Core | Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
-| [`wiqd agent env`](#wiqd-agent-env) | wiqd Core | env |
-| [`wiqd agent env add`](#wiqd-agent-env-add) | wiqd Core | Add a new environment, copying from an existing one. |
-| [`wiqd agent env list`](#wiqd-agent-env-list) | wiqd Core | List the project's environments. |
-| [`wiqd agent env reset`](#wiqd-agent-env-reset) | wiqd Core | Reset (clear) an existing environment file. |
 | [`wiqd agent eval`](#wiqd-agent-eval) | Copilot Eval | Run quality evaluations against a deployed declarative agent. |
 | [`wiqd agent eval init`](#wiqd-agent-eval-init) | Copilot Eval | Initialize an evaluation prompts.json for a project (drops a fixed seven-item bootstrap for the default declarative-agent template, plus env/.env.<env>.user from your Azure OpenAI / tenant env vars). This is not manifest-aware count-based generation. |
 | [`wiqd agent info`](#wiqd-agent-info) | wiqd Core | Show MOS3 launch / acquisition info for a deployed agent. Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launch-info JSON. Used by the DevUI portal. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent list`](#wiqd-agent-list) | Work IQ | List declarative agents deployed in the tenant. |
 | [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the Insights Agent about a provisioned agent's performance and usage. |
-| [`wiqd agent package`](#wiqd-agent-package) | wiqd Core | Package the agent into a deployable .zip after validating bundled DA skill and Worker references. |
-| [`wiqd agent policy`](#wiqd-agent-policy) | wiqd Core | Work IQ maker-policy operations |
-| [`wiqd agent policy publish`](#wiqd-agent-policy-publish) | wiqd Core | Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in. |
-| [`wiqd agent provision`](#wiqd-agent-provision) | wiqd Core | Provision a declarative agent after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
-| [`wiqd agent provision package`](#wiqd-agent-provision-package) | wiqd Core | Personally sideload a final DA ZIP, converting a supported single MCP connector into a minimal DA test host when needed. Unrelated skills, tabs and compose extensions are omitted from the host, not the original ZIP. Use --dry-run to prepare locally without authentication or network. |
-| [`wiqd agent publish`](#wiqd-agent-publish) | wiqd Core | Publish an agent to the org catalog. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
-| [`wiqd agent share`](#wiqd-agent-share) | wiqd Core | Share an agent with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login`. |
-| [`wiqd agent share collaborator`](#wiqd-agent-share-collaborator) | wiqd Core | collaborator |
-| [`wiqd agent share collaborator add`](#wiqd-agent-share-collaborator-add) | wiqd Core | Grant a user collaborator access (Entra app + TDP agent). Requires Microsoft 365 sign-in; use `wiqd auth login`. |
-| [`wiqd agent share collaborator list`](#wiqd-agent-share-collaborator-list) | wiqd Core | List collaborators. `--all` is currently a compatibility flag with the same behavior as default. Requires Microsoft 365 sign-in; use `wiqd auth login`. |
-| [`wiqd agent share remove`](#wiqd-agent-share-remove) | wiqd Core | Remove user or owner access from an agent. Requires Microsoft 365 sign-in; use `wiqd auth login`. |
-| [`wiqd agent show`](#wiqd-agent-show) | wiqd (core) | Show a local summary of the agent project (manifest, capabilities, environments). |
-| [`wiqd agent validate`](#wiqd-agent-validate) | Validation & LSP | Validate source offline, a final package with TDP (default), or package and Marketplace readiness. Package/Marketplace upload the ZIP and may require Core sign-in. |
-| [`wiqd agent validate add-market-listing`](#wiqd-agent-validate-add-market-listing) | Validation & LSP | Save .validate/listing.json with approved publishing-only details. Replaces the whole listing; use preview-market-listing afterward for HTML confirmation. Does not validate or publish. |
-| [`wiqd agent validate get-market-listing`](#wiqd-agent-validate-get-market-listing) | Validation & LSP | Read .validate/listing.json and check any supported schema, including 1.0. Missing files return 404; invalid listings fail explicitly. No policy or media checks. |
-| [`wiqd agent validate preview-market-listing`](#wiqd-agent-validate-preview-market-listing) | Validation & LSP | Generate a read-only HTML review of an existing valid listing and its local media. Supports legacy listings without recollection; no package, AI or validation execution. |
-| [`wiqd agent validate repair-package`](#wiqd-agent-validate-repair-package) | Validation & LSP | Apply explicit hash-bound replacements to a new ZIP without a source project. Preserves the original; does not validate or publish. |
+| [`wiqd agent show`](#wiqd-agent-show) | Work IQ | Retrieve the real Work IQ A2A agent card by deployed agent ID or name. |
 
 **wiqd auth**
 
@@ -187,7 +163,8 @@ per-command tables below.
 
 | Command | Extension | Description |
 | --- | --- | --- |
-| [`wiqd connector`](#wiqd-connector) | wiqd (core) | Discover and inspect Microsoft 365 catalog connectors |
+| [`wiqd connector`](#wiqd-connector) | wiqd (core) | Discover catalog connectors and create MCP or REST API connectors |
+| [`wiqd connector add`](#wiqd-connector-add) | wiqd Core | Create a connector for a remote MCP server or Swagger 2.0 REST API through production MCP Platform. |
 | [`wiqd connector list`](#wiqd-connector-list) | wiqd Core | Discover remote MCP and preview OpenAPI connectors from the Microsoft 365 catalog. |
 | [`wiqd connector show`](#wiqd-connector-show) | wiqd Core | Show a canonical catalog agentConnector node. |
 
@@ -218,7 +195,7 @@ per-command tables below.
 
 | Command | Extension | Description |
 | --- | --- | --- |
-| [`wiqd eula`](#wiqd-eula) | wiqd (core) | Accept or report downstream-tool End User License Agreements (EULAs) |
+| [`wiqd eula`](#wiqd-eula) | wiqd (core) | Accept or report WIQD and downstream-tool End User License Agreements (EULAs) |
 | [`wiqd eula accept`](#wiqd-eula-accept) | wiqd (core) | Accept one tool’s EULA through the human-confirmed acceptance path |
 | [`wiqd eula status`](#wiqd-eula-status) | wiqd (core) | Report EULA-acceptance state for all EULA-gated tools |
 
@@ -259,20 +236,60 @@ per-command tables below.
 | --- | --- | --- |
 | [`wiqd plugin`](#wiqd-plugin) | wiqd (core) | Build, validate, package, and publish standalone plugins (agent + skills + connector) |
 | [`wiqd plugin add`](#wiqd-plugin-add) | wiqd Core | add |
-| [`wiqd plugin add agent`](#wiqd-plugin-add-agent) | wiqd Core | Add a declarative agent component to a plugin. |
+| [`wiqd plugin add agent`](#wiqd-plugin-add-agent) | wiqd Core | Compose one declarative agent into an existing plugin without replacing plugin-owned files. |
+| [`wiqd plugin add collaborator`](#wiqd-plugin-add-collaborator) | wiqd Core | Add and read-back verify one M365 plugin title co-owner. |
 | [`wiqd plugin add connector`](#wiqd-plugin-add-connector) | wiqd Core | Add a catalog connector (--selector), a remote MCP connector, or an OpenAPI custom connector to the plugin manifest. |
+| [`wiqd plugin add environment`](#wiqd-plugin-add-environment) | wiqd Core | Copy an existing plugin environment to a new name. |
+| [`wiqd plugin add market-listing`](#wiqd-plugin-add-market-listing) | Validation & LSP | Save .validate/listing.json with approved publishing-only details. Replaces the whole listing; use 'wiqd plugin preview market-listing' afterward for HTML confirmation. Does not validate or publish. |
 | [`wiqd plugin add skill`](#wiqd-plugin-add-skill) | wiqd Core | Scaffold a SKILL.md skill folder and register it in the plugin manifest. |
+| [`wiqd plugin ask`](#wiqd-plugin-ask) | Work IQ | Send a message directly to a declarative agent component. |
 | [`wiqd plugin create`](#wiqd-plugin-create) | wiqd Core | Scaffold a new, empty standalone plugin project from the built-in blank app template. |
 | [`wiqd plugin delete`](#wiqd-plugin-delete) | wiqd Core | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin export`](#wiqd-plugin-export) | wiqd Core | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
+| [`wiqd plugin get`](#wiqd-plugin-get) | Validation & LSP | Get plugin resources. |
+| [`wiqd plugin get market-listing`](#wiqd-plugin-get-market-listing) | Validation & LSP | Read .validate/listing.json and check any supported schema, including 1.0. Missing files return 404; invalid listings fail explicitly. No policy or media checks. |
 | [`wiqd plugin import`](#wiqd-plugin-import) | wiqd Core | Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project. |
 | [`wiqd plugin list`](#wiqd-plugin-list) | wiqd Core | List standalone plugin projects under a directory. |
+| [`wiqd plugin list collaborators`](#wiqd-plugin-list-collaborators) | wiqd Core | List verified co-owners for the selected M365 plugin title, including standalone plugins. |
+| [`wiqd plugin list environments`](#wiqd-plugin-list-environments) | wiqd Core | List environments from the lifecycle-configured environment folder. |
+| [`wiqd plugin list templates`](#wiqd-plugin-list-templates) | wiqd Core | List supported templates for 'wiqd plugin add agent'. |
 | [`wiqd plugin package`](#wiqd-plugin-package) | wiqd Core | Package the plugin into a .zip. Use --offline for a local-only preview connector/skill package without provisioning or server validation. |
+| [`wiqd plugin preview`](#wiqd-plugin-preview) | Validation & LSP | Preview plugin resources. |
+| [`wiqd plugin preview market-listing`](#wiqd-plugin-preview-market-listing) | Validation & LSP | Generate a read-only HTML review of an existing valid listing and its local media. Supports legacy listings without recollection; no package, AI or validation execution. |
 | [`wiqd plugin provision`](#wiqd-plugin-provision) | wiqd Core | Provision a plugin to an environment after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd plugin provision package`](#wiqd-plugin-provision-package) | wiqd Core | Prepare or personally sideload a final DA or supported MCP connector ZIP without a source project. |
 | [`wiqd plugin publish`](#wiqd-plugin-publish) | wiqd Core | Submit a provisioned plugin to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd plugin remove`](#wiqd-plugin-remove) | wiqd Core | Remove plugin access. |
+| [`wiqd plugin remove access`](#wiqd-plugin-remove-access) | wiqd Core | Remove plugin usage or existing shared-access grants. This is not title co-owner removal. |
+| [`wiqd plugin repair`](#wiqd-plugin-repair) | Validation & LSP | Repair plugin artifacts. |
+| [`wiqd plugin repair package`](#wiqd-plugin-repair-package) | Validation & LSP | Apply explicit hash-bound replacements to a new ZIP without a source project. Preserves the original; does not validate or publish. |
+| [`wiqd plugin reset`](#wiqd-plugin-reset) | wiqd Core | Reset plugin state. |
+| [`wiqd plugin reset environment`](#wiqd-plugin-reset-environment) | wiqd Core | Reset a plugin environment and its optional .user sidecar. |
 | [`wiqd plugin share`](#wiqd-plugin-share) | wiqd Core | Share a plugin with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
-| [`wiqd plugin show`](#wiqd-plugin-show) | wiqd Core | Show a summary of a standalone plugin project. |
+| [`wiqd plugin show`](#wiqd-plugin-show) | wiqd Core | Show complete offline details for a local plugin and its optional embedded agent. |
 | [`wiqd plugin validate`](#wiqd-plugin-validate) | Validation & LSP | Validate plugin source offline, a final package with TDP (default), or package and Marketplace readiness. Package/Marketplace upload the ZIP and may require Core sign-in. |
+
+**wiqd policy**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd policy`](#wiqd-policy) | wiqd (core) | Work IQ maker-policy operations |
+| [`wiqd policy publish`](#wiqd-policy-publish) | wiqd Core | Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in. |
+
+**wiqd publish**
+
+| Command | Extension | Description |
+| --- | --- | --- |
+| [`wiqd publish`](#wiqd-publish) | wiqd (core) | Publish prepared packages to a registry or marketplace |
+| [`wiqd publish pc`](#wiqd-publish-pc) | Partner Center Publishing Foundation | Run the real preflight, Draft preparation, and submission flow in order. Requires --interactive with separate typed submission authorization, or --authorize-submit for unattended submission; Draft confirmation is supplied internally to the composed preparation stage. |
+| [`wiqd publish pc access`](#wiqd-publish-pc-access) | Partner Center Publishing Foundation | Show static Marketplace publisher setup guidance; WIQD cannot verify publishing readiness at this time. |
+| [`wiqd publish pc init`](#wiqd-publish-pc-init) | Partner Center Publishing Foundation | Scaffold or read partner-center.json for this project; optionally verifies --product-id against the real Product. |
+| [`wiqd publish pc preflight`](#wiqd-publish-pc-preflight) | Partner Center Publishing Foundation | Read the real Product/resource-tree and classify the proposed change (listing-only vs. package/version impact). |
+| [`wiqd publish pc prepare`](#wiqd-publish-pc-prepare) | Partner Center Publishing Foundation | Create/update the real Draft: configure listing fields, upload package/assets via MCP, and record the Product ID locally. |
+| [`wiqd publish pc resume`](#wiqd-publish-pc-resume) | Partner Center Publishing Foundation | Show a synthetic resume result; no operation is read, reconciled, or continued. |
+| [`wiqd publish pc status`](#wiqd-publish-pc-status) | Partner Center Publishing Foundation | Read real job/submission/resource-tree state for the selected Product or configure job. |
+| [`wiqd publish pc submit`](#wiqd-publish-pc-submit) | Partner Center Publishing Foundation | Submit a prepared Draft for certification. Requires --yes AND either --interactive with typed confirmation at a real terminal or --authorize-submit for unattended authorization. Re-verifies the exact prepared Draft before dispatch. |
+| [`wiqd publish pc update`](#wiqd-publish-pc-update) | Partner Center Publishing Foundation | Preview or apply selected listing fields, package changes and media to the offer bound in partner-center.json. Run in the project/appPackage directory or select --path. Every applied update carries a higher-version package; never submits. |
 
 **wiqd update**
 
@@ -282,7 +299,7 @@ per-command tables below.
 
 ## wiqd agent
 
-Build, validate, provision, publish, and monitor declarative agents
+Configure embedded agents and inspect deployed declarative agents
 
 **Extension:** wiqd (core)
 
@@ -389,9 +406,9 @@ wiqd agent add auth [options]
 **Examples**
 
 ```bash
-wiqd agent add auth
 wiqd agent add auth --plugin-manifest <value> --auth-name <value>
-wiqd agent add auth --json
+wiqd agent add auth --plugin-manifest <value> --auth-name <value> --operations <value> --auth-type bearer-token
+wiqd agent add auth --plugin-manifest <value> --auth-name <value> --json
 ```
 
 ### wiqd agent add skill
@@ -419,210 +436,6 @@ wiqd agent add skill [options]
 wiqd agent add skill
 wiqd agent add skill --name <value> --description <value>
 wiqd agent add skill --json
-```
-
-### wiqd agent ask
-
-Send a message directly to a declarative agent.
-
-**Extension:** Work IQ
-
-```bash
-wiqd agent ask [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `-q, --query <value>` | Message to send to the agent |
-| `--agent-id <value>` | Agent ID |
-| `--agent-name <value>` | Agent name |
-| `--env <value>` | Target environment (default: "local") |
-| `--path <value>` | Project path |
-| `--devui` | Proxy the ask through the local Work IQ DevUI (A2A) so the call is captured and inspectable there; falls back to a direct ask if DevUI isn't running. |
-| `--developer` | Include Work IQ developer execution metadata; may contain sensitive diagnostics |
-
-**Examples**
-
-```bash
-wiqd agent ask
-wiqd agent ask --query <value> --agent-id <value>
-wiqd agent ask --json
-```
-
-### wiqd agent create
-
-Scaffold a new declarative agent project.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent create [options] <command>
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `-t, --template <value>` | Agent template (default: declarative-agent — the only family wiqd supports) (default: "declarative-agent") |
-| `-n, --name <value>` | Project name |
-| `-o, --output <value>` | Output directory |
-| `--mcp-server-url <value>` | Remote MCP server URL; enables MCP scaffold mode |
-| `--connector-package <value>` | Original single-MCP connector ZIP; prepare a minimal source host with explicit oauth-dynamic and runtime tool discovery, without registration or installation |
-| `--mcp-auth-type <value>` | MCP authentication mode (choices: "none", "oauth", "oauth-dynamic", "entra-sso", default: "none") |
-| `--mcp-client-id <value>` | OAuth or Microsoft Entra application client ID |
-| `--mcp-client-secret <value>` | Custom OAuth client secret |
-| `--mcp-scopes <value>` | Space-separated custom OAuth scopes |
-
-**Examples**
-
-```bash
-wiqd agent create
-wiqd agent create --template <value> --name <value>
-wiqd agent create --help
-```
-
-### wiqd agent create list
-
-List available declarative agent templates.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent create list
-```
-
-**Examples**
-
-```bash
-wiqd agent create list
-wiqd agent create list --json
-```
-
-### wiqd agent delete
-
-Delete an agent's cloud resources. Either by env (project-based) or by --title-id (works for any agent you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
-
-**Extension:** wiqd Core
-
-**Aliases:** `uninstall`
-
-```bash
-wiqd agent delete [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--env <value>` | Environment to delete (ignored when --title-id is set) (default: "local") |
-| `--path <value>` | Project path (ignored when --title-id is set) |
-| `--title-id <value>` | Title ID of the agent to delete (e.g. T_xxx or T_xxx.declarativeAgent). When set, deletes via title-id mode and skips project/env checks. |
-| `--keep-env-file` | Keep the local env file after deletion (project mode only) |
-| `--yes` | Skip confirmation prompt |
-
-**Examples**
-
-```bash
-wiqd agent delete
-wiqd agent delete --env <value> --path <value>
-wiqd agent delete --json
-```
-
-### wiqd agent env
-
-env
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent env <command>
-```
-
-**Examples**
-
-```bash
-wiqd agent env
-wiqd agent env add
-wiqd agent env list
-wiqd agent env reset
-wiqd agent env --help
-```
-
-### wiqd agent env add
-
-Add a new environment, copying from an existing one.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent env add [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--name <value>` | New environment name |
-| `--from <value>` | Source environment to copy from (default: "local") |
-| `-f, --folder <value>` | Project folder |
-
-**Examples**
-
-```bash
-wiqd agent env add
-wiqd agent env add --name <value> --from <value>
-wiqd agent env add --json
-```
-
-### wiqd agent env list
-
-List the project's environments.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent env list [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `-f, --folder <value>` | Project folder |
-
-**Examples**
-
-```bash
-wiqd agent env list
-wiqd agent env list --folder <value>
-wiqd agent env list --json
-```
-
-### wiqd agent env reset
-
-Reset (clear) an existing environment file.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent env reset [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--env <value>` | Environment to reset |
-| `-f, --folder <value>` | Project folder |
-
-**Examples**
-
-```bash
-wiqd agent env reset
-wiqd agent env reset --env <value> --folder <value>
-wiqd agent env reset --json
 ```
 
 ### wiqd agent eval
@@ -762,295 +575,11 @@ wiqd agent monitor --query <value> --env <value>
 wiqd agent monitor --json
 ```
 
-### wiqd agent package
-
-Package the agent into a deployable .zip after validating bundled DA skill and Worker references.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent package [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--env <value>` | Environment to resolve variables from (default: "local") |
-| `--output <value>` | Output path for the zip package |
-| `--include-file <value>` | Include one regular project file unchanged at the ZIP root |
-| `--path <value>` | Project path (defaults to CWD) |
-
-**Examples**
-
-```bash
-wiqd agent package
-wiqd agent package --env <value> --output <value>
-wiqd agent package --json
-```
-
-### wiqd agent policy
-
-Work IQ maker-policy operations
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent policy <command>
-```
-
-**Examples**
-
-```bash
-wiqd agent policy
-wiqd agent policy publish
-wiqd agent policy --help
-```
-
-### wiqd agent policy publish
-
-Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent policy publish [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--title-id <value>` | Explicit existing MOS title ID |
-| `--file <value>` | Policy JSON file validated and captured by the native SDK |
-| `--caller-id <value>` | Explicit runtime App ID used for Work IQ policy binding |
-
-**Examples**
-
-```bash
-wiqd agent policy publish
-wiqd agent policy publish --title-id <value> --file <value>
-wiqd agent policy publish --json
-```
-
-### wiqd agent provision
-
-Provision a declarative agent after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent provision [options] <command>
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `-e, --env <value>` | Target environment (default: "local") |
-| `--path <value>` | Project path (defaults to CWD) |
-
-**Examples**
-
-```bash
-wiqd agent provision
-wiqd agent provision --env <value> --path <value>
-wiqd agent provision --help
-```
-
-### wiqd agent provision package
-
-Personally sideload a final DA ZIP, converting a supported single MCP connector into a minimal DA test host when needed. Unrelated skills, tabs and compose extensions are omitted from the host, not the original ZIP. Use --dry-run to prepare locally without authentication or network.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent provision package [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--package-file <value>` | Final DA or supported single MCP connector ZIP, optionally with skills, tabs or compose extensions |
-| `--output <value>` | Private preparation directory; reuse the same directory after reviewing --dry-run |
-| `--connector-auth-type <value>` | Explicitly confirm anonymous access only for omitted connector authorization; cannot replace declared auth (choices: "None") |
-| `--dry-run` | Prepare and inspect artifacts locally; do not authenticate or install |
-| `--reconcile` | Check the retained sideload status with the same preparation and identity; never upload again |
-| `--preparation-sha256 <value>` | Require the exact preparation-record hash returned by --dry-run |
-| `--expected-tenant <value>` | Require this currently signed-in tenant ID; never switch tenants |
-| `--expected-account <value>` | Require this currently signed-in account; never switch accounts |
-
-**Examples**
-
-```bash
-wiqd agent provision package
-wiqd agent provision package --package-file <value> --output <value>
-wiqd agent provision package --json
-```
-
-### wiqd agent publish
-
-Publish an agent to the org catalog. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent publish [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--env <value>` | Environment to publish (default: "local") |
-| `--path <value>` | Project path |
-| `--manifest <value>` | Manifest file path |
-| `--dry-run` | Run the validation pipeline and report readiness without submitting (default: false) |
-| `--no-runtime` | Skip Phase 3 (agent response sampling) and Phase 4 (browser) in dry-run mode |
-| `--no-network` | Skip Phase 2 (URL reachability) in dry-run mode |
-| `--browser` | Opt in to Phase 4 headless-browser checks (requires Playwright; bundled tabs only) (default: false) |
-| `--prompts <value>` | Path to a YAML file overriding the 5 canonical Phase 3 prompts |
-| `--artifacts <value>` | Restrict report artifacts (choices: "md", "html", "json", "all", default: "all") |
-
-**Examples**
-
-```bash
-wiqd agent publish
-wiqd agent publish --env <value> --path <value>
-wiqd agent publish --json
-```
-
-### wiqd agent share
-
-Share an agent with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent share [options] <command>
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--scope <value>` | Share scope: 'users' or 'tenant' (default: "users") |
-| `--email <value>` | Comma-separated email addresses |
-| `--env <value>` | Target environment (default: "local") |
-| `--path <value>` | Project path |
-
-**Examples**
-
-```bash
-wiqd agent share
-wiqd agent share --scope <value> --email <value>
-wiqd agent share --help
-```
-
-### wiqd agent share collaborator
-
-collaborator
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent share collaborator <command>
-```
-
-**Examples**
-
-```bash
-wiqd agent share collaborator
-wiqd agent share collaborator add
-wiqd agent share collaborator list
-wiqd agent share collaborator --help
-```
-
-### wiqd agent share collaborator add
-
-Grant a user collaborator access (Entra app + TDP agent). Requires Microsoft 365 sign-in; use `wiqd auth login`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent share collaborator add [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--email <value>` | Collaborator email |
-| `--env <value>` | (default: "local") |
-| `--path <value>` |  |
-
-**Examples**
-
-```bash
-wiqd agent share collaborator add
-wiqd agent share collaborator add --email <value> --env <value>
-wiqd agent share collaborator add --json
-```
-
-### wiqd agent share collaborator list
-
-List collaborators. `--all` is currently a compatibility flag with the same behavior as default. Requires Microsoft 365 sign-in; use `wiqd auth login`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent share collaborator list [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--all` | Compatibility flag; currently same behavior as default |
-| `--env <value>` | (default: "local") |
-| `--path <value>` |  |
-
-**Examples**
-
-```bash
-wiqd agent share collaborator list
-wiqd agent share collaborator list --env <value> --path <value>
-wiqd agent share collaborator list --json
-```
-
-### wiqd agent share remove
-
-Remove user or owner access from an agent. Requires Microsoft 365 sign-in; use `wiqd auth login`.
-
-**Extension:** wiqd Core
-
-```bash
-wiqd agent share remove [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--users <value>` | Comma-separated emails to revoke user access |
-| `--owners <value>` | Comma-separated emails to revoke owner access |
-| `--env <value>` | (default: "local") |
-| `--path <value>` |  |
-
-**Examples**
-
-```bash
-wiqd agent share remove
-wiqd agent share remove --users <value> --owners <value>
-wiqd agent share remove --json
-```
-
 ### wiqd agent show
 
-Show a local summary of the agent project (manifest, capabilities, environments).
+Retrieve the real Work IQ A2A agent card by deployed agent ID or name.
 
-**Extension:** wiqd (core)
+**Extension:** Work IQ
 
 ```bash
 wiqd agent show [options]
@@ -1060,180 +589,15 @@ wiqd agent show [options]
 
 | Option | Description |
 | --- | --- |
-| `--path <path>` | Agent project directory |
-| `--env <env>` | Target environment |
-| `--verbose` | Show verbose output |
+| `--id <value>` | Deployed agent ID (takes precedence over --name) |
+| `--name <value>` | Deployed agent name |
 
 **Examples**
 
 ```bash
-wiqd agent show
-wiqd agent show --path <path> --env <env>
-wiqd agent show --json
-```
-
-### wiqd agent validate
-
-Validate source offline, a final package with TDP (default), or package and Marketplace readiness. Package/Marketplace upload the ZIP and may require Core sign-in.
-
-**Extension:** Validation & LSP
-
-```bash
-wiqd agent validate [options] <command>
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--mode <value>` | source (offline project), package (default; uploads ZIP), or marketplace (package and policy checks) (default: "package") |
-| `--path <value>` | Project root for package discovery (defaults to CWD) |
-| `--env <value>` | Project environment context; does not select a marketplace package (default: "local") |
-| `--package-file <value>` | Exact ZIP to audit, relative to CWD; otherwise require one appPackage/build/*.zip |
-| `--listing-file <value>` | Package-bound AppSource listing evidence JSON |
-| `--ai-mode <value>` | StoreOps AI evidence mode (default auto; off still permits deterministic network checks) (choices: "auto", "copilot", "off") |
-| `--ai-timeout <value>` | Planner and independent audit acquisition/AI budgets in seconds, 1–1200 each (default 240); collection is separately bounded |
-| `--ai-evidence-file <value>` | Request-bound AI evidence JSON; requires --ai-mode off |
-| `--agent-id <value>` | Exact deployed target for automatic read-only functional collection; up to 12 scenarios, default 180 seconds total (marketplace only) |
-| `--functional-timeout <value>` | Overall functional collection budget in seconds, 1–900 (default 180); requires --agent-id and marketplace |
-| `--functional-request-timeout <value>` | Per-request collection timeout in seconds, 1–900 (default 60); requires --agent-id and marketplace, bounded by the overall budget |
-| `--connector-plan-file <value>` | Use a reviewed, package-bound read-only operation and concrete public or synthetic-fixture inputs; requires --agent-id and marketplace |
-| `--connector-scenario <value>` | Approve one bounded public-example read-only connector test using existing access; requires --agent-id and marketplace, never signs in or modifies data (choices: "public-example") |
-| `--functional-batch` | Collect independent conversational questions in one shared structured request; requires --agent-id and marketplace, with no retry or fallback |
-| `--functional-batch-allow-duplicate-json` | Allow two identical complete batch JSON documents, preserving raw evidence and marking normalization; requires --functional-batch (default off) |
-| `--functional-evidence-file <value>` | Replay package-bound observations without target calls; mutually exclusive with --agent-id |
-| `--repair-context <value>` | Explicit previous report/hash, original modes and authorized changes JSON for cumulative repair history (Marketplace required) |
-
-**Examples**
-
-```bash
-wiqd agent validate
-wiqd agent validate --mode <value> --path <value>
-wiqd agent validate --help
-```
-
-### wiqd agent validate add-market-listing
-
-Save .validate/listing.json with approved publishing-only details. Replaces the whole listing; use preview-market-listing afterward for HTML confirmation. Does not validate or publish.
-
-**Extension:** Validation & LSP
-
-```bash
-wiqd agent validate add-market-listing [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--agent-folder <value>` | Agent project or ZIP-only folder; output is .validate/listing.json |
-| `--package-file <value>` | Exact final ZIP; otherwise require one ZIP in appPackage/build or the ZIP-only folder |
-| `--language <value>` | Package default locale only (default package locale or en-US) |
-| `--app-name <value>` | Approved Marketplace title (default manifest name.short) |
-| `--developer-name <value>` | Approved developer name (default manifest developer.name) |
-| `--offer-type <value>` | Offer type (default microsoft-365); shown in the complete HTML review without a separate collection question (choices: "microsoft-365", "other") |
-| `--short-description <value>` | Approved short description as plain text (default package value) |
-| `--full-description <value>` | Approved full description as plain text (default package value) |
-| `--privacy-policy-url <value>` | Approved privacy policy URL (default package value) |
-| `--terms-of-use-url <value>` | Approved terms URL (default package value) |
-| `--support-document-link <value>` | Approved public HTTPS support documentation URL |
-| `--screenshots <value>` | Comma-separated local PNG paths, 1–20; omission records incomplete coverage |
-| `--video-url <value>` | Optional approved YouTube/Vimeo HTTPS product-video URL. Recommend 60-90 seconds for value/demo guidance, not a duration cap. Native validation owns the host check. |
-| `--categories <value>` | 1-3 comma-separated Partner Center categories: Accounting + finance, Collaboration, Content management, CRM, Data + analytics, File managers, IT/admin, Legal + HR, Maps, News + weather, Productivity, Project management, Reference, Sales + marketing, Site Design, Social, Training & Tutorial, Utilities + tools, Workflow & Process Management |
-| `--industries <value>` | Up to 2 comma-separated industries, or none: Agriculture, Distribution, Education, Finance, Government, Healthcare, Manufacturing, Professional Services, Retail, Sustainability |
-| `--requires-associated-service-purchase <value>` | Confirmed associated service or additional in-app purchases requirement; publishing only (choices: "true", "false") |
-| `--use-standard-contract <value>` | true selects Microsoft's Standard Contract EULA at https://go.microsoft.com/fwlink/?linkid=2041178; conflicts with a different explicit terms URL (choices: "true", "false") |
-| `--search-terms <value>` | Up to 3 distinct comma-separated complementary Marketplace search keywords; omitted means none |
-| `--test-instructions <value>` | Private certification instructions as plain text, without credentials; required unless a PDF is supplied; publishing only |
-| `--test-instructions-file <value>` | Local certification PDF, at most 5 MiB; copied and linked in the preview, never evaluated by validation |
-| `--offer-id <value>` | Internal Partner Center lookup ID; lowercase letters, digits, dashes or underscores, max 50, not ending -preview; default generated from app name and app ID |
-| `--offer-alias <value>` | Internal Partner Center lookup alias, not public display copy; default approved app name |
-| `--availability-date <value>` | Publishing-only UTC date YYYY-MM-DD; omit to store null (publish when ready), without scheduling publication |
-| `--publish-markets <value>` | worldwide (default), or distinct comma-separated two-letter country/region codes to include, e.g. US,CA; confirmed through natural-language collection |
-| `--exclude-markets <value>` | Distinct comma-separated two-letter country/region codes excluded from worldwide; cannot combine with --publish-markets |
-
-**Examples**
-
-```bash
-wiqd agent validate add-market-listing
-wiqd agent validate add-market-listing --agent-folder <value> --package-file <value>
-wiqd agent validate add-market-listing --json
-```
-
-### wiqd agent validate get-market-listing
-
-Read .validate/listing.json and check any supported schema, including 1.0. Missing files return 404; invalid listings fail explicitly. No policy or media checks.
-
-**Extension:** Validation & LSP
-
-```bash
-wiqd agent validate get-market-listing [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--agent-folder <value>` | Agent project or ZIP-only folder containing .validate/listing.json |
-| `--listing-file <value>` | Explicit listing JSON to read instead of .validate/listing.json |
-
-**Examples**
-
-```bash
-wiqd agent validate get-market-listing
-wiqd agent validate get-market-listing --agent-folder <value> --listing-file <value>
-wiqd agent validate get-market-listing --json
-```
-
-### wiqd agent validate preview-market-listing
-
-Generate a read-only HTML review of an existing valid listing and its local media. Supports legacy listings without recollection; no package, AI or validation execution.
-
-**Extension:** Validation & LSP
-
-```bash
-wiqd agent validate preview-market-listing [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--agent-folder <value>` | Workspace for .validate/reviews; defaults to reading its .validate/listing.json |
-| `--listing-file <value>` | Explicit existing listing JSON to review without modifying it or its assets |
-
-**Examples**
-
-```bash
-wiqd agent validate preview-market-listing
-wiqd agent validate preview-market-listing --agent-folder <value> --listing-file <value>
-wiqd agent validate preview-market-listing --json
-```
-
-### wiqd agent validate repair-package
-
-Apply explicit hash-bound replacements to a new ZIP without a source project. Preserves the original; does not validate or publish.
-
-**Extension:** Validation & LSP
-
-```bash
-wiqd agent validate repair-package [options]
-```
-
-**Options**
-
-| Option | Description |
-| --- | --- |
-| `--package-file <value>` | Original final ZIP |
-| `--changes-file <value>` | JSON with packageSha256 and replacements [{path,contentPath}] |
-| `--output <value>` | Previously absent output ZIP path |
-
-**Examples**
-
-```bash
-wiqd agent validate repair-package
-wiqd agent validate repair-package --package-file <value> --changes-file <value>
-wiqd agent validate repair-package --json
+wiqd agent show --id <deployed-agent-id>
+wiqd agent show --name "<deployed-agent-name>"
+wiqd agent show --id <deployed-agent-id> --json
 ```
 
 ## wiqd auth
@@ -1692,7 +1056,7 @@ wiqd config set [pairs...]
 
 ## wiqd connector
 
-Discover and inspect Microsoft 365 catalog connectors
+Discover catalog connectors and create MCP or REST API connectors
 
 **Extension:** wiqd (core)
 
@@ -1704,9 +1068,35 @@ wiqd connector <command>
 
 ```bash
 wiqd connector
+wiqd connector add
 wiqd connector list
 wiqd connector show
 wiqd connector --help
+```
+
+### wiqd connector add
+
+Create a connector for a remote MCP server or Swagger 2.0 REST API through production MCP Platform.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd connector add [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--input-file <value>` | Private JSON with displayName, authentication and either serverUrl (MCP) or apiDefinition (Swagger 2.0) |
+| `--dry-run` | Validate input offline without authentication or creation |
+
+**Examples**
+
+```bash
+wiqd connector add --input-file <value>
+wiqd connector add --input-file <value> --dry-run
+wiqd connector add --input-file <value> --json
 ```
 
 ### wiqd connector list
@@ -1799,9 +1189,9 @@ wiqd devui ask [options]
 **Examples**
 
 ```bash
-wiqd devui ask
-wiqd devui ask --query <value> --agent <value>
-wiqd devui ask --json
+wiqd devui ask --query <value>
+wiqd devui ask --query <value> --agent <value> --transport direct
+wiqd devui ask --query <value> --json
 ```
 
 ### wiqd devui config
@@ -1922,9 +1312,9 @@ wiqd diagnostics collect [options]
 **Examples**
 
 ```bash
-wiqd diagnostics collect
+wiqd diagnostics collect --output <archive.json.gz>
 wiqd diagnostics collect --output <archive.json.gz> --log <file>
-wiqd diagnostics collect --json
+wiqd diagnostics collect --output <archive.json.gz> --json
 ```
 
 ## wiqd doctor
@@ -1946,7 +1336,7 @@ wiqd doctor --json
 
 ## wiqd eula
 
-Accept or report downstream-tool End User License Agreements (EULAs)
+Accept or report WIQD and downstream-tool End User License Agreements (EULAs)
 
 **Extension:** wiqd (core)
 
@@ -1983,13 +1373,14 @@ wiqd eula accept tool [options]
 
 | Option | Description |
 | --- | --- |
+| `--yes` | Accept the current WIQD EULA without prompting, including in CI. WIQD only; never downstream or mock. |
 | `--consent <phrase>` | A non-TTY phrase matching the complete affirmative template for the named EULA, exact URL, and current version when surfaced. No default or additional language; TTY use, CI, and --mock are refused. |
 
 **Examples**
 
 ```bash
 wiqd eula accept <tool>
-wiqd eula accept <tool> --consent <phrase>
+wiqd eula accept <tool> --consent <phrase> --yes
 wiqd eula accept <tool> --json
 ```
 
@@ -2289,14 +1680,12 @@ wiqd plugin add <command>
 ```bash
 wiqd plugin add
 wiqd plugin add agent
-wiqd plugin add connector
-wiqd plugin add skill
 wiqd plugin add --help
 ```
 
 ### wiqd plugin add agent
 
-Add a declarative agent component to a plugin.
+Compose one declarative agent into an existing plugin without replacing plugin-owned files.
 
 **Extension:** wiqd Core
 
@@ -2308,14 +1697,42 @@ wiqd plugin add agent [options]
 
 | Option | Description |
 | --- | --- |
+| `-t, --template <value>` | Agent template from 'wiqd plugin list templates' (choices: "declarative-agent", default: "declarative-agent") |
+| `-n, --name <value>` | Embedded agent name (defaults to the plugin name) |
 | `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
 
 **Examples**
 
 ```bash
 wiqd plugin add agent
-wiqd plugin add agent --folder <value>
+wiqd plugin add agent --template declarative-agent --name <value>
 wiqd plugin add agent --json
+```
+
+### wiqd plugin add collaborator
+
+Add and read-back verify one M365 plugin title co-owner.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin add collaborator [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--email <value>` | One directory email or UPN |
+| `--env <value>` | Target environment (default: "local") |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin add collaborator --email <value>
+wiqd plugin add collaborator --email <value> --env <value> --path <value>
+wiqd plugin add collaborator --email <value> --json
 ```
 
 ### wiqd plugin add connector
@@ -2351,6 +1768,80 @@ wiqd plugin add connector --kind openapi --name "Contoso Kusto" --description "E
 wiqd plugin add connector --kind openapi --name "Contoso Kusto" --description "Existing custom connector" --auth-reference-id shared_kusto --dev-preview --json
 ```
 
+### wiqd plugin add environment
+
+Copy an existing plugin environment to a new name.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin add environment [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--name <value>` | New environment name |
+| `--from <value>` | Source environment (default: "local") |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin add environment --name <value>
+wiqd plugin add environment --name <value> --from <value> --folder <value>
+wiqd plugin add environment --name <value> --json
+```
+
+### wiqd plugin add market-listing
+
+Save .validate/listing.json with approved publishing-only details. Replaces the whole listing; use 'wiqd plugin preview market-listing' afterward for HTML confirmation. Does not validate or publish.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin add market-listing [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--agent-folder <value>` | Agent project or ZIP-only folder; output is .validate/listing.json |
+| `--package-file <value>` | Exact final ZIP; otherwise require one ZIP in appPackage/build or the ZIP-only folder |
+| `--language <value>` | Package default locale only (default package locale or en-US) |
+| `--app-name <value>` | Approved Marketplace title (default manifest name.short) |
+| `--developer-name <value>` | Approved developer name (default manifest developer.name) |
+| `--offer-type <value>` | Offer type (default microsoft-365); shown in the complete HTML review without a separate collection question (choices: "microsoft-365", "other") |
+| `--short-description <value>` | Approved short description as plain text (default package value) |
+| `--full-description <value>` | Approved full description as plain text (default package value) |
+| `--privacy-policy-url <value>` | Approved privacy policy URL (default package value) |
+| `--terms-of-use-url <value>` | Approved terms URL (default package value) |
+| `--support-document-link <value>` | Approved public HTTPS support documentation URL |
+| `--screenshots <value>` | Comma-separated local PNG paths, 1–20; omission records incomplete coverage |
+| `--video-url <value>` | Optional approved YouTube/Vimeo HTTPS product-video URL. Recommend 60-90 seconds for value/demo guidance, not a duration cap. Native validation owns the host check. |
+| `--categories <value>` | 1-3 comma-separated Partner Center categories: Accounting + finance, Collaboration, Content management, CRM, Data + analytics, File managers, IT/admin, Legal + HR, Maps, News + weather, Productivity, Project management, Reference, Sales + marketing, Site Design, Social, Training & Tutorial, Utilities + tools, Workflow & Process Management |
+| `--industries <value>` | Up to 2 comma-separated industries, or none: Agriculture, Distribution, Education, Finance, Government, Healthcare, Manufacturing, Professional Services, Retail, Sustainability |
+| `--requires-associated-service-purchase <value>` | Confirmed associated service or additional in-app purchases requirement; publishing only (choices: "true", "false") |
+| `--use-standard-contract <value>` | true selects Microsoft's Standard Contract EULA at https://go.microsoft.com/fwlink/?linkid=2041178; conflicts with a different explicit terms URL (choices: "true", "false") |
+| `--search-terms <value>` | Up to 3 distinct comma-separated complementary Marketplace search keywords; omitted means none |
+| `--test-instructions <value>` | Private certification instructions as plain text, without credentials; required unless a PDF is supplied; publishing only |
+| `--test-instructions-file <value>` | Local certification PDF, at most 5 MiB; copied and linked in the preview, never evaluated by validation |
+| `--offer-id <value>` | Internal Partner Center lookup ID; lowercase letters, digits, dashes or underscores, max 50, not ending -preview; default generated from app name and app ID |
+| `--offer-alias <value>` | Internal Partner Center lookup alias, not public display copy; default approved app name |
+| `--availability-date <value>` | Publishing-only UTC date YYYY-MM-DD; omit to store null (publish when ready), without scheduling publication |
+| `--publish-markets <value>` | worldwide (default), or distinct comma-separated two-letter country/region codes to include, e.g. US,CA; confirmed through natural-language collection |
+| `--exclude-markets <value>` | Distinct comma-separated two-letter country/region codes excluded from worldwide; cannot combine with --publish-markets |
+
+**Examples**
+
+```bash
+wiqd plugin add market-listing --agent-folder <value> --categories <value> --industries <value> --requires-associated-service-purchase true
+wiqd plugin add market-listing --agent-folder <value> --categories <value> --industries <value> --requires-associated-service-purchase true --package-file <value> --language <value>
+wiqd plugin add market-listing --agent-folder <value> --categories <value> --industries <value> --requires-associated-service-purchase true --json
+```
+
 ### wiqd plugin add skill
 
 Scaffold a SKILL.md skill folder and register it in the plugin manifest.
@@ -2371,9 +1862,40 @@ wiqd plugin add skill [options]
 **Examples**
 
 ```bash
-wiqd plugin add skill
+wiqd plugin add skill --name <value>
 wiqd plugin add skill --name <value> --folder <value>
-wiqd plugin add skill --json
+wiqd plugin add skill --name <value> --json
+```
+
+### wiqd plugin ask
+
+Send a message directly to a declarative agent component.
+
+**Extension:** Work IQ
+
+```bash
+wiqd plugin ask [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--component <value>` | Plugin component to invoke (currently: agent) (choices: "agent") |
+| `-q, --query <value>` | Message to send to the agent |
+| `--agent-id <value>` | Agent ID |
+| `--agent-name <value>` | Agent name |
+| `--env <value>` | Target environment (default: "local") |
+| `--path <value>` | Project path |
+| `--devui` | Proxy the ask through the local Work IQ DevUI (A2A) so the call is captured and inspectable there; falls back to a direct ask if DevUI isn't running. |
+| `--developer` | Include Work IQ developer execution metadata; may contain sensitive diagnostics |
+
+**Examples**
+
+```bash
+wiqd plugin ask --component agent --query <value>
+wiqd plugin ask --component agent --query <value> --agent-id <value> --agent-name <value>
+wiqd plugin ask --component agent --query <value> --json
 ```
 
 ### wiqd plugin create
@@ -2397,9 +1919,9 @@ wiqd plugin create [options]
 **Examples**
 
 ```bash
-wiqd plugin create
-wiqd plugin create --name <value> --output <value>
-wiqd plugin create --json
+wiqd plugin create --name <value>
+wiqd plugin create --name <value> --output <value> --force
+wiqd plugin create --name <value> --json
 ```
 
 ### wiqd plugin delete
@@ -2458,6 +1980,49 @@ wiqd plugin export --path <value> --output <value>
 wiqd plugin export --json
 ```
 
+### wiqd plugin get
+
+Get plugin resources.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin get <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin get
+wiqd plugin get market-listing
+wiqd plugin get --help
+```
+
+### wiqd plugin get market-listing
+
+Read .validate/listing.json and check any supported schema, including 1.0. Missing files return 404; invalid listings fail explicitly. No policy or media checks.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin get market-listing [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--agent-folder <value>` | Agent project or ZIP-only folder containing .validate/listing.json |
+| `--listing-file <value>` | Explicit listing JSON to read instead of .validate/listing.json |
+
+**Examples**
+
+```bash
+wiqd plugin get market-listing --agent-folder <value>
+wiqd plugin get market-listing --agent-folder <value> --listing-file <value>
+wiqd plugin get market-listing --agent-folder <value> --json
+```
+
 ### wiqd plugin import
 
 Import an Open Plugin (or Claude/Cursor plugin) as a new plugin project.
@@ -2484,9 +2049,9 @@ wiqd plugin import [options]
 **Examples**
 
 ```bash
-wiqd plugin import
-wiqd plugin import --path <value> --output <value>
-wiqd plugin import --json
+wiqd plugin import --path <value>
+wiqd plugin import --path <value> --output <value> --privacy-url <value>
+wiqd plugin import --path <value> --json
 ```
 
 ### wiqd plugin list
@@ -2496,7 +2061,7 @@ List standalone plugin projects under a directory.
 **Extension:** wiqd Core
 
 ```bash
-wiqd plugin list [options]
+wiqd plugin list [options] <command>
 ```
 
 **Options**
@@ -2512,7 +2077,73 @@ wiqd plugin list [options]
 ```bash
 wiqd plugin list
 wiqd plugin list --name <value> --top <value>
-wiqd plugin list --json
+wiqd plugin list --help
+```
+
+### wiqd plugin list collaborators
+
+List verified co-owners for the selected M365 plugin title, including standalone plugins.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin list collaborators [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--env <value>` | Target environment (default: "local") |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin list collaborators
+wiqd plugin list collaborators --env <value> --path <value>
+wiqd plugin list collaborators --json
+```
+
+### wiqd plugin list environments
+
+List environments from the lifecycle-configured environment folder.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin list environments [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin list environments
+wiqd plugin list environments --folder <value>
+wiqd plugin list environments --json
+```
+
+### wiqd plugin list templates
+
+List supported templates for 'wiqd plugin add agent'.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin list templates
+```
+
+**Examples**
+
+```bash
+wiqd plugin list templates
+wiqd plugin list templates --json
 ```
 
 ### wiqd plugin package
@@ -2543,6 +2174,49 @@ wiqd plugin package --env <value> --output <value>
 wiqd plugin package --json
 ```
 
+### wiqd plugin preview
+
+Preview plugin resources.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin preview <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin preview
+wiqd plugin preview market-listing
+wiqd plugin preview --help
+```
+
+### wiqd plugin preview market-listing
+
+Generate a read-only HTML review of an existing valid listing and its local media. Supports legacy listings without recollection; no package, AI or validation execution.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin preview market-listing [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--agent-folder <value>` | Workspace for .validate/reviews; defaults to reading its .validate/listing.json |
+| `--listing-file <value>` | Explicit existing listing JSON to review without modifying it or its assets |
+
+**Examples**
+
+```bash
+wiqd plugin preview market-listing --agent-folder <value>
+wiqd plugin preview market-listing --agent-folder <value> --listing-file <value>
+wiqd plugin preview market-listing --agent-folder <value> --json
+```
+
 ### wiqd plugin provision
 
 Provision a plugin to an environment after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
@@ -2550,7 +2224,7 @@ Provision a plugin to an environment after validating bundled DA skill and Worke
 **Extension:** wiqd Core
 
 ```bash
-wiqd plugin provision [options]
+wiqd plugin provision [options] <command>
 ```
 
 **Options**
@@ -2565,7 +2239,38 @@ wiqd plugin provision [options]
 ```bash
 wiqd plugin provision
 wiqd plugin provision --env <value> --path <value>
-wiqd plugin provision --json
+wiqd plugin provision --help
+```
+
+### wiqd plugin provision package
+
+Prepare or personally sideload a final DA or supported MCP connector ZIP without a source project.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin provision package [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--package-file <value>` | Final DA or supported single-MCP connector ZIP |
+| `--output <value>` | Private preparation directory |
+| `--connector-auth-type <value>` | Explicit anonymous selection only for omitted connector authorization (choices: "None") |
+| `--dry-run` | Prepare locally without authentication or installation |
+| `--reconcile` | Read retained sideload status without another upload |
+| `--preparation-sha256 <value>` | Require the exact preparation-record hash |
+| `--expected-tenant <value>` | Require the currently signed-in tenant |
+| `--expected-account <value>` | Require the currently signed-in account |
+
+**Examples**
+
+```bash
+wiqd plugin provision package --package-file <value> --output <value>
+wiqd plugin provision package --package-file <value> --output <value> --connector-auth-type None --preparation-sha256 <value>
+wiqd plugin provision package --package-file <value> --output <value> --json
 ```
 
 ### wiqd plugin publish
@@ -2600,6 +2305,137 @@ wiqd plugin publish --env <value> --path <value>
 wiqd plugin publish --json
 ```
 
+### wiqd plugin remove
+
+Remove plugin access.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin remove <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin remove
+wiqd plugin remove access
+wiqd plugin remove --help
+```
+
+### wiqd plugin remove access
+
+Remove plugin usage or existing shared-access grants. This is not title co-owner removal.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin remove access [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--users <value>` | Comma-separated usage recipients to revoke |
+| `--owners <value>` | Comma-separated existing shared-access owners to revoke |
+| `--env <value>` | Target environment (default: "local") |
+| `--path <value>` | Plugin project path (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin remove access
+wiqd plugin remove access --users <value> --owners <value>
+wiqd plugin remove access --json
+```
+
+### wiqd plugin repair
+
+Repair plugin artifacts.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin repair <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin repair
+wiqd plugin repair package
+wiqd plugin repair --help
+```
+
+### wiqd plugin repair package
+
+Apply explicit hash-bound replacements to a new ZIP without a source project. Preserves the original; does not validate or publish.
+
+**Extension:** Validation & LSP
+
+```bash
+wiqd plugin repair package [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--package-file <value>` | Original final ZIP |
+| `--changes-file <value>` | JSON with packageSha256 and replacements [{path,contentPath}] |
+| `--output <value>` | Previously absent output ZIP path |
+
+**Examples**
+
+```bash
+wiqd plugin repair package --package-file <value> --changes-file <value> --output <value>
+wiqd plugin repair package --package-file <value> --changes-file <value> --output <value> --json
+```
+
+### wiqd plugin reset
+
+Reset plugin state.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin reset <command>
+```
+
+**Examples**
+
+```bash
+wiqd plugin reset
+wiqd plugin reset environment
+wiqd plugin reset --help
+```
+
+### wiqd plugin reset environment
+
+Reset a plugin environment and its optional .user sidecar.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd plugin reset environment [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--env <value>` | Environment to reset |
+| `-f, --folder <value>` | Plugin project folder (defaults to CWD) |
+
+**Examples**
+
+```bash
+wiqd plugin reset environment --env <value>
+wiqd plugin reset environment --env <value> --folder <value>
+wiqd plugin reset environment --env <value> --json
+```
+
 ### wiqd plugin share
 
 Share a plugin with users or the entire tenant. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
@@ -2629,7 +2465,7 @@ wiqd plugin share --json
 
 ### wiqd plugin show
 
-Show a summary of a standalone plugin project.
+Show complete offline details for a local plugin and its optional embedded agent.
 
 **Extension:** wiqd Core
 
@@ -2643,6 +2479,7 @@ wiqd plugin show [options]
 | --- | --- |
 | `--path <value>` | Plugin project path (defaults to CWD) |
 | `-n, --name <value>` | Plugin name to locate under CWD (exact match) |
+| `--env <value>` | Filter environments shown |
 
 **Examples**
 
@@ -2683,6 +2520,7 @@ wiqd plugin validate [options]
 | `--functional-batch-allow-duplicate-json` | Allow two identical complete batch JSON documents, preserving raw evidence and marking normalization; requires --functional-batch (default off) |
 | `--functional-evidence-file <value>` | Replay package-bound observations without target calls; mutually exclusive with --agent-id |
 | `--repair-context <value>` | Explicit previous report/hash, original modes and authorized changes JSON for cumulative repair history (Marketplace required) |
+| `--autofix-telemetry` | Telemetry-only marker for authorized Auto Fix revalidation; does not apply repairs |
 
 **Examples**
 
@@ -2690,6 +2528,327 @@ wiqd plugin validate [options]
 wiqd plugin validate
 wiqd plugin validate --mode <value> --path <value>
 wiqd plugin validate --json
+```
+
+## wiqd policy
+
+Work IQ maker-policy operations
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd policy <command>
+```
+
+**Examples**
+
+```bash
+wiqd policy
+wiqd policy publish
+wiqd policy --help
+```
+
+### wiqd policy publish
+
+Publish Work IQ policy for an existing title through the native SDK. Requires a compatible SDK and prior Microsoft 365 sign-in.
+
+**Extension:** wiqd Core
+
+```bash
+wiqd policy publish [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--title-id <value>` | Explicit existing MOS title ID |
+| `--file <value>` | Policy JSON file validated and captured by the native SDK |
+| `--caller-id <value>` | Explicit runtime App ID used for Work IQ policy binding |
+
+**Examples**
+
+```bash
+wiqd policy publish --title-id <value> --file <value> --caller-id <value>
+wiqd policy publish --title-id <value> --file <value> --caller-id <value> --json
+```
+
+## wiqd publish
+
+Publish prepared packages to a registry or marketplace
+
+**Extension:** wiqd (core)
+
+```bash
+wiqd publish <command>
+```
+
+**Examples**
+
+```bash
+wiqd publish
+wiqd publish pc
+wiqd publish --help
+```
+
+### wiqd publish pc
+
+Run the real preflight, Draft preparation, and submission flow in order. Requires --interactive with separate typed submission authorization, or --authorize-submit for unattended submission; Draft confirmation is supplied internally to the composed preparation stage.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc [options] <command>
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Listing file used for binding, publishing inputs, and the prepared Product (default partner-center.json). |
+| `--package <value>` | Candidate ZIP path; bypasses fresh package generation and is validated, frozen, and uploaded during Draft preparation. |
+| `--package-env <value>` | Agent lifecycle environment used to build a fresh ZIP when --package is omitted. (default: "local") |
+| `--release-notes <value>` | Explicit release-note override. |
+| `--availability-date <value>` | ISO timestamp with seconds and timezone. |
+| `--listing-only` | Assert a listing-only change; still cross-checked by the real preflight. |
+| `--interactive` | Requests typed submission authorization at a real terminal after Draft verification. Choose this or --authorize-submit, not both. |
+| `--authorize-submit` | Explicitly authorizes submission of the verified Draft for this invocation without a prompt. Choose this or --interactive, not both. Does not grant authentication or bypass certification. |
+
+**Examples**
+
+```bash
+wiqd publish pc
+wiqd publish pc --path <value> --listing <value>
+wiqd publish pc --help
+```
+
+### wiqd publish pc access
+
+Show static Marketplace publisher setup guidance; WIQD cannot verify publishing readiness at this time.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc access
+```
+
+**Examples**
+
+```bash
+wiqd publish pc access
+wiqd publish pc access --json
+```
+
+### wiqd publish pc init
+
+Scaffold or read partner-center.json for this project; optionally verifies --product-id against the real Product.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc init [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Destination partner-center.json path (default partner-center.json); scaffolded if absent. |
+| `--product-id <value>` | Canonical product/<GUID> binding; verified with a real REST read. |
+
+**Examples**
+
+```bash
+wiqd publish pc init
+wiqd publish pc init --path <value> --listing <value>
+wiqd publish pc init --json
+```
+
+### wiqd publish pc preflight
+
+Read the real Product/resource-tree and classify the proposed change (listing-only vs. package/version impact).
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc preflight [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Listing file read for the bound Product (default partner-center.json). |
+| `--package <value>` | Candidate ZIP path; bypasses fresh package generation and is hashed for the change classification. |
+| `--package-env <value>` | Agent lifecycle environment used to build the temporary preflight ZIP when --package is omitted. (default: "local") |
+| `--release-notes <value>` | Explicit release-note override. |
+| `--availability-date <value>` | ISO timestamp with seconds and timezone. |
+| `--listing-only` | Assert a listing-only change; still cross-checked against the real classification. |
+
+**Examples**
+
+```bash
+wiqd publish pc preflight
+wiqd publish pc preflight --path <value> --listing <value>
+wiqd publish pc preflight --json
+```
+
+### wiqd publish pc prepare
+
+Create/update the real Draft: configure listing fields, upload package/assets via MCP, and record the Product ID locally.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc prepare [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Listing context (default partner-center.json); read for binding and written with the Draft Product ID. |
+| `--package <value>` | Candidate ZIP path; bypasses fresh package generation and is uploaded via MCP when package changes are required. |
+| `--package-env <value>` | Agent lifecycle environment used to build and retain a fresh ZIP when --package is omitted. (default: "local") |
+| `--release-notes <value>` | Explicit release-note override. |
+| `--availability-date <value>` | ISO timestamp with seconds and timezone. |
+| `--listing-only` | Assert a listing-only change; still cross-checked against the real classification. |
+| `--interactive` | Guided shape only; no prompts. |
+| `--yes` | Required for Draft updates. Does not authorize submission. |
+
+**Examples**
+
+```bash
+wiqd publish pc prepare
+wiqd publish pc prepare --path <value> --listing <value>
+wiqd publish pc prepare --json
+```
+
+### wiqd publish pc resume
+
+Show a synthetic resume result; no operation is read, reconciled, or continued.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc resume [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .); no files are read. |
+| `--listing <value>` | Binding context (default partner-center.json); no file is read. |
+| `--operation <value>` | Operation selector; no receipt is read. |
+| `--interactive` | Guided shape only; no prompts or consent. |
+
+**Examples**
+
+```bash
+wiqd publish pc resume --operation <value>
+wiqd publish pc resume --operation <value> --path <value> --listing <value>
+wiqd publish pc resume --operation <value> --json
+```
+
+### wiqd publish pc status
+
+Read real job/submission/resource-tree state for the selected Product or configure job.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc status [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Binding context (default partner-center.json); read when no other selector is given. |
+| `--product-id <value>` | Canonical product/<GUID> to read status for. |
+| `--job-id <value>` | Configure job ID to read status for. |
+| `--watch` | Poll until a terminal state is reached instead of a single read. |
+
+**Examples**
+
+```bash
+wiqd publish pc status
+wiqd publish pc status --path <value> --listing <value>
+wiqd publish pc status --json
+```
+
+### wiqd publish pc submit
+
+Submit a prepared Draft for certification. Requires --yes AND either --interactive with typed confirmation at a real terminal or --authorize-submit for unattended authorization. Re-verifies the exact prepared Draft before dispatch.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc submit [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project context (default .). |
+| `--listing <value>` | Listing file read for the prepared Product ID (default partner-center.json). |
+| `--product-id <value>` | Canonical product/<GUID> of the Product to submit; must match the Product recorded by a prior `pc prepare`. |
+| `--yes` | Required ordinary-preparation confirmation, identical gating to `pc prepare`. Does NOT by itself authorize submission, accept legal terms, or establish Live intent — choose --interactive or --authorize-submit. |
+| `--interactive` | In addition to --yes, requests an explicit "submit" confirmation at a real terminal after Draft verification. Choose this or --authorize-submit, not both. |
+| `--authorize-submit` | In addition to --yes, explicitly authorizes submission of the verified Draft for this invocation without a prompt. Mutually exclusive with --interactive. Does not grant authentication or bypass certification. |
+
+**Examples**
+
+```bash
+wiqd publish pc submit --product-id <value>
+wiqd publish pc submit --product-id <value> --path <value> --listing <value>
+wiqd publish pc submit --product-id <value> --json
+```
+
+### wiqd publish pc update
+
+Preview or apply selected listing fields, package changes and media to the offer bound in partner-center.json. Run in the project/appPackage directory or select --path. Every applied update carries a higher-version package; never submits.
+
+**Extension:** Partner Center Publishing Foundation
+
+```bash
+wiqd publish pc update [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--path <value>` | Project root or its appPackage directory (default current directory). Reads the offer's Product ID from partner-center.json. |
+| `--listing <value>` | Listing file bound to the offer (default partner-center.json). |
+| `--fields <value>` | Comma-separated partner-center.json fields to update: listing.title, listing.description, listing.searchResultSummary, listing.categories, listing.legal.privacyPolicyUrl, listing.legal.supportDocumentUrl, listing.legal.termsConditions, listing.legal.termsOfUseUrl, listing.certification.notesToReviewer, availabilityDate. Unselected fields are preserved. |
+| `--update-package` | Rebuild and replace the package from the local project even without listing or media changes. Manifest descriptions do not overwrite store descriptions. |
+| `--package <value>` | Project-contained prebuilt ZIP instead of a fresh build. Its manifest version must exceed the local manifest and recorded successful updates; source ZIP and local manifest are unchanged. |
+| `--package-env <value>` | Agent lifecycle environment used to build a fresh ZIP when --package is omitted. (default: "local") |
+| `--release-notes <value>` | Submission input required with --package; does not change Draft listing fields or submit. |
+| `--availability-date <value>` | ISO timestamp with seconds and timezone; requires --fields availabilityDate. |
+| `--listing-only` | States that only listing content changed. The package version is still bumped and the package rebuilt. |
+| `--dry-run` | Read the offer and show what an update would do, including the proposed package version. Writes nothing. |
+| `--logo` | Update only the listing logo selected by assets.logo in partner-center.json; app-package icons are not edited. |
+| `--screenshots` | Upload the screenshots in partner-center.json, up to five total on the resulting listing. Ask the user whether to add or replace before choosing --screenshot-mode. |
+| `--screenshot-mode <value>` | add preserves existing screenshots; replace replaces the set. Requires --screenshots. If omitted, --interactive asks the user in a real terminal. |
+| `--yes` | Apply explicitly selected fields/media and the required package to Draft. Never submits. |
+| `--submit` | Also submit the updated Draft for certification. Requires --yes and --interactive. Not supported yet. |
+| `--interactive` | Ask add versus replace for screenshots in a real terminal when --screenshot-mode is omitted. Never authorizes submission. |
+
+**Examples**
+
+```bash
+wiqd publish pc update
+wiqd publish pc update --path <value> --listing <value>
+wiqd publish pc update --json
 ```
 
 ## wiqd update
@@ -2761,7 +2920,8 @@ Flag changes do not trigger a plugin reinstall.
 | `frontier` | `boolean` | `false` | `alpha` | wiqd-core | 0.14.0 | Enables preview capabilities across wiqd and participating extensions. |
 | `agent-skills` | `boolean` | `false` | `beta` | microsoft.wiqd.core | 0.12.2 | Enables `wiqd agent add skill` and fx-core inclusion of DA-only `agent_skills` folders during agent/plugin package, provision, and publish. The DA manifest schema for skills is not yet worldwide (WW); off by default until the schema is generally available. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
-| `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `agent ask` and `agent list` are always available. |
+| `partner-center-publishing` | `boolean` | `true` | `alpha` | microsoft.marketplace | 0.17.0 | Expose Marketplace authentication and Partner Center publishing (real REST/MCP actions for init, preflight, prepare, submit, status, and composed publish; static access guidance; simulated resume). |
+| `workiq-monitor` | `boolean` | `true` | `beta` | microsoft.workiq | 0.2.2 | Enables the `wiqd agent monitor` command (Insights Agent query) inside the Work IQ extension. On by default; can be set to false to hide the command. `plugin ask --component agent` and `agent list` are always available. |
 <!-- END: generated-flag-table -->
 
 Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_SNAKE_CASE_NAME>`:
@@ -2772,5 +2932,6 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 | `frontier` | `WIQD_FLAG_FRONTIER` |
 | `agent-skills` | `WIQD_FLAG_AGENT_SKILLS` |
 | `devui` | `WIQD_FLAG_DEVUI` |
+| `partner-center-publishing` | `WIQD_FLAG_PARTNER_CENTER_PUBLISHING` |
 | `workiq-monitor` | `WIQD_FLAG_WORKIQ_MONITOR` |
 <!-- END: generated-env-table -->

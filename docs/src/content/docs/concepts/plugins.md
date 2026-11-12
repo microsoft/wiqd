@@ -16,7 +16,7 @@ scaffolds, not a new artifact type — and it is the **source-of-truth artifact*
 knows about a plugin's capabilities is derived from it, not from any wiqd-side cache.
 
 A **declarative agent is one of the capabilities a plugin composes**, not a separate parallel
-surface. A standalone [`wiqd agent`](/cli/reference/#wiqd-agent-create) project is simply the
+surface. A standalone [`wiqd plugin`](/cli/reference/#wiqd-plugin-create) project is simply the
 special case of a plugin whose single capability is a declarative agent — structurally the two are
 the same app package. Think in terms of the plugin first, and reach for the declarative agent as
 the capability that gives the plugin its conversational surface.
@@ -54,11 +54,11 @@ A plugin can carry one or more of these, declared as top-level components in the
 A declarative agent brings its own API plugins (`actions[]`) and MCP references along with it —
 those live inside the agent's own manifest, not as separate top-level plugin components.
 
-A wiqd-owned descriptor, `wiqd.plugin.json`, marks the project root and caches the capability list
-for fast enumeration (used by [`wiqd plugin list`](/cli/reference/#wiqd-plugin-list)). It is an
-**advisory cache** — the app manifest (`appPackage/manifest.json`) is always the source of truth,
-and commands like `wiqd plugin show` and `wiqd plugin validate` read the manifest itself rather
-than trusting the cache.
+WIQD recognizes a project structurally from contained `m365agents.yml` and
+`appPackage/manifest.json`. The app manifest owns the normalized project name
+and capability collections; `show`, `list`, and `validate` derive them on every
+read without an identity/cache file. A historical `wiqd.plugin.json` is ignored
+and may be deleted manually after checking external-tool dependencies.
 
 `wiqd plugin create` pins the scaffolded manifest to `manifestVersion: "1.29"` — the numbered (GA)
 Teams schema that supports `agentSkills` (1.28) and, at 1.29, url-only `agentConnectors` (where
@@ -78,12 +78,13 @@ This writes only a `ConnectionVault` logical-name pointer and updates both app-m
 fields to `devPreview`. It does not create the custom connector, invent an endpoint, or treat a
 tentative numbered manifest version as supported.
 
-The bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of
+Local devPreview packaging supports
 `agentConnectors[].toolSource.openApiConnector` and remote MCP connectors using `ConnectionVault`,
 preserving their fields without changing the source manifest. Local packaging success does not
 guarantee server-side acceptance.
-Deep validation needs a built ZIP, including one supplied through `--package-file`. Preserve the
-connector and inspect the actual deep-validation verdict; do not rewrite or drop it to bypass
+Package validation needs a built ZIP selected with `--package-file`; use
+`wiqd plugin validate --mode package --package-file "<zip>"`. Preserve the
+connector and inspect the actual validation verdict; do not rewrite or drop it to bypass
 the local schema. See the
 [plugin authoring reference](/getting-started/plugin-reference/#existing-openapi-custom-connectors)
 for the current limitations.
@@ -153,7 +154,7 @@ new to the plugin construct.
 
 | # | Surface                                            | What it does                                                                                                    | Lives in                                                          |
 | - | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 1 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Scaffolds a `SKILL.md` folder and registers it in the **plugin's own app manifest** (`agentSkills[]`)          | A standalone plugin project (`wiqd.plugin.json`)                  |
+| 1 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Scaffolds a `SKILL.md` folder and registers it in the **plugin's own app manifest** (`agentSkills[]`)          | A structural standalone plugin project (`m365agents.yml` + root app manifest) |
 | 2 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Adds a skill to an existing **declarative agent** project's own skill surface, via the core lifecycle backend       | An agent project (`m365agents.yml`)                                |
 | 3 | Extension-contributed **Copilot skills** | The `SKILL.md` packages a wiqd *extension* bundles, that the host loads as part of the marketplace plugin | A wiqd extension's `skills/` directory, selected by the marketplace release profile |
 
@@ -166,7 +167,7 @@ plugin can be skill-only.
 
 ### 2. `wiqd agent add skill` — an agent's own skill
 
-This uses the core FxCore backend to add a skill directly into an **existing agent project**,
+This adds a skill directly into an **existing agent project**,
 in-place. It produces a `SKILL.md` folder referenced from the declarative-agent manifest's
 `agent_skills[]`; it does not add the root Cowork `agentSkills[]` registration. The command also
 supports `--from <path>` to import an existing skill directory or `.zip`. Use this when you're
@@ -176,22 +177,22 @@ independent Cowork plugin from scratch.
 `wiqd agent add skill` sits behind the `agent-skills` [feature flag](/cli/reference/#feature-flags)
 (off by default) while the declarative-agent manifest schema for skills is not yet
 worldwide (WW). Enable it with `wiqd config flags set agent-skills true`. Once a skill is added, the
-project's `appPackage/declarativeAgent.json` is bumped to manifest version `v1.9` so downstream
-services keep working ahead of general availability; `wiqd agent create`'s own scaffold version is
-untouched by this.
+declarative-agent file selected by the root app manifest is bumped to manifest version `v1.9` so
+downstream services keep working ahead of general availability. Custom contained DA paths are
+preserved; WIQD does not create a second default manifest. `wiqd plugin create`'s own scaffold
+version is untouched by this.
 
-With the FxCore backend, the evaluated flag also enables SDK skill support during packaging,
-provisioning, and publishing. Its temporary SDK environment override is restored when SDK work
-settles; disabling the flag leaves your original environment unchanged. The core backend remains the only lifecycle backend.
+Keep the flag enabled when packaging, provisioning or publishing an agent that
+uses these skills.
 
 ### 3. Extension-contributed Copilot skills
 
 This is a different axis entirely — it's not about the M365 app package at all. A wiqd *extension*
 (the packages that contribute `wiqd` CLI commands, like the Core or Work IQ extensions)
 can ship its own `SKILL.md` files that teach **GitHub Copilot CLI itself** how to drive that
-extension's commands conversationally. Those skills are selected by the release
-profile and composed into the published marketplace artifact, not merged when a
-user installs or activates the CLI extension. They have nothing to do with
+extension's commands conversationally. Install or update the coding-assistant
+plugin through its marketplace; installing a CLI extension alone does not refresh
+these skills. They have nothing to do with
 `agentSkills[]` or any M365 app package.
 
 ## Go deeper

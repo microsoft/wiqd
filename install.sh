@@ -90,7 +90,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.25.0"
+WIQD_INSTALLER_VERSION="0.26.0"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -1660,7 +1660,7 @@ extensions_check_has_id() {
 # 1 when a required dependency is missing (caller exits 1). Fails closed with
 # the canonical reinstall hint when the probe is unavailable or its JSON can't
 # be parsed. Node is guaranteed on PATH (Step 1) and wiqd is itself a
-# node CLI, so it parses the envelope into TAB-separated name/status/message.
+# node CLI, so it parses the envelope into unit-separated fields.
 show_dependency_status() {
     local json checks
     json=$(run_wiqd_installed doctor --json 2>/dev/null || true)
@@ -1669,7 +1669,7 @@ show_dependency_status() {
         write_hint "Re-run: npm install -g @microsoft/wiqd"
         return 1
     fi
-    checks=$(printf '%s' "$json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=((JSON.parse(s).data)||{}).checks||[];for(const x of c)process.stdout.write(`${x.name||""}\t${x.status||""}\t${x.message||""}\t${x.remediation||""}\n`);}catch(e){}});' 2>/dev/null || true)
+    checks=$(printf '%s' "$json" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const c=((JSON.parse(s).data)||{}).checks||[];for(const x of c)process.stdout.write([x.name,x.status,x.message,x.remediation,x.version,x.executablePath].map(v=>v||"").join("\x1f")+"\n");}catch(e){}});' 2>/dev/null || true)
     if [[ -z "$checks" ]]; then
         write_err "Could not verify required downstream components."
         write_hint "Re-run: npm install -g @microsoft/wiqd"
@@ -1682,9 +1682,24 @@ show_dependency_status() {
     # matching by name alone would assign one entry to both rows. Consuming in
     # declaration order (probe before EULA) assigns each to the right row.
     local -a c_name=() c_status=() c_msg=() c_remediation=() consumed=()
-    local nm st ms remediation
-    while IFS=$'\t' read -r nm st ms remediation; do
+    local nm st ms remediation runtime_version executable_path location
+    # Unlike tab IFS, this separator preserves empty optional fields.
+    while IFS=$'\x1f' read -r nm st ms remediation runtime_version executable_path; do
         [[ -z "$nm" ]] && continue
+        runtime_version="${runtime_version#v}"
+        if [[ "$nm" == "Node.js" && "$runtime_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] &&
+            ! version_gte "$runtime_version" "$MIN_NODE_VERSION"; then
+            location=""
+            [[ -z "$executable_path" ]] || location=" at $executable_path"
+            write_err "wiqd uses unsupported Node.js v${runtime_version}${location}. Requires ${MIN_NODE_VERSION}+."
+            write_hint "Update this Node.js to ${MIN_NODE_VERSION} or later, then retry."
+            return 1
+        fi
+        if [[ "$nm" == "Node.js" && "$st" == "error" ]]; then
+            write_err "$ms"
+            write_hint "Update this Node.js to ${MIN_NODE_VERSION} or later, then retry."
+            return 1
+        fi
         c_name+=("$nm"); c_status+=("$st"); c_msg+=("$ms"); c_remediation+=("$remediation"); consumed+=(0)
     done <<< "$checks"
 
@@ -1714,7 +1729,7 @@ show_dependency_status() {
         return 1
     fi
 
-    local backend_row="Extensions::fx-core::1::Active::(required for \`wiqd agent\` commands)::::1"
+    local backend_row="Extensions::fx-core::1::Active::(required for \`wiqd plugin\` and \`wiqd agent\` commands)::::1"
     local rows=(
         "$backend_row"
         "runevals::runevals::0::Installed::(optional - needed for \`wiqd agent eval\`)::microsoft.eval::1::wiqd agent eval::M365_COPILOT_EVAL_PATH"
@@ -2198,10 +2213,11 @@ show_wiqd_banner
 # we skip the prompt.
 
 read_eula_acceptance() {
+    local target_version="$1"
     # Check whether an existing wiqd already has the EULA accepted.
     if command -v wiqd >/dev/null 2>&1; then
-        local status_json
-        status_json=$(wiqd eula status --json 2>/dev/null) || true
+        local status_json status_exit=0
+        status_json=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd eula status --json 2>/dev/null) || status_exit=$?
         if [ -n "$status_json" ]; then
             # Parse JSON properly — grep on unstructured JSON risks matching
             # another tool's state. Use node (guaranteed present if wiqd is
@@ -2209,11 +2225,17 @@ read_eula_acceptance() {
             local wiqd_accepted
             wiqd_accepted=$(echo "$status_json" | node -e "
                 let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{
-                  try{const j=JSON.parse(d);const w=j.data&&j.data.wiqd;
-                    console.log(w&&w.tool==='wiqd'&&w.state==='accepted'?'yes':'no');
+                  try{const j=JSON.parse(d),exit=Number(process.argv[1]);
+                    const report=exit===0&&j.status==='success'?j.data:
+                      exit===2&&j.status==='error'&&j.exitCode===2&&
+                      j.error.code==='EULA_STATUS_BINARY_UNRESOLVED'&&
+                      j.error.data.tools.some(t=>t.state==='binary-unresolved')?j.error.data:null;
+                    const w=report&&report.wiqd;
+                    console.log(w&&w.tool==='wiqd'&&w.state==='accepted'&&
+                      w.cliVersion===process.argv[2]?'yes':'no');
                   }catch{console.log('no')}
                 })
-            " 2>/dev/null) || true
+            " "$status_exit" "$target_version" 2>/dev/null) || true
             if [ "$wiqd_accepted" = "yes" ]; then
                 echo "already-accepted"
                 return
@@ -2262,21 +2284,6 @@ read_eula_acceptance() {
     esac
 }
 
-EULA_CHOICE=$(read_eula_acceptance)
-
-if [ "$EULA_CHOICE" = "declined" ]; then
-    echo ""
-    write_warn "Cancelled — EULA not accepted. Nothing was installed."
-    exit 1
-fi
-
-if [ "$EULA_CHOICE" = "non-interactive" ]; then
-    echo ""
-    write_warn "Cannot proceed without EULA acceptance in non-interactive mode."
-    exit 1
-fi
-
-# EULA_CHOICE is 'accepted' or 'already-accepted' — continue with install.
 
 # Determine total steps
 TOTAL_STEPS=3
@@ -2339,6 +2346,11 @@ else
     fi
 fi
 
+EULA_CHOICE=$(read_eula_acceptance "$target_version")
+if [[ "$EULA_CHOICE" == "declined" || "$EULA_CHOICE" == "non-interactive" ]]; then
+    write_warn "Cannot proceed without EULA acceptance for the selected candidate. Nothing was installed."
+    exit 1
+fi
 
 current_version=$(get_npm_global_package_version "$WIQD_PACKAGE")
 skip_install=false

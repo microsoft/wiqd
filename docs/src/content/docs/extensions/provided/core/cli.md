@@ -5,7 +5,7 @@ description: Commands contributed by the native wiqd Core extension
 
 # wiqd Core · CLI commands
 
-The commands below are backed by the in-process fx-core adapter contributed by `microsoft.wiqd.core`.
+Use these commands to author and deliver Microsoft 365 plugins.
 
 ## Plugin authoring and lifecycle
 
@@ -18,46 +18,31 @@ alpha and enabled by default.
 | [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) | Compose a declarative-agent component. |
 | [`wiqd plugin add skill`](/cli/reference/#wiqd-plugin-add-skill) | Compose a root plugin skill. |
 | [`wiqd plugin add connector`](/cli/reference/#wiqd-plugin-add-connector) | Compose a connector or reuse one from the catalog. |
+| [`wiqd plugin list templates`](/cli/reference/#wiqd-plugin-list-templates) | List templates accepted by `plugin add agent`. |
 | [`wiqd plugin show`](/cli/reference/#wiqd-plugin-show), [`list`](/cli/reference/#wiqd-plugin-list) | Inspect a plugin or discover local projects. |
+| [`wiqd plugin list environments`](/cli/reference/#wiqd-plugin-list-environments) | List deployment environments; sibling add/reset commands manage them. |
 | [`wiqd plugin provision`](/cli/reference/#wiqd-plugin-provision) | Register the plugin and write its environment before packaging or sharing. |
+| [`wiqd plugin provision package`](/cli/reference/#wiqd-plugin-provision-package) | Prepare or personally sideload an exact ZIP without a source project. |
 | [`wiqd plugin package`](/cli/reference/#wiqd-plugin-package) | Build the distributable ZIP. |
 | [`wiqd plugin publish`](/cli/reference/#wiqd-plugin-publish) | Submit to the tenant catalog for administrator approval. |
-| [`wiqd plugin share`](/cli/reference/#wiqd-plugin-share) | Grant direct access to users or the tenant. |
+| [`wiqd plugin share`](/cli/reference/#wiqd-plugin-share) | Grant direct usage access to users or the tenant. |
+| [`wiqd plugin remove access`](/cli/reference/#wiqd-plugin-remove-access) | Revoke usage or existing shared-access grants with partial-effect reporting. |
+| [`wiqd plugin add collaborator`](/cli/reference/#wiqd-plugin-add-collaborator) / [`list collaborators`](/cli/reference/#wiqd-plugin-list-collaborators) | Add or list M365 title co-owners without changing usage sharing. |
 | [`wiqd plugin import`](/cli/reference/#wiqd-plugin-import), [`export`](/cli/reference/#wiqd-plugin-export) | Convert supported plugin formats, subject to format limitations. |
 | [`wiqd plugin delete`](/cli/reference/#wiqd-plugin-delete) | Remove provisioned cloud resources. |
 
-[`wiqd plugin validate`](/cli/reference/#wiqd-plugin-validate) is contributed by
-the Validate extension. Static mode checks the declarative-agent surface; deep
-mode delegates to Core to validate an already-built app package.
+[`wiqd plugin validate`](/cli/plugin-validate/) is contributed by the Validate
+extension. Explicit source mode checks saved declarative-agent source offline.
+Package (default) uploads an existing ZIP to Teams Developer Portal; Marketplace adds
+StoreOps checks on the same ZIP. Validation never builds automatically.
 
 ## Agent-component authoring
 
-Existing `wiqd agent` projects remain supported. Use these commands for their
-agent-specific workflow, not as a prerequisite for every plugin.
+Use these retained `wiqd agent` commands only for the embedded agent component.
+Project identity and lifecycle stay under `wiqd plugin`.
 
 | Command | What it does |
 | --- | --- |
-| [`wiqd agent create`](/cli/reference/#wiqd-agent-create) | Scaffold a new declarative agent project. |
-| [`wiqd agent create list`](/cli/reference/#wiqd-agent-create-list) | List available declarative-agent templates. |
-| [`wiqd agent show`](/cli/reference/#wiqd-agent-show) | Show a local summary of the agent project. |
 | [`wiqd agent add action`](/cli/reference/#wiqd-agent-add-action) | Add an OpenAPI or remote MCP action. |
 | [`wiqd agent add skill`](/cli/reference/#wiqd-agent-add-skill) | Add a skill to the agent. |
 | [`wiqd agent add auth`](/cli/reference/#wiqd-agent-add-auth) | Add an auth configuration to a plugin manifest. |
-
-## Existing agent-project lifecycle
-
-| Command | What it does |
-| --- | --- |
-| [`wiqd agent provision`](/cli/reference/#wiqd-agent-provision) | Provision the agent into an environment. |
-| [`wiqd agent package`](/cli/reference/#wiqd-agent-package) | Build the deployable `.zip`. |
-| [`wiqd agent publish`](/cli/reference/#wiqd-agent-publish) | Publish to the org catalog. |
-| [`wiqd agent delete`](/cli/reference/#wiqd-agent-delete) (alias `uninstall`) | Delete cloud resources by env or title ID. |
-| [`wiqd agent env`](/cli/reference/#wiqd-agent-env) | List, add, and reset environments. |
-| `wiqd agent validate --mode package --package-file "<zip>"` | Validate checks the captured final ZIP through Core's TDP API. |
-
-## Collaboration
-
-| Command | What it does |
-| --- | --- |
-| [`wiqd agent share`](/cli/reference/#wiqd-agent-share) | Share with users or the tenant. |
-| [`wiqd agent share collaborator`](/cli/reference/#wiqd-agent-share-collaborator) | Manage agent collaborators. |

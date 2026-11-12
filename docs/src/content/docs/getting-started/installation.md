@@ -75,12 +75,9 @@ its files. The installer handles that specific WIQD state by unregistering the
 owned local marketplace without force, then installing the public plugin. Other
 plugins that reference the marketplace still block migration, even if disabled.
 
-The installer reads native JSON inventories first and may use its bounded
-compatibility readers when a host rejects `--json`. Use a host version that
-supports native JSON for canonical-source adoption; text or stored configuration
-cannot prove that a `wiqd@wiqd` deployment is the public Microsoft plugin.
-Unreadable or ambiguous inventory stops public changes when a canonical
-candidate is observed.
+Use an up-to-date host so the installer can verify the installed plugin's source.
+If it cannot verify an existing `wiqd@wiqd` installation, it stops plugin changes
+and asks you to resolve the installation rather than replacing it blindly.
 
 Before switching an existing installation, inspect your chosen host's native
 plugin and marketplace inventory to identify the actual source. An old local
@@ -156,12 +153,6 @@ The installer will:
   Copilot and Claude hosts. It does not install either host. Use `-SkipPlugin`
   (PowerShell) or `--skip-plugin` (Bash) to skip this step.
 
-The installer manages plugins with native PowerShell or bash functions,
-independent of the installed CLI version. Bash reuses the Node.js runtime
-verified earlier in the installation for plugin inventory and migration checks.
-The parser is embedded in the downloaded script; no `jq` or separate helper
-download is needed. PowerShell uses its built-in JSON parser. Skipping plugin
-installation, including when no hosts are detected, does not require a parser.
 Conflicting plugin sources require manual resolution; forcing a CLI reinstall
 does not bypass plugin ownership checks. A plugin failure leaves the verified
 CLI installed and reports a setup warning with recovery guidance.
@@ -185,9 +176,14 @@ and actual CLI defaults are unchanged.
 ```text
 wiqd plugin create --name my-plugin
 cd my-plugin
-wiqd plugin validate --env dev
+wiqd plugin validate --mode source --env dev
 wiqd plugin provision --env dev
 ```
+
+Source checks are offline and cover the saved declarative-agent component when
+present, not the entire plugin. Bare `wiqd plugin validate` instead defaults to
+package mode and uploads an existing ZIP. After packaging, pass its returned path
+with `wiqd plugin validate --mode package --package-file "<zip>"`.
 
 Sign in with `wiqd auth login --interactive` before provisioning. The `dev`
 environment is provisioned to your Microsoft 365 tenant; it is not an offline
@@ -328,6 +324,133 @@ npm install -g @microsoft/wiqd
 
 If the installer reports `E404`, either the requested `wiqd` version or one of its dependencies is unavailable from the registry identified by the installer. Follow the attributed message: for public npm, use the printed recovery command after the package is published; for a configured registry, fix or update that registry and re-run the installer.
 
+## Install from an assistant conversation
+
+The WIQD marketplace plugin and CLI are separate installations. If the CLI is
+missing, a human-attended assistant can complete setup in the conversation even
+when its shell has no interactive terminal:
+
+1. The assistant checks that supported Node.js/npm (and PowerShell 7 on Windows)
+   already exist, selects an exact published compatible CLI version, shows the
+   commands, and asks permission to install or repair it. It does not install
+   Node/npm or treat your original product request as installation permission.
+2. With your approval, it acquires `@microsoft/wiqd@<exact-version>` through npm
+   from a temporary directory, resolves the absolute launcher in that npm global
+   prefix, and verifies the selected CLI version. This is not EULA acceptance.
+3. If current WIQD terms are not already accepted, it displays the pre-release
+   notice, terms URL and current content version returned by that CLI, then asks
+   you to choose **Agree and continue** or **Decline**, in your language, with no
+   default agreement. You do not need to type a statement, version or URL.
+   Only agreement to this specific question authorizes
+   `wiqd eula accept wiqd --yes --json`; permission to install alone does not.
+   The assistant rechecks the CLI and terms before executing; changed terms
+   require a new confirmation. It does not construct a consent phrase for you.
+4. It verifies current host acceptance, completes the same-version platform
+   installer with `-SkipPlugin -SkipVSCode` (or `--skip-plugin --skip-vscode`),
+   and verifies the recovered CLI before continuing your original request.
+   The installer uses the same verified launcher even if it is missing from
+   PATH or shadowed by an older installation. Any alias/PATH binding is limited
+   to this setup invocation; your profile and persistent PATH stay unchanged.
+
+Work IQ/Eval terms, authentication and tenant permissions remain separate.
+Existing working installations need not be reinstalled merely to accept current
+host terms. Failed acceptance or setup is reported as a blocker, not success.
+
+You can decline or cancel either permission. The assistant stops the pending
+operation and reports any installation already completed; it does not pretend
+to roll back those changes. An unattended session without a responding human
+cannot newly obtain this consent. Missing or ambiguous replies do not count as
+agreement. The following CI path requires its own explicit job-owner
+authorization; conversation approval does not grant unattended or downstream consent.
+
+## Fresh CI runners: explicit WIQD terms acceptance
+
+Provision Node.js 24.15.0+ and npm first. Select an exact approved WIQD version
+that supports `--yes`; npm-only acquisition makes the CLI available before
+acceptance. The job owner must review [WIQD's current terms](https://aka.ms/wiqd/eula)
+and authorize this operation, including any terms changes when selecting a new
+candidate. Installation, CI detection, or a blocked command never supplies consent.
+
+**PowerShell 7:**
+
+```powershell
+$version = '<approved-exact-version>'
+npm.cmd install -g "@microsoft/wiqd@$version" '--loglevel=error'
+if ($LASTEXITCODE -ne 0) { throw 'WIQD installation failed' }
+$prefix = npm.cmd prefix -g
+if ($LASTEXITCODE -ne 0) { throw 'npm prefix resolution failed' }
+$launcher = (Resolve-Path -LiteralPath (Join-Path "$prefix".Trim() 'wiqd.cmd') -ErrorAction Stop).Path
+$installed = & $launcher --version --no-banner
+if ($LASTEXITCODE -ne 0 -or "$installed".Trim() -ne $version) {
+    throw 'Wrong or unavailable WIQD launcher; inspect PATH and npm prefix'
+}
+& $launcher eula accept wiqd --yes --json
+if ($LASTEXITCODE -ne 0) { throw 'WIQD terms acceptance failed' }
+$status = & $launcher eula status --json | ConvertFrom-Json
+$code = $LASTEXITCODE
+$report = if ($code -eq 0 -and $status.status -eq 'success') {
+    $status.data
+} elseif ($code -eq 2 -and $status.status -eq 'error' -and $status.exitCode -eq 2 -and
+    $status.error.code -eq 'EULA_STATUS_BINARY_UNRESOLVED' -and
+    @($status.error.data.tools | Where-Object state -eq 'binary-unresolved').Count -gt 0) {
+    $status.error.data
+} else { throw 'EULA status inspection failed' }
+if ($report.wiqd.tool -ne 'wiqd' -or $report.wiqd.state -ne 'accepted' -or
+    $report.wiqd.cliVersion -ne $version) {
+    throw 'Current WIQD terms are not accepted'
+}
+```
+
+**Bash:**
+
+```bash
+set -e
+version='<approved-exact-version>'
+npm install -g "@microsoft/wiqd@$version" --loglevel=error
+prefix=$(npm prefix -g)
+launcher="$prefix/bin/wiqd"
+test -x "$launcher"
+test "$("$launcher" --version --no-banner)" = "$version"
+"$launcher" eula accept wiqd --yes --json
+code=0
+status=$("$launcher" eula status --json) || code=$?
+printf '%s' "$status" | node -e '
+let text=""; process.stdin.on("data", c => text += c);
+process.stdin.on("end", () => {
+  const j=JSON.parse(text), code=Number(process.argv[1]);
+  const report=code===0 && j.status==="success" ? j.data :
+    code===2 && j.status==="error" && j.exitCode===2 &&
+    j.error.code==="EULA_STATUS_BINARY_UNRESOLVED" &&
+    j.error.data.tools.some(t=>t.state==="binary-unresolved") ? j.error.data : null;
+  process.exit(report?.wiqd.tool==="wiqd" && report.wiqd.state==="accepted" &&
+    report.wiqd.cliVersion===process.argv[2] ? 0 : 1);
+});' "$code" "$version"
+```
+
+Keep using that absolute launcher for your intended local product command:
+`& $launcher plugin show --path <existing-plugin-project> --json` in PowerShell,
+or `"$launcher" plugin show --path <existing-plugin-project> --json` in Bash, before any authorized
+tenant operations. Acceptance releases only the host gate, not authentication,
+project validation, or Work IQ/Eval agreements. A fresh npm install can return
+status exit 2 because a downstream managed binary is not yet installed; only the
+specific error report above permits independent host observation.
+
+`--yes` accepts current WIQD terms without a prompt or consent phrase, in CI,
+non-TTY or TTY. It stores the terms identity/version, URL, timestamp and
+`explicit-yes` method as mutable local evidence, not authenticated identity or
+proof of organizational authority. Repeats preserve prior evidence. Store failure
+returns 1 / `EULA_STORE_WRITE_FAILED`; mock, downstream/unknown selectors and
+combinations with consent/stamp refuse with 2. Without `--yes`, existing typed
+confirmation/human relay and CI refusal remain.
+
+If full installer setup is needed afterward, select that same exact candidate
+with `-Version` / `--version` (or its verified tarball). The installer verifies
+prior acceptance against the selected candidate. An older accepted CLI cannot
+prove changed target terms. Fresh unattended web installation without prior
+acceptance still refuses; do not run it as the first bootstrap step.
+Installer `-Force` / `--force` means reinstall, not EULA consent. There is no
+acceptance `--force` alias or supported installer acceptance switch.
+
 ## Verify Installation
 
 ```bash
@@ -335,10 +458,9 @@ wiqd --version
 wiqd doctor
 ```
 
-The `doctor` command verifies wiqd and the core lifecycle backend (fx-core
-when explicitly selected), reconciles active managed owners such as Work IQ and Eval into isolated
-`~/.wiqd/extensions/` generations, and reports any remaining extension health or EULA warnings
-without treating those optional warnings as installer failures.
+The `doctor` command checks the CLI and installed extensions, repairs managed
+extension installations when needed, and reports remaining health or EULA warnings.
+Optional extension warnings do not mean the CLI installation failed.
 
 ## Update
 
@@ -387,6 +509,18 @@ editing launcher bytes:
   '"node"' is not recognized as an internal or external command,
   operable program or batch file.
   ```
+
+`node --version` in PowerShell may differ from the Node used by `wiqd.cmd`.
+The npm launcher prefers `node.exe` beside itself; otherwise CMD searches the
+current directory before PATH. Step 1 checks bootstrap Node/npm; Step 3 uses
+the installed launcher's `wiqd doctor` to check WIQD's actual runtime.
+If it reports unsupported Node, update the executable it names or correct its
+lookup, then retry. `wiqd.cmd doctor --json` reports the actual Node version and
+`executablePath`; incompatible extension packages are not necessarily missing.
+If npm installation succeeded, fixing the selected Node normally lets you rerun
+doctor without reinstalling WIQD. Switching a Node manager's global prefix may
+instead require installing WIQD in that new prefix.
+The installer does not change your Node manager, PATH, or npm launcher contents.
 
 For published installs, fix the caller environment:
 

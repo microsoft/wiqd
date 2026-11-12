@@ -16,10 +16,15 @@ use [interactive authentication](/getting-started/authentication/). The local re
 bootstrap command is an exception only in where it runs: it prepares a pipeline
 secret and does not sign you into your normal WIQD developer session.
 
-These modes support core-backed `wiqd agent provision`, `wiqd agent publish`, and
-`wiqd agent share`, and corresponding plugin lifecycle operations. They do not
+These modes support core-backed `wiqd plugin provision`, `wiqd plugin publish`, and
+`wiqd plugin share`, and corresponding plugin lifecycle operations. They do not
 authenticate Work IQ, eval, other extensions, or arbitrary Azure/SPFx drivers. Those require their
 own credentials.
+
+For `wiqd publish pc`, neither credential mode on this page authenticates
+Marketplace. That extension uses its own protected OS session and has no
+supported clean-runner bootstrap in this build. See
+[Marketplace authentication in automation](/getting-started/publish-to-partner-center/#marketplace-authentication-in-automation).
 
 ## Configure a Trusted Pipeline
 
@@ -41,7 +46,7 @@ Invoke the lifecycle command directly once the secret store has injected the inp
 
 ```powershell
 $env:CI_ENABLED = "true"
-wiqd agent provision --env dev
+wiqd plugin provision --env dev
 ```
 
 **Do not run `wiqd auth login` in CI.** It requires a real terminal, regardless of
@@ -177,6 +182,6 @@ the identity provider/administrator.
 
 - [Interactive authentication](/getting-started/authentication/)
 - [Refresh-token bootstrap reference](/cli/reference/#wiqd-auth-token-get)
-- [Provision](/cli/reference/#wiqd-agent-provision)
-- [Publish](/cli/reference/#wiqd-agent-publish)
-- [Share](/cli/reference/#wiqd-agent-share)
+- [Provision](/cli/reference/#wiqd-plugin-provision)
+- [Publish](/cli/reference/#wiqd-plugin-publish)
+- [Share](/cli/reference/#wiqd-plugin-share)

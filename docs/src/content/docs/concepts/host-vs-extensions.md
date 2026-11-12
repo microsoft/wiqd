@@ -5,7 +5,7 @@ description: How Work IQ Dev Tools are structured and where commands come from
 
 # Host vs extensions
 
-When you type `wiqd agent create` or `wiqd agent provision`, two different layers are at work. Understanding the split helps you predict where a command lives, what tool you need installed, and where to look when something goes wrong.
+When you type `wiqd plugin create` or `wiqd plugin provision`, two different layers are at work. Understanding the split helps you predict where a command lives, what tool you need installed, and where to look when something goes wrong.
 
 ## The host
 
@@ -14,7 +14,7 @@ The **host** is the `wiqd` binary you install. It owns:
 - The command-line surface — parsing flags, picking subcommands, printing help.
 - Global concerns — authentication, configuration, telemetry, output formatting (`--json`), the spinner, the banner.
 - A small set of *core* commands that work without any extensions: `version`, `config`, `auth`, `update`, `doctor`, `docs`, `feedback`, `install`, `uninstall`, `ext`.
-- The bundled `microsoft.validate` runtime contributes `wiqd agent validate` (source, package and
+- The bundled `microsoft.validate` runtime contributes `wiqd plugin validate` (source, package and
   Marketplace) plus the native `wiqd agent lsp` protocol entry. Source remains offline; provider
   behavior belongs to the extension, not domain-specific host branches.
 
@@ -35,18 +35,22 @@ deactivates an extension.
 
 ## Extensions
 
-Every other command — `wiqd agent create`, `wiqd agent provision`, `wiqd agent monitor`, `wiqd agent eval` — is contributed by an **extension**. An extension is a package that ships:
+Every other command — `wiqd plugin create`, `wiqd plugin provision`, `wiqd agent monitor`, `wiqd agent eval` — is contributed by an **extension**. An extension is a package that ships:
 
 - A manifest describing the commands it adds, the options each one accepts, how to render the result, and what to validate after the upstream tool runs.
 - Optionally, transform scripts that shape data flowing between you and the upstream tool.
 - Doctor health checks that `wiqd doctor` aggregates.
 - Optionally, Copilot skills and a VS Code companion.
 
-Work IQ Dev Tools ship with six extensions out of the box (see [Provided Extensions](/extensions/provided/)). You don't install them separately — they come with `wiqd`. The native in-process core backend is installed and registered as the sole lifecycle provider; retired ATK registrations are removed during upgrade.
+Work IQ Dev Tools bundle their provided extensions (see [Provided Extensions](/extensions/provided/)).
+They come with `wiqd`; the public launch build includes default-enabled Marketplace
+for direct Partner Center publishing, while preserving explicit removal/disablement.
+The native in-process core backend is installed and registered as the sole
+lifecycle provider; retired ATK registrations are removed during upgrade.
 
 ## How a command flows
 
-Take `wiqd agent provision --env dev`:
+Take `wiqd plugin provision --env dev`:
 
 1. The host parses the flags and looks up `agent.provision` in its command tree.
 2. It finds that the command belongs to the wiqd Core extension.

@@ -44,7 +44,7 @@ different artifact from the Microsoft 365 plugin you are building.
     Build, improve, preview, and publish from one agentic experience. Create a plugin, compose capabilities, validate, provision, package, and share or submit it to your tenant catalog.
   </Card>
   <Card title="LSP Validation" icon="approve-check-circle">
-    Get real-time manifest diagnostics for declarative-agent components in your editor. Use CLI static checks and package-first deep validation as you iterate on the plugin.
+    Get real-time manifest diagnostics for declarative-agent components in your editor. Use offline source checks while authoring, then validate the exact built ZIP with package or Marketplace checks.
   </Card>
   <Card title="Guided Authoring" icon="star">
     Describe your plugin in GitHub Copilot CLI or Claude Code. WIQD guides composition, validation, troubleshooting, and delivery; CLI commands remain available for automation.
@@ -73,12 +73,15 @@ wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add agent
 
 # Validate, provision, and package
-wiqd plugin validate --env dev
+wiqd plugin validate --mode source --env dev
 wiqd auth login --interactive
 wiqd plugin provision --env dev
 wiqd plugin package --env dev
-wiqd plugin validate --mode deep --env dev
+wiqd plugin validate --mode package --env dev --package-file "<zip>"
 ```
+
+Replace `<zip>` with the path returned by `wiqd plugin package`. Package validation
+uploads the existing ZIP and may require sign-in; source checks are offline.
 
 For guided authoring, install the [WIQD marketplace plugin](/getting-started/installation/#path-1-install-from-the-marketplace),
 start a new session, and ask: **"Create a plugin with an issue-triage skill and a declarative agent."**
@@ -86,8 +89,9 @@ Follow the [Quickstart](/getting-started/quickstart/) for authentication and sha
 [Build a Plugin](/getting-started/build-a-plugin/) for connectors, publishing, and interoperability.
 
 :::caution[Preview]
-The `wiqd plugin` commands are alpha and enabled by default. Static validation checks the
-declarative-agent surface; use package-first deep validation for the full app package.
+The `wiqd plugin` commands are alpha and enabled by default. Source validation checks the
+saved declarative-agent surface, not the entire plugin. Package mode validates a captured ZIP;
+Marketplace mode adds policy checks on the same ZIP. Neither result is official certification.
 Tenant catalog submission requires administrator approval before discovery.
 :::
 

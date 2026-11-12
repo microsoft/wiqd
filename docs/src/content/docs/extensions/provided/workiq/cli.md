@@ -5,19 +5,26 @@ description: Every command contributed by Work IQ Dev Tools' Work IQ extension
 
 # Work IQ · CLI commands
 
-The Work IQ extension contributes three commands, all under `wiqd agent`. Every one of them requires `wiqd auth login`.
+The Work IQ extension contributes commands across the retained Agent surface
+and the plugin ask surface. Every one requires Work IQ authentication.
 
 | Command | What it does |
 |---------|--------------|
 | [`wiqd agent monitor`](/cli/reference/#wiqd-agent-monitor) | Ask the Insights Agent about a provisioned agent's performance and usage. |
-| [`wiqd agent ask`](/cli/reference/#wiqd-agent-ask) | Send a message directly to a declarative agent by ID or name. |
+| [`wiqd plugin ask --component agent`](/cli/reference/#wiqd-plugin-ask) | Send a message directly to a declarative agent by ID or name. |
 | [`wiqd agent list`](/cli/reference/#wiqd-agent-list) | List declarative agents deployed in the tenant. |
+
+`plugin ask` always requires `--component agent`; no other component value is
+supported. `--agent-id` and `--agent-name` work from any directory without a
+local plugin project. If neither is supplied, `--path` and `--env` select the
+existing project-context target resolver. The command also retains
+`--developer` and the feature-gated `--devui` proxy option.
 
 ## Policy publication
 
-The core extension provides `wiqd agent policy publish` for an existing MOS title
+The core extension provides `wiqd policy publish` for an existing MOS title
 without requiring the original source, app package or project. See
-[Policy publication](/cli/agent/agent-policy/) for required inputs,
+[Policy publication](/cli/policy/) for required inputs,
 authentication, publication outcomes and mock behavior.
 
 ## Monitor request scope

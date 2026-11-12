@@ -136,6 +136,21 @@ wiqd exec runevals --version
 wiqd exec runevals --init-only
 ```
 
+For a **no-install walkthrough**, do not execute those commands: even `--version`
+can lazily install or refresh packages, and `--init-only` downloads dependencies.
+Use `wiqd ext show microsoft.eval --json` for a filesystem-only inspection.
+`data.upstream.requiredVersion` is the supported range, not the installed version.
+If `available` is true, locate the active generation's
+`node_modules/@microsoft/m365-copilot-eval/package.json` from `resolvedPath` and
+read only its `name` and `version`, without executing the binary. The extension's
+`data.packagePath` contains `package.json` with the exact desired
+pin (currently 1.15.0 or newer); neither that pin nor the extension's version
+proves the CLI is installed. If metadata is unavailable, report the installed
+version as unverified. Defer installation, initialization, authentication, and
+EULA acceptance until separately authorized; do not print credential values.
+After a consented refresh, an older supported retained generation remains usable
+if the refresh fails; do not block solely because it is not the latest pin.
+
 Choose a judge based on the suite:
 
 | Judge | Best for | Setup |
@@ -212,3 +227,12 @@ Recommendations target the layer evidenced by the failure:
 | A configured evaluator returns no score for otherwise valid output | Eval CLI/evaluator integration |
 
 Eval edits always use the proposal-and-approval gate. Agent changes do not justify weakening the unchanged regression suite.
+
+Resolve the actual manifest's instruction reference before recommending changes.
+For example, `$[file('instructions.txt')]` in `appPackage/declarativeAgent.json`
+targets `appPackage/instructions.txt`, not an inline field or a guessed filename.
+Use exact artifact paths and rank recommendations by impact and effort.
+A refusal consistent with the declared domain is an eval-expectation issue, not
+an instruction gap. Mark the affected dataset/item pending explicit human
+approval; do not remove boundary checks, evaluators, or thresholds to make it
+pass. A recommendation-only request authorizes no file edits.

@@ -205,6 +205,51 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "not": {
+          "required": ["upstream"]
+        }
+      },
+      "then": {
+        "properties": {
+          "commands": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/LegacyCommandWithoutStreamStderr"
+                }
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "definitions": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/CommandWithoutStreamStderr"
+                    }
+                  },
+                  "additionalNamespaces": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "_description": {},
+                        "_gatedBy": {}
+                      },
+                      "additionalProperties": {
+                        "$ref": "#/definitions/CommandWithoutStreamStderr"
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
     }
   ],
   "description": "A wiqd extension manifest (`wiqd-extension.json`). Declares the commands, upstream tool, auth providers, doctor checks, and mock responses an extension contributes to the wiqd host.",
@@ -283,6 +328,19 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/CommandWithoutProtocolProcess"
+          }
+        }
+      }
+    },
+    "CommandWithoutStreamStderr": {
+      "not": {
+        "required": ["streamStderr"]
+      },
+      "properties": {
+        "subcommands": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/CommandWithoutStreamStderr"
           }
         }
       }
@@ -613,7 +671,7 @@
         },
         "gatedBy": {
           "type": "string",
-          "description": "Optional feature-flag gate for a SINGLE option/positional. When set, the host skips registering this arg unless the named boolean flag is enabled — so the flag hides the arg from `--help` AND makes it inert (an unregistered option can never be parsed, so any `argMap`/`devuiProxy` expression keyed on it evaluates falsy). Fail-closed: an unknown or disabled flag hides the arg. Use this to gate a capability-specific flag on an otherwise-always-available command (e.g. `--devui` on `agent ask`, gated by the `devui` flag)."
+          "description": "Optional feature-flag gate for a SINGLE option/positional. When set, the host skips registering this arg unless the named boolean flag is enabled — so the flag hides the arg from `--help` AND makes it inert (an unregistered option can never be parsed, so any `argMap`/`devuiProxy` expression keyed on it evaluates falsy). Fail-closed: an unknown or disabled flag hides the arg. Use this to gate a capability-specific flag on an otherwise-always-available command (e.g. `--devui` on `plugin ask`, gated by the `devui` flag)."
         },
         "default": {
           "type": ["string", "boolean", "number"]
@@ -632,6 +690,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "choiceValidation": {
+          "type": "string",
+          "enum": ["commander", "executor"],
+          "description": "Choose whether Commander or ManifestExecutor validates `choices`. Executor validation preserves the manifest command identity and `INVALID_VALUE` envelope while still failing before any upstream work. Defaults to `commander`."
         },
         "upstream": {
           "type": "string"
@@ -1123,6 +1186,19 @@
         }
       }
     },
+    "LegacyCommandWithoutStreamStderr": {
+      "properties": {
+        "definition": {
+          "$ref": "#/definitions/CommandWithoutStreamStderr"
+        },
+        "subcommands": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LegacyCommandWithoutStreamStderr"
+          }
+        }
+      }
+    },
     "ManagedInstallConfig": {
       "type": "object",
       "properties": {
@@ -1196,7 +1272,7 @@
         },
         "preHandler": {
           "$ref": "#/definitions/PreHandlerConfig",
-          "description": "Optional read-only trusted guard invoked before computed values and confirmation."
+          "description": "Optional trusted preparation invoked before ordinary preflight, computed values, and confirmation."
         },
         "preTransform": {
           "$ref": "#/definitions/PreTransformConfig"
@@ -1359,7 +1435,7 @@
         },
         "handler": {
           "$ref": "#/definitions/HandlerConfig",
-          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, passthroughExitCodes, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
+          "description": "Trusted in-process invocation. Replaces the upstream spawn stage with a method call on the extension's `runtime` adapter. Mutually exclusive with the subprocess-control fields (argMap, noUpstream, skipUpstreamWhen, stdioPassthrough, stdioMode, devuiProxy, preTransform, passthroughExitCodes, streamStderr, preTransformPostActions, transform, transformOptional, transformFailureNonFatal, verify, errors, exitCode, omitRawResponse, renderExitCodes, nativeDryRunHandler, requiresAuth); `delegateWhen` is the one permitted alongside it."
         },
         "protocolProcess": {
           "$ref": "#/definitions/ProtocolProcessConfig",
@@ -1371,6 +1447,10 @@
         },
         "stdioPassthrough": {
           "type": "boolean"
+        },
+        "streamStderr": {
+          "type": "boolean",
+          "description": "Relay sanitized primary-subprocess stderr lines through the progress logger while running."
         },
         "stdioMode": {
           "type": "string",
@@ -1425,6 +1505,51 @@
             "not": {
               "required": ["publicCommandId"]
             }
+          }
+        },
+        {
+          "if": {
+            "required": ["streamStderr"]
+          },
+          "then": {
+            "required": ["argMap"],
+            "allOf": [
+              {
+                "not": {
+                  "required": ["handler"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["mcpCall"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["devuiProxy"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["stdioPassthrough"]
+                }
+              },
+              {
+                "not": {
+                  "required": ["stdioMode"]
+                }
+              },
+              {
+                "not": {
+                  "properties": {
+                    "noUpstream": {
+                      "const": true
+                    }
+                  },
+                  "required": ["noUpstream"]
+                }
+              }
+            ]
           }
         },
         {
@@ -1696,9 +1821,79 @@
             "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
             "maxLength": 64
           }
+        },
+        "deprecations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/ManifestDeprecationDef"
+            },
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(?:\\.[A-Za-z0-9][A-Za-z0-9_-]{0,63}){0,15}$",
+              "maxLength": 256
+            }
+          },
+          "description": "Failure-only migration diagnostics, grouped by top-level namespace and keyed by dotted legacy command path. These declarations never execute a command backend.",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+            "maxLength": 64
+          }
         }
       },
       "required": ["definitions"]
+    },
+    "ManifestDeprecationDef": {
+      "type": "object",
+      "properties": {
+        "guidance": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2048,
+          "description": "Static migration instructions appended to the host-owned deprecation message.",
+          "pattern": "\\S"
+        },
+        "when": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "description": "Parse-scope condition used only when the legacy invocation overlays a retained executable route."
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManifestDeprecationOption"
+          },
+          "description": "Hidden parse-only options needed to distinguish a retained legacy shape.",
+          "maxItems": 32
+        }
+      },
+      "required": ["guidance"],
+      "additionalProperties": false
+    },
+    "ManifestDeprecationOption": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Canonical long option flag, including the leading `--`.",
+          "pattern": "^--[A-Za-z0-9][A-Za-z0-9-]{0,62}$"
+        },
+        "short": {
+          "type": "string",
+          "description": "Optional one-character short option, including the leading `-`.",
+          "pattern": "^-[A-Za-z0-9]$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["string", "boolean", "number", "bool", "int", "float"],
+          "description": "Parse shape only; diagnostic options never declare command behavior."
+        }
+      },
+      "required": ["name"],
+      "additionalProperties": false
     },
     "ManifestMockConfig": {
       "type": "object",

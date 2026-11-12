@@ -73,9 +73,27 @@ wiqd auth login --interactive
 When Marketplace publishing is unconfigured, generic `--interactive` login
 offers **Skip Marketplace setup** as the default choice. Skipping reports that
 optional provider as not applicable and continues signing in to later
-providers. Choose directory discovery or another directory to start publisher
+providers, without acquiring secure storage or creating its lock. Choose directory discovery or another directory to start publisher
 setup; Cancel still cancels the aggregate login. On Windows, Marketplace setup
 prefers WAM when it is available.
+
+Marketplace is included and enabled by default in the public CLI. An explicit
+extension removal or disabled `partner-center-publishing` flag still excludes
+it. Setup uses OS-protected storage; missing/denied `keytar` fails before
+authentication and never falls back to plaintext. Skip remains available even
+when storage is unavailable.
+
+Marketplace acquires distinct Graph and Marketplace resource tokens with its own
+client. It never borrows Azure CLI, Copilot, browser-cookie or another provider's
+credentials. Windows prefers WAM; other supported systems use external Edge,
+never an embedded sign-in pane. Use the home work account while targeting the
+seller tenant; a guest object is not a separate account/password. Confirm
+**Seller Id**, not Partner ID, before saving the binding. Successful sign-in
+does not prove enrollment, Product Ingestion admission or submission authority.
+Marketplace logout clears only its own local credentials.
+
+See [Publish to Partner Center](/getting-started/publish-partner-center/) for
+the direct publishing flow and its separate consent gates.
 
 When Marketplace publishing is enabled and you already know the seller tenant
 GUID, explicitly target setup without entering the Skip/directory menu:
