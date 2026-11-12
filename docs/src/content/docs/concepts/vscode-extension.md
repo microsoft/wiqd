@@ -6,7 +6,7 @@ description: Real-time manifest validation, diagnostics, and language features i
 # VS Code extension
 
 The Work IQ Dev Tools VS Code extension brings the diagnostics engine used by
-`wiqd agent validate --mode source` into your editor. As you type, schema problems show up as
+`wiqd plugin validate --mode source` into your editor. As you type, schema problems show up as
 squigglies, hovers explain the violated rule, and quick fixes appear where supported. The editor
 can check unsaved buffers; the source command checks saved files. Package/Marketplace validation
 uses captured ZIP bytes and has a different scope.
@@ -18,15 +18,9 @@ This page explains what the extension does and where it fits. For installation s
 - **Live diagnostics on every keystroke.** Open a `declarativeAgent.json` or `manifest.json` and the extension lights up the file with errors, warnings, and informational diagnostics from the Microsoft Validation Layer (MVL) — the same engine the M365 platform uses to accept a manifest.
 - **Hovers and quick fixes.** Hover an underline to read the full diagnostic. When the validator knows a safe fix (for example, normalising a casing inconsistency), VS Code offers it as a code action.
 - **Schema-aware completion.** Manifest fields, enums, and capability shapes auto-complete because the schema is bundled with the extension.
-- **Shared source diagnostics, distinct scopes.** `wiqd agent validate --mode source` reuses the
+- **Shared source diagnostics, distinct scopes.** `wiqd plugin validate --mode source` reuses the
   editor's diagnostics service on saved files. Unsaved buffers and editing-only advisory checks
   can differ; package/Marketplace checks evaluate captured ZIPs, not the editor buffer.
-
-## How it works
-
-The extension is a thin client. The real work happens in the `wiqd agent lsp` Language Server, which the extension launches automatically when you open a workspace that contains a declarative-agent manifest. The server speaks the standard Language Server Protocol, watches the open files, runs MVL on every change, and streams diagnostics back to VS Code.
-
-Because the server is just the Work IQ Dev Tools CLI in a different mode, it shares everything else with the terminal: the same validation engine, the same exit-code semantics, and the same diagnostic catalogue. Upgrading Work IQ Dev Tools upgrades the editor experience too.
 
 ## When to use it
 
@@ -34,20 +28,22 @@ Because the server is just the Work IQ Dev Tools CLI in a different mode, it sha
 - **During scaffolding**, to catch malformed capability blocks the moment you paste them in.
 - **During reviews**, to load a teammate's branch and immediately see whether the manifest is well-formed.
 
-The extension is not a substitute for `wiqd agent validate --mode source` in offline CI.
+The extension is not a substitute for `wiqd plugin validate --mode source` in offline CI.
 Build and explicitly validate the final ZIP when package acceptance is required. The editor
 experience is for the inner loop, not proof of deployment/publication approval.
 
 ## Installation
 
-The fastest path is `wiqd install --vscode` from any terminal where `wiqd` is on your PATH. That command resolves the latest version, downloads the VSIX, and installs it into VS Code and VS Code Insiders if you have them. See [Installation](/getting-started/installation/) for the full set of options, including manual install and Insiders-only mode.
+Run `wiqd component vscode install` from a terminal where `wiqd` is on your PATH.
+Use `wiqd component vscode install --insiders` for VS Code Insiders. These install
+the VS Code extension, not the coding-assistant marketplace plugin.
+See [Installation](/getting-started/installation/) for the other setup paths.
 
-Once installed, open any project that contains a declarative-agent manifest and the LSP server starts on its own. There is no command to run and no settings to configure.
+Once installed, open a project that contains a declarative-agent manifest.
+Diagnostics start automatically; no separate validation command is needed.
 
 ## Go deeper
 
-- [`wiqd agent lsp`](/extensions/provided/validate/cli/) — the language server the extension launches
 - [Validation & MVL](/concepts/validation-mvl/) — what the validator checks and why
 - [Validate extension](/extensions/provided/validate/) — the bundled extension that ships the validator and LSP server
 - [Installation](/getting-started/installation/) — install or update the VS Code extension
-- Source on GitHub — the extension package and LSP client

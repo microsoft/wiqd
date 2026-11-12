@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.26.0] — 2026-11-12
+
+> **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.
+
+### Breaking Changes
+
+- unify plugin-owned lifecycle commands
+- move policy publish to the root namespace
+
+### Features
+
+- add MCP-backed connector creation
+- support nonproduction connector creation
+- infer MCP or OpenAPI connector input
+- scope Marketplace journey navigation to validation mode
+- support purchase disclosure and industries
+- route natural-language connector creation to connector add
+- support explicit CI acceptance with --yes
+- clarify Standard Contract and custom EULA choice
+- enable public direct Partner Center publishing
+
+### Fixes
+
+- project connector creation output
+- keep connector add uncertain-outcome diagnostics visible
+- redraw scoped navigation when requests change
+- preserve npm failure operation context
+- await connector add auth settlement and address review findings
+- default guided authoring to shared dev and Cowork links
+- return distinct Cowork and Chat lifecycle links
+- integrate plugin lifecycle ownership from main
+- add back --template for plugin add agent
+- preserve hidden command deprecation guidance
+- support conversational WIQD EULA consent and task resumption
+- repair staged transforms and eval regression failures
+- verify installed Node runtime before backend readiness
+
 ## [0.25.0] — 2026-11-09
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

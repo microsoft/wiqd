@@ -139,7 +139,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.25.0"
+$script:WiqdVersion = "0.26.0"
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -1460,6 +1460,21 @@ function Show-DependencyStatus {
         return $false
     }
 
+    $nodeCheck = @($checks | Where-Object { [string]$_.name -eq 'Node.js' }) | Select-Object -First 1
+    $runtimeVersion = $null
+    if ($nodeCheck -and [version]::TryParse(([string]$nodeCheck.version -replace '^v', ''), [ref]$runtimeVersion) -and $runtimeVersion -lt $MinNodeVersion) {
+        $runtimePath = if ($nodeCheck.PSObject.Properties['executablePath']) { [string]$nodeCheck.executablePath } else { '' }
+        $location = if ($runtimePath) { " at $runtimePath" } else { '' }
+        Write-Err "wiqd uses unsupported Node.js v$runtimeVersion$location. Requires $MinNodeVersion+."
+        Write-Hint "Update this Node.js to $MinNodeVersion or later, then retry."
+        return $false
+    }
+    if ($nodeCheck -and [string]$nodeCheck.status -eq 'error') {
+        Write-Err ([string]$nodeCheck.message)
+        Write-Hint "Update this Node.js to $MinNodeVersion or later, then retry."
+        return $false
+    }
+
     $extensionsCheck = @($checks | Where-Object { [string]$_.name -eq 'Extensions' }) | Select-Object -First 1
     $coreActive = $false
     $coreInactive = $false
@@ -1482,7 +1497,7 @@ function Show-DependencyStatus {
         return $false
     }
 
-    $backendRow = @{ Keys = @('Extensions'); Label = 'fx-core'; Required = $true; OkWord = 'Active'; Note = '(required for `wiqd agent` commands)'; ReRun = $true; ActiveExtensionId = 'microsoft.wiqd.core' }
+    $backendRow = @{ Keys = @('Extensions'); Label = 'fx-core'; Required = $true; OkWord = 'Active'; Note = '(required for `wiqd plugin` and `wiqd agent` commands)'; ReRun = $true; ActiveExtensionId = 'microsoft.wiqd.core' }
     $rows = @($backendRow) + $optionalRows
 
     # Materialize the checks as an ordered list so rows can consume matches
@@ -1983,15 +1998,25 @@ Show-WiqdBanner
 # is already accepted, we skip the prompt entirely.
 
 function Read-EulaAcceptance {
+    param([string]$TargetVersion)
     # Check whether an existing wiqd install already has the EULA accepted for
     # the version being installed. If so, skip the prompt.
     if (Get-Command wiqd -ErrorAction SilentlyContinue) {
         try {
-            $r = Invoke-Native { & wiqd eula status --json }
+            $r = Invoke-WiqdProbe { & wiqd eula status --json }
             $statusJson = $r.Stdout -join "`n" | ConvertFrom-Json
-            if ($statusJson.status -eq 'success') {
-                $wiqdRow = $statusJson.data.wiqd
-                if ($wiqdRow -and $wiqdRow.tool -eq 'wiqd' -and $wiqdRow.state -eq 'accepted') {
+            $report = $null
+            if ($r.ExitCode -eq 0 -and $statusJson.status -eq 'success') {
+                $report = $statusJson.data
+            } elseif ($r.ExitCode -eq 2 -and $statusJson.status -eq 'error' -and
+                $statusJson.exitCode -eq 2 -and $statusJson.error.code -eq 'EULA_STATUS_BINARY_UNRESOLVED' -and
+                @($statusJson.error.data.tools | Where-Object state -eq 'binary-unresolved').Count -gt 0) {
+                $report = $statusJson.error.data
+            }
+            if ($report) {
+                $wiqdRow = $report.wiqd
+                if ($wiqdRow -and $wiqdRow.tool -eq 'wiqd' -and $wiqdRow.state -eq 'accepted' -and
+                    $wiqdRow.cliVersion -ceq $TargetVersion) {
                     return 'already-accepted'
                 }
             }
@@ -2029,22 +2054,6 @@ function Read-EulaAcceptance {
     }
 }
 
-$eulaChoice = Read-EulaAcceptance
-
-if ($eulaChoice -eq 'declined') {
-    Write-Host ""
-    Write-Warn "Cancelled — EULA not accepted. Nothing was installed."
-    return 1
-}
-
-if ($eulaChoice -eq 'non-interactive') {
-    Write-Host ""
-    Write-Warn "Cannot proceed without EULA acceptance in non-interactive mode."
-    return 1
-}
-
-# $eulaChoice is 'accepted' or 'already-accepted' — continue with install.
-# The acceptance will be persisted after a successful install (see post-install).
 
 # Determine total steps
 $totalSteps = 3
@@ -2108,6 +2117,11 @@ if ($Tarball) {
         Write-Err $_.Exception.Message
         return 1
     }
+}
+$eulaChoice = Read-EulaAcceptance -TargetVersion $targetVersion
+if ($eulaChoice -eq 'declined' -or $eulaChoice -eq 'non-interactive') {
+    Write-Warn "Cannot proceed without EULA acceptance for the selected candidate. Nothing was installed."
+    return 1
 }
 $currentVersion = Get-NpmGlobalPackageVersion $WiqdPackage
 $skipInstall = -not $Tarball -and $currentVersion -and -not $Force -and $currentVersion -eq $targetVersion

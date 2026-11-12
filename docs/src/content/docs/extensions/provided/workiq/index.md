@@ -41,10 +41,10 @@ wiqd agent list
 wiqd agent list --name "Sales"
 
 # 3. Send a test message to an agent by ID
-wiqd agent ask --agent-id "T_b6bd...declarativeAgent" -q "Hello, summarize the latest sales deck."
+wiqd plugin ask --component agent --agent-id "T_b6bd...declarativeAgent" -q "Hello, summarize the latest sales deck."
 
 # 4. Or send it by display name
-wiqd agent ask --agent-name "Sales Copilot Assistant" -q "..."
+wiqd plugin ask --component agent --agent-name "Sales Copilot Assistant" -q "..."
 
 # 5. Ask the Insights Agent how a specific agent is doing
 wiqd agent monitor --path ./my-agent --env dev --query "How often was this agent asked last week?"

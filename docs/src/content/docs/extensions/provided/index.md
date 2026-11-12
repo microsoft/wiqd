@@ -15,17 +15,25 @@ Run `wiqd ext list` at any time to see what's loaded in your environment.
 |-----------|-------------------|----------------------------|
 | [wiqd Core](/extensions/provided/core/) | Plugin composition and lifecycle, plus agent-component authoring and existing agent projects | `wiqd plugin`, `wiqd agent` |
 | [Eval](/extensions/provided/eval/) | Quality evaluations of deployed agents (LLM-as-judge scoring) | `wiqd agent eval` |
-| [Validate](/extensions/provided/validate/) | Shared plugin/agent source, package and Marketplace validation, plus editor LSP | `wiqd plugin validate`, `wiqd agent validate`, `wiqd agent lsp` |
+| [Validate](/extensions/provided/validate/) | Source, package and Marketplace validation, listing/repair helpers, plus editor diagnostics | `wiqd plugin validate`, plugin listing/repair helpers |
 | [Work IQ](/extensions/provided/workiq/) | Monitor, ask, and list deployed agents in your tenant | `wiqd agent monitor`, `ask`, `list` |
 | [Work IQ DevUI](/extensions/provided/devui/) | Launch the local Work IQ DevUI web experience for interactively testing/debugging agents | `wiqd devui` |
+| [Marketplace](/getting-started/publish-to-partner-center/) | Publisher sign-in and direct declarative-agent offer preparation, submission, updates and status | `wiqd publish pc`, Marketplace provider under `wiqd auth` |
+
+Marketplace is bundled and enabled by default in the public launch build.
+Explicit extension removal or a disabled `partner-center-publishing` flag is
+preserved. Installing it does not grant publisher access or submission authority.
 
 ## How each extension is documented
 
-Every extension has its own collapsible subsection in the sidebar with **four pages**:
+Most extensions have a collapsible subsection in the sidebar with **four pages**.
+Marketplace instead has a [publishing guide](/getting-started/publish-to-partner-center/)
+and [command reference](/cli/publish-pc/):
 
-1. **Overview** — one-paragraph elevator pitch, a realistic end-to-end workflow walkthrough, and pointers into the codebase.
+1. **Overview** — what the extension does and when to use it.
 2. **CLI commands** — every leaf command this extension adds, with links to the full CLI reference page for each.
-3. **Agentic workflows** — the multi-step workflow files and reference files this extension contributes to the wiqd Copilot orchestrator. Some extensions (Support, Validate) contribute none; those pages say so honestly and explain why.
+3. **Agentic workflows** — the steps your coding assistant guides you through, including validation and authorized repair.
 4. **Agent plugins** — the user-facing scenarios this extension unlocks in Copilot Chat, with trigger phrases and routing guidance.
 
-This structure makes it easy to answer three different questions: *"what can I script with this?"* (CLI commands), *"what will Copilot do for me?"* (Agentic workflows + Copilot skills), and *"where does the code live?"* (Overview → "Where to look in the codebase").
+Use the CLI pages for scripting and the workflow and agent-plugin pages for
+guided use with your coding assistant.

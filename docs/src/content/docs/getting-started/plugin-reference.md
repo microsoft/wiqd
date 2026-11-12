@@ -17,9 +17,11 @@ the interface may change without notice.
 ## Package anatomy
 
 The table below lists the files under the project's `appPackage/` directory — the same layout
-`wiqd agent` scaffolds. Alongside it, at the project root, sit the wiqd descriptor
-`wiqd.plugin.json`, the ATK lifecycle file `m365agents.yml`, and the per-environment `env/.env.<env>`
-files that `provision` writes.
+`wiqd plugin create` scaffolds, with `wiqd plugin add agent` for an optional
+declarative-agent component. Alongside it, at the project root, sit the lifecycle
+file `m365agents.yml` and the per-environment `env/.env.<env>` files that
+`provision` writes. WIQD derives project identity and capabilities from these
+structural files and the root app manifest.
 
 | Path (under `appPackage/`)   | Purpose                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------ |
@@ -156,7 +158,7 @@ The same managed `ConnectionVault` mechanism can therefore appear on either conn
 
 `show` returns the canonical node, including its `toolSource`. Composition with
 `wiqd plugin add connector --selector` copies that exact validated node, preserves its returned
-authorization definition, updates the plugin capability cache, and moves the app manifest to
+authorization definition, makes the capability visible from the root collection, and moves the app manifest to
 `devPreview`. It does not acquire the title, register credentials, sign in to the connector,
 create a connection, or mutate tenant state.
 If the catalog node carries an inline tool list or references a title-owned file that is unavailable
@@ -207,10 +209,8 @@ An agent connector that fronts a remote MCP server must satisfy:
 > to a file under `appPackage/` and pass `--tool-description <file>`. `add connector` warns
 > when you leave it out.
 
-The path is relative to `appPackage/`. A leading `./` — the form Microsoft Learn's own
-examples use — is accepted and canonicalized away, because `validateAppPackage` compares the
-raw manifest string against ZIP entry names (which carry no prefix) and would otherwise
-reject it with *"not found in the app package."*
+The path is relative to `appPackage/`; a leading `./` is also accepted.
+Include the referenced file in the ZIP to avoid a *"not found in the app package"* error.
 
 `add connector` also enforces caps before writing, so an out-of-bounds entry never reaches the
 manifest in the first place:
@@ -260,7 +260,7 @@ future version is not treated as support without a confirmed platform contract. 
 opt-in can repair those fields for an identical existing connector without duplicating it; the
 command reports a manifest update, while a later unchanged invocation is a no-op. Package
 validation is the relevant check; source validation does not inspect root connectors. The
-bundled fx-core `3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of OpenAPI
+CLI supports local devPreview packaging of OpenAPI
 and remote MCP connectors using `ConnectionVault`, preserving their fields in the ZIP without
 changing the source manifest. Local packaging does not establish whether server-side
 AVL accepts the package. With a built ZIP, use `wiqd plugin validate --mode package
@@ -337,8 +337,8 @@ in the manifest. wiqd does not create the app registration or discover OAuth end
 
 `wiqd plugin validate --mode source` covers saved declarative-agent diagnostics and plugin project
 guards, not full API/OpenAPI, skill, connector or app-manifest content. Everything below
-surfaces at `wiqd plugin validate --mode package` (Core/TDP) or at upload/submission
-time — knowing which layer owns which code tells you where in your workflow a given failure will
+surfaces at `wiqd plugin validate --mode package` or at upload/submission
+time — knowing when each check runs tells you where in your workflow a given failure will
 actually appear. The `ASKILL-*` codes are the Microsoft 365 Copilot platform's own Agent Skills
 validation codes (emitted by AVL and at upload), not wiqd-defined — wiqd surfaces them by running
 package validation against that platform. `--mode marketplace` adds StoreOps policy/evidence
@@ -445,7 +445,7 @@ equivalent:
 | Package (zip with Compress-Archive)   | **Covered, different mechanism** — `wiqd plugin package` replaces hand-zipping                          |
 | Test / sideload                       | **Covered, different mechanism** — `wiqd plugin provision` + `wiqd plugin share` replace raw `atk install` sideloading |
 | Publish to tenant                     | **Covered** — [Build a Plugin → Publishing paths](/getting-started/build-a-plugin/#publishing-paths)                    |
-| Publish to the public store           | **Out of scope for wiqd** — Partner Center certification/submission is a human/admin step outside wiqd; see [Publishing paths](/getting-started/build-a-plugin/#publishing-paths) |
+| Publish a standalone plugin to the public store | Use Partner Center's portal; this plugin lifecycle does not submit it. Declarative-agent packages use the separate [direct publishing flow](/getting-started/publish-partner-center/). Certification remains external. |
 | Test connector via dev tunnels         | **Out of scope for wiqd** — wiqd does not manage dev tunnels; expose your MCP server yourself and pass its public `https://` URL to `wiqd plugin add connector` |
 | Packaging patterns                    | **Covered** — [Package anatomy](#package-anatomy)                                                       |
 | Skill best practices                  | **Covered** — [Skill-authoring best practices](#skill-authoring-best-practices)                          |

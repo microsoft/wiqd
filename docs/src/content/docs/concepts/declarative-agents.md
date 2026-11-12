@@ -48,6 +48,6 @@ Work IQ Dev Tools do **not** replace Copilot or the M365 platform. Under the hoo
 - [Agent component lifecycle](/concepts/agent-lifecycle/) — the agent-specific flow and existing projects
 - [Host vs extensions](/concepts/host-vs-extensions/) — how Work IQ Dev Tools route each command
 - [`wiqd plugin add agent`](/cli/reference/#wiqd-plugin-add-agent) — compose an agent into your plugin
-- [`wiqd agent create`](/cli/reference/#wiqd-agent-create) — the supported agent-focused project workflow
-- [`wiqd agent show`](/cli/reference/#wiqd-agent-show) — see what's in a project
+- [`wiqd plugin create`](/cli/reference/#wiqd-plugin-create) — the supported agent-focused project workflow
+- [`wiqd plugin show`](/cli/reference/#wiqd-plugin-show) — see what's in the local plugin project
 - [wiqd Core extension](/extensions/provided/core/) — the upstream tool that owns the manifest format

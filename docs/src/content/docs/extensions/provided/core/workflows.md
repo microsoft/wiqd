@@ -11,7 +11,11 @@ description: Workflows and references contributed by the wiqd Core extension
 | --- | --- |
 | `workflows/wiqd-core.md` | Native lifecycle: create, edit with source prechecks, provision, package, share, publish, delete, environments, migration, and localization. |
 | `workflows/plugin.md` | Standalone reusable plugin authoring and lifecycle. |
-| `workflows/partner-center.md` | 3P Partner Center publishing guidance. |
+| `workflows/partner-center.md` | 3P direct Partner Center preparation/submission with explicit consent, or portal fallback when unavailable. |
+
+See [Publish to Partner Center](/getting-started/publish-partner-center/) for
+publisher setup, exact-package validation, listing inputs and separate submission
+authorization. Submission acceptance is not certification or Live publication.
 
 ## Reference files
 

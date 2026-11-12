@@ -48,10 +48,23 @@ const { internalSidebarGroups, internalRedirects } = includeInternalDocs
   ? await import('./src/internal-sidebar.mjs')
   : { internalSidebarGroups: [], internalRedirects: {} };
 
+const publicRedirects = {
+  '/cli/agent/agent-validate': '/cli/plugin-validate/',
+  '/cli/agent/agent-package': '/cli/plugin-package/',
+  '/cli/agent/agent-provision-package': '/cli/plugin-provision-package/',
+  '/extensions/provided/atk': '/extensions/provided/core/',
+  '/extensions/provided/atk/cli': '/extensions/provided/core/cli/',
+  '/extensions/provided/atk/skills': '/extensions/provided/core/skills/',
+  '/extensions/provided/atk/workflows': '/extensions/provided/core/workflows/',
+};
+
 // Astro matches redirect sources below the base but emits destinations
 // verbatim, so destinations need the deployment base prepended.
 const redirects = Object.fromEntries(
-  Object.entries(internalRedirects).map(([from, to]) => [from, `${base}${to.replace(/^\/+/, '')}`]),
+  Object.entries({ ...publicRedirects, ...internalRedirects }).map(([from, to]) => [
+    from,
+    `${base}${to.replace(/^\/+/, '')}`,
+  ]),
 );
 
 // https://astro.build/config
@@ -120,6 +133,10 @@ export default defineConfig({
             { label: 'Installation', slug: 'getting-started/installation' },
             { label: 'Quickstart', slug: 'getting-started/quickstart' },
             { label: 'Build a plugin', slug: 'getting-started/build-a-plugin' },
+            {
+              label: 'Publish to Partner Center',
+              slug: 'getting-started/publish-to-partner-center',
+            },
             { label: 'Plugin authoring reference', slug: 'getting-started/plugin-reference' },
             { label: 'Authentication', slug: 'getting-started/authentication' },
             {
@@ -152,7 +169,9 @@ export default defineConfig({
           items: [
             { label: 'Command reference', slug: 'cli/reference' },
             { label: 'Marketplace setup', slug: 'cli/marketplace-setup' },
-            { label: 'Agent package', slug: 'cli/agent/agent-package' },
+            { label: 'Plugin validation', slug: 'cli/plugin-validate' },
+            { label: 'Plugin package', slug: 'cli/plugin-package' },
+            { label: 'Publish to Partner Center (pc)', slug: 'cli/publish-pc' },
             { label: 'Connectors', slug: 'cli/connector' },
           ],
         },

@@ -6,8 +6,7 @@ description: Natural-language scenarios powered by the wiqd Core extension
 # wiqd Core · Agent plugins
 
 With WIQD's coding-assistant plugin loaded, describe the Microsoft 365 plugin
-you want to build. Plugin requests route to the plugin workflow and use the
-native Core backend for composition and delivery. Declarative agents are
+you want to build. It guides you through composition and delivery. Declarative agents are
 optional components, alongside skills and connectors.
 
 ## Scenarios unlocked
@@ -16,7 +15,7 @@ optional components, alongside skills and connectors.
 - **Edit** — modify instructions, capabilities, actions, plugins, auth, and localization.
 - **Source prechecks** — use explicit offline source checks during edit/package/provision flows.
   Explicit validation and finding-bound repair route to the [Validate workflow](/extensions/provided/validate/skills/).
-- **Plugin validation** — use plugin static checks and deep validation of a built package.
+- **Plugin validation** — route explicit source, final-package and Marketplace checks to the Validate workflow; package checks require an existing ZIP.
 - **Provision** — register the plugin in an environment.
 - **Package** — build the deployable `.zip`.
 - **Share / collaborate** — grant user, tenant, or collaborator access.

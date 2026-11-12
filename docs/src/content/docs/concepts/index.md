@@ -15,7 +15,7 @@ Read these in roughly this order:
 4. [Agent component lifecycle](/concepts/agent-lifecycle/) — agent-specific authoring, evaluation, and existing `wiqd agent` projects
 5. [Host vs extensions](/concepts/host-vs-extensions/) — how Work IQ Dev Tools are structured under the hood
 6. [Environments](/concepts/environments/) — how `local`, `dev`, `staging`, and `prod` work
-7. [Validation & MVL](/concepts/validation-mvl/) — plugin static/deep and agent source/package/Marketplace checks
+7. [Validation & MVL](/concepts/validation-mvl/) — offline source, final-package and Marketplace checks through `wiqd plugin validate`
 8. [Exit codes & output](/concepts/exit-codes-output/) — how to script Work IQ Dev Tools safely
 9. [VS Code extension](/concepts/vscode-extension/) — live diagnostics in your editor
 

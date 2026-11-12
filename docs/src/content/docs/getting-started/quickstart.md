@@ -86,7 +86,7 @@ wiqd plugin add skill --name "Triage Issues"
 wiqd plugin add agent
 ```
 
-The project contains `wiqd.plugin.json`, `m365agents.yml`, and an
+The project contains `m365agents.yml`, a root `appPackage/manifest.json`, and an
 `appPackage/` directory. The app manifest registers the skill and declarative
 agent as components of the same plugin.
 
@@ -133,8 +133,10 @@ Packaging produces the distributable `.zip`; substitute its returned path for
 `<zip>`. Package validation uploads a captured copy to Microsoft 365's validation service; it requires that ZIP
 and is not a substitute for trying the plugin's behavior.
 
-Inspect the returned findings before continuing. Exit `0` means passed; findings
-or incomplete checks fail. In JSON automation, read success `data` or completed
+Inspect the returned findings before continuing. Exit `0` means passed; confirmed
+blocking findings or incomplete provider execution fail. Individual unverified
+Marketplace policies do not necessarily block completed validation with no
+must-fix findings. In JSON automation, read success `data` or completed
 non-pass `error.data` and use `validation.result` for the verdict.
 See [Validation & MVL](/concepts/validation-mvl/).
 

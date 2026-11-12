@@ -9,7 +9,11 @@ description: A local Fluent UI web app for interactively testing and debugging d
 
 ## What it does
 
-The DevUI extension launches a **local, fully self-contained web app** — the Work IQ DevUI — for interactively testing and debugging Microsoft 365 Copilot declarative agents. It's a visual companion to the terminal-based `wiqd agent ask` / `wiqd agent monitor` commands: pick an agent, send prompts, and watch the turn run live in a polished Fluent UI interface with full developer detail (matched/selected plugins, retrieval, citations, request/conversation/task IDs, and raw JSON).
+The DevUI extension launches a **local, fully self-contained web app** — the
+Work IQ DevUI — for interactively testing and debugging Microsoft 365 Copilot
+declarative agents. It's a visual companion to
+`wiqd plugin ask --component agent` and `wiqd agent monitor`: pick an agent,
+send prompts, and watch the turn run live with full developer detail.
 
 DevUI authenticates to M365 Copilot with a token minted by the `workiq` CLI (`workiq dev token`) and, by default, streams over the **A2A cloud transport** for live token-by-token answers. Because the experience is still evolving, it is hidden behind the `devui` preview flag:
 

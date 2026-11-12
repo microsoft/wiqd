@@ -41,8 +41,79 @@ configuration. Choose an exact approved WIQD release, Node.js 24.15.0 or later,
 the project path, lifecycle environment and intended operations. Check the
 installed version with `wiqd --version`.
 
+On a fresh runner, use the [direct-npm-first bootstrap](/getting-started/installation/#fresh-ci-runners-explicit-wiqd-terms-acceptance).
+After reviewing the current terms, the job owner may explicitly configure
+`wiqd eula accept wiqd --yes --json`. This host-only opt-in is not installation
+consent, authentication, or downstream Work IQ/Eval acceptance. Do not start
+with the web installer's fresh unattended consent prompt.
+
 Retain real project build/tests. Declarative projects have no universal compile
-command; `wiqd agent package` produces their distributable ZIP.
+command; `wiqd plugin package` produces their distributable ZIP.
+
+## Deploy WIQD's own plugin from this repository
+
+The manually queued repository pipeline
+`.azuredevops/pipelines/wiqd-plugin-m365.yml` builds the checked-out CLI and
+composes WIQD's complete `3p/public-stable` plugin, then imports, validates and
+provisions it for an experimental M365 deployment. The provision lifecycle
+packages and deploys; afterward the pipeline retains that generated ZIP without
+running `wiqd plugin package` again. It consumes
+the public `wiqd eula accept wiqd --yes --json` command above; it does not
+provide a separate EULA implementation or require delegated credentials for
+host acceptance. The job owner must review the terms and authorize both
+acceptance and deployment before queuing.
+
+This repository pipeline supports **refresh-token authentication only**; there is
+no `authMode` selector or password fallback. Configure `M365_REFRESH_TOKEN` as a
+protected secret pipeline variable and `M365_TENANT_ID` as the target tenant GUID.
+Follow the refresh-token setup guidance below, including using a token issued
+for the supported public client. Do not configure `M365_ACCOUNT_NAME` or
+`M365_ACCOUNT_PASSWORD` for this pipeline. Missing, blank or unresolved required
+inputs, a non-GUID tenant or any password input stop cloud lookup/provisioning.
+Set `appName`, `appVersion` and approved
+HTTPS `privacyUrl`, `termsUrl` and `websiteUrl` values. Increment `appVersion`
+when updating an existing app; the pipeline does not increment it automatically.
+The composed plugin version comes from the checked-out repository's `VERSION`.
+
+Leave `existingAppId` as `none` for unique, exact case-sensitive name discovery,
+or supply an independently verified Teams app GUID to bypass discovery.
+Name-based reuse requires app details to confirm the deployment tenant.
+Missing, invalid or conflicting tenant evidence stops discovery; it does not
+mean the app is absent. Zero accessible matches permits creation, not proof
+that no such app exists anywhere in the tenant. For a new target, the pipeline
+first creates only its Teams app identity using the pinned SDK and binds the
+returned GUID before import and provision. This does not yet upload WIQD's
+payload or install its M365 title. Existing targets are not recreated.
+An uncertain identity-creation result stops the run and is not retried.
+
+Local validation explicitly uses `wiqd plugin validate --mode source --env dev`
+with the project path. The default `package` mode requires an existing ZIP and
+uploads it; source checks do not certify the ZIP or prove runtime readiness.
+Only cloud identity lookup/creation, provision and a read-only version-conflict diagnostic receive
+delegated credentials.
+
+If provisioning reports that the new title needs a higher version, the error
+includes the submitted `appVersion` and attempts one read-only M365 lookup for the
+current deployed version. It reports `unavailable` if the version cannot be
+verified; it does not substitute the Developer Portal draft version or expose
+the raw response. Inspect the target, then queue a new run with a version higher
+than the deployed version. The pipeline neither increments the version nor
+retries provision automatically.
+
+After successful provision, the pipeline copies the lifecycle's app-package ZIP
+and publishes it with an integrity receipt, not the project, environment files,
+credentials or acceptance records. It verifies the package output matches the
+deployment input and does not build a second ZIP for retention. The receipt
+records package provenance and `deploymentStatus: not-verified`, not independent
+runtime or exact HTTP-upload verification. This flow does not submit the app
+to the organization catalog.
+
+Changed source inputs or identity stop the applicable phase; missing, empty or
+changed ZIP bytes prevent retention. Failed provision stops artifact publication,
+so a downloadable package is not guaranteed for failed deployments. If retention
+or artifact publication fails afterward, deployment may already have succeeded;
+that failure does not roll it back. Inspect the target before starting another
+run after any uncertain mutation; the pipeline does not replay it automatically.
 
 ## Configure lifecycle authentication
 
@@ -89,8 +160,19 @@ checks, plus provider-specific steps that invoke it. Select only the
 operations needed. Sharing requires explicit audience authorization; destructive
 cleanup is not an automatic stage.
 
-Static validation is not deep validation, eval, certification or permission to
+Offline source validation is not final-package validation, eval, certification or permission to
 publish. Org-catalog submission is not public Marketplace publication.
+
+### Partner Center is a separate authentication path
+
+`wiqd publish pc` uses the Marketplace provider, not the core pipeline credentials
+above. `--authorize-submit` is submission consent, not a clean-runner sign-in
+mechanism. This build requires a previously established Marketplace session and
+accessible protected OS storage under the runner's user. Core username/password
+and refresh-token inputs do not establish it. Ephemeral runners can validate and
+package, then hand publishing to an authenticated operator. See
+[Marketplace authentication in automation](/getting-started/publish-to-partner-center/#marketplace-authentication-in-automation)
+for the supported boundary and setup.
 
 ## Wire authentication and commands into the pipeline
 
@@ -172,7 +254,8 @@ idempotent. Never preserve state by publishing env/user-secret files, auth cache
 or the entire project.
 
 Continue only after native exit success, a valid JSON success envelope and
-expected package output. Resolve EULA consent outside CI. Inspect existing
+expected package output. Configure WIQD host `--yes` only with explicit job-owner
+authorization; downstream EULA consent remains outside CI. Inspect existing
 resources after timeout or uncertainty before any manually approved rerun;
 do not automatically retry mutations. WIQD does not rotate your secret store.
 
@@ -187,4 +270,4 @@ evidence that a live pipeline succeeded.
 - [Pipeline authentication](/getting-started/ci-cd-authentication/)
 - [Environments](/concepts/environments/)
 - [Exit codes and output](/concepts/exit-codes-output/)
-- [Agent package](/cli/agent/agent-package/)
+- [Agent package](/cli/plugin-package/)

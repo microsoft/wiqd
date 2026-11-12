@@ -82,6 +82,14 @@ including the full `wiqd plugin ...` surface — while orienting you on the unde
 Build → Improve → Preview → Publish plugin lifecycle. You never have to remember a flag; you just
 say what you want next.
 
+Plugin authoring defaults to **shared scope in `dev`**, without asking you to
+choose or confirm that default. The assistant passes `--env dev` explicitly
+through source validation, provisioning, packaging, publishing, and sharing.
+An explicit personal/`local` or custom environment, or one already selected in
+the conversation, is preserved. This is a guided-authoring default, not a change
+to bare CLI commands (which still default to `local`), and it does not
+automatically deploy, share, publish, or delete anything.
+
 ### What to say
 
 Saying any of these in GitHub Copilot CLI routes the conversation into the plugin-authoring
@@ -105,17 +113,18 @@ declarative agent.
 `appPackage/skills/triage-issues/SKILL.md` and registering it in the manifest. It then suggests
 adding another capability, or validating what you have so far.
 
-**You say:** "Validate my plugin in dev."
+**You say:** "Validate my plugin."
 **wiqd does:** runs `wiqd plugin validate --mode source --env dev` (the offline source check). On a clean result, it
 suggests provisioning the plugin or exporting it for another tool. There is no shipped command
-that merges a whole plugin into an existing agent. For an OpenAPI custom connector, it omits export because that format cannot represent the
-`ConnectionVault` reference, and explains that source validation does not establish packaging or
+that merges a whole plugin into an existing agent. For an OpenAPI custom connector
+or remote MCP connector using `ConnectionVault`, it omits export because the pinned
+exporter cannot preserve the connector reference, and explains that source validation does not establish packaging or
 deployment readiness.
 
-**You say:** "Provision it in dev, then package and share it with my team using dev."
+**You say:** "Provision it, then package and share it with my team."
 **wiqd does:** explains that standard projects use `local` for personal testing and `dev`
-for shared deployment, checks the project's actual scope configuration, and selects the
-shared environment. It validates, runs `wiqd plugin provision --env dev`, then
+for shared deployment, selects `dev` without a default-selection question, and checks
+the project's actual scope configuration. It validates, runs `wiqd plugin provision --env dev`, then
 `wiqd plugin package --env dev`, then
 `wiqd plugin share --env dev --scope users --email <you supply>`. Each step's
 report tells you what ran and what's next, so a multi-step request like this one still gives you a
@@ -149,7 +158,7 @@ configuration and `AGENT_SCOPE` in the selected environment under
 it is shared. `--scope users|tenant` selects the sharing audience, not deployment
 scope. There is no `wiqd plugin provision --scope shared` option.
 
-Direct `wiqd plugin share` (and `wiqd agent share`) checks the selected environment
+Direct `wiqd plugin share` (and `wiqd plugin remove access`) checks the selected environment
 file for `AGENT_SCOPE=shared` before sharing. Missing, invalid, duplicate, or
 non-shared scope fails with `INVALID_AGENT_SCOPE` (exit `1`); the CLI does not
 provision automatically. Correct the shared deployment configuration, validate,
@@ -203,16 +212,38 @@ wiqd plugin list --root .
 wiqd plugin delete --env dev --yes
 ```
 
-After provisioning or sharing, wiqd prints a **Cowork install/test** link in
+After provisioning, wiqd prints a **Cowork install/test** link in
 this form:
 
 ```text
-https://m365.cloud.microsoft/cowork#/customize/plugins/<M365_TITLE_ID>
+https://copilot.cloud.microsoft/plugins?pluginsTab=cowork&coworkPage=detail&coworkPluginId=<M365_TITLE_ID>
 ```
 
-Open that link to install and test the standalone plugin in Cowork. Declarative
-agents use a different Microsoft 365 Copilot chat link; wiqd keeps that agent
-route separate from standalone plugin lifecycle output.
+Open that link to install and test the standalone plugin in Cowork. After
+`wiqd plugin provision`, wiqd also returns a separate **Chat install/test** link:
+
+```text
+https://copilot.cloud.microsoft/plugins?titleId=<M365_TITLE_ID>&pluginsTab=chat
+```
+
+After `wiqd plugin share`, wiqd instead returns these two recipient links:
+
+```text
+Cowork: https://m365.cloud.microsoft/cowork#/extensions/plugins/<M365_TITLE_ID>
+Chat:   https://m365.cloud.microsoft/chat/?titleId=<M365_TITLE_ID>
+```
+
+Both commands return `data.deepLink` for Cowork and `data.chatLink` for Chat.
+Both links use the
+same complete `M365_TITLE_ID` returned by the API, preserving any `T_` or `P_`
+prefix without adding or converting it. Standalone declarative-agent commands
+retain their separate Microsoft 365 Copilot chat route.
+The assistant uses the successful command's returned `data.deepLink`, including
+for plugins containing a declarative agent, and the returned `data.chatLink`
+after provisioning or sharing. It does not replace the Cowork link with a Chat
+URL or an older environment's `SHARE_LINK`. If either link is missing or unexpected,
+it reports the problem rather than inventing a URL from the Teams app ID or
+provisioning again.
 
 :::note
 **Order matters:** `provision` must run before `package` — `provision` writes `.env.<env>` under
@@ -305,25 +336,29 @@ sharing a newly imported app.
 Rather than assembling a package and hoping upload-time validation passes, validate continuously as
 you build:
 
-- **Source (`--mode source`)** — offline saved declarative-agent diagnostics, using the same native
-  engine, codes, locations and selected environment as agent validation. It also checks plugin
-  project guards (`wiqd.plugin.json` and `appPackage/manifest.json` must be readable JSON objects).
+- **Source (`--mode source`)** — offline saved declarative-agent diagnostics.
+  The project must contain valid `m365agents.yml` and `appPackage/manifest.json`.
   It does not fully validate those schemas, skill/connector content or referenced API/OpenAPI
   content. A skill-only/connector-only plugin reports no DA source coverage; a declared but missing
   DA fails. Use this explicitly before provisioning or packaging.
-- **Package (default, `--mode package`)** — checks the final ZIP through Core/TDP. It uploads the
+- **Package (default, `--mode package`)** — checks the final ZIP through Teams Developer Portal. It uploads the
   ZIP and may require sign-in; it does not build the ZIP or sign in automatically.
-- **Marketplace (`--mode marketplace`)** — package checks plus the same StoreOps policy/evidence
-  checks as agent validation. Missing evidence is not a pass, and a report is not official Store approval.
+- **Marketplace (`--mode marketplace`)** — package checks plus StoreOps policy/evidence
+  checks on the same captured ZIP. An individual policy with missing evidence remains
+  unverified; completed validation without confirmed must-fix findings can still be
+  `PASSED`. Incomplete provider execution is `ERROR` unless confirmed blockers make
+  the overall result `FAILED`. A report is not official Store approval.
 
-All modes share the agent validation options and result envelope. Package/Marketplace write
+Use [`wiqd plugin validate`](/cli/plugin-validate/) and read
+`validation.result` for the overall verdict. Package/Marketplace write
 immutable JSON/HTML reports and accept a ZIP without a source project. Supply `--package-file <zip>`
-or a project containing exactly one `appPackage/build/*.zip`. Old `static`/`deep`/`manifest` modes
+or a structurally recognized project containing exactly one `appPackage/build/*.zip`.
+Old `static`/`deep`/`manifest` modes
 are rejected with migration guidance; the default is no longer offline.
 
 Source validation does not inspect root `agentConnectors[]`, including `openApiConnector`.
-For a preview custom connector, package before package validation. The bundled fx-core
-`3.1.5-alpha.36e30da2f6.0` supports local devPreview packaging of OpenAPI and remote MCP
+For a preview custom connector, package before package validation. Local devPreview
+packaging supports OpenAPI and remote MCP
 connectors using `ConnectionVault`, preserving their fields and leaving the source manifest
 unchanged. Local packaging success is not a server verdict. Check the built ZIP with
 `wiqd plugin validate --mode package --package-file <zip>`. Report the returned findings rather than
@@ -343,7 +378,10 @@ tenant path based on how users should receive the plugin:
   `wiqd plugin share --scope tenant` grants tenant-wide access. Sharing is a different operation
   from catalog submission.
 - **Public store** — run `wiqd plugin package --env <env>` and submit the `.zip` through Partner
-  Center. wiqd does not automate Partner Center certification or public-store submission.
+  Center. This standalone-plugin lifecycle does not automate public-store submission.
+  Declarative-agent packages have a separate
+  [direct Partner Center flow](/getting-started/publish-to-partner-center/).
+  Certification and store publication remain Partner Center responsibilities.
 
 Normal publish validates the effective app manifest that it sends to fx-core:
 `appPackage/manifest.json` by default, or the contained file selected with
@@ -366,8 +404,10 @@ Declarative-agent checks are explicitly skipped for skill/connector-only plugins
 claim those components received full runtime validation.
 
 **Where wiqd stops:** wiqd automates submission to the tenant organization app catalog, but tenant
-administrator approval remains an admin action. Partner Center certification and public-store
-publication also remain outside wiqd.
+administrator approval remains an admin action. For supported declarative-agent packages,
+`wiqd publish pc` prepares, submits, and tracks your offer, while account verification,
+certification, and store publication stay with Partner Center. See
+[Publish to Partner Center](/getting-started/publish-to-partner-center/).
 
 ## What's Next?
 

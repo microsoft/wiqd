@@ -13,7 +13,8 @@ Validate checks **saved source**, **final packages**, and **Marketplace readines
 Marketplace includes package and policy checks on the same captured ZIP. The extension
 also provides **Language Server Protocol (LSP)** editor diagnostics.
 
-Source reuses the editor's diagnostics service for saved `appPackage/declarativeAgent.json`,
+Source reuses the editor's diagnostics service for the saved DA file registered in
+`appPackage/manifest.json` (commonly `appPackage/declarativeAgent.json`),
 without network, authentication, ZIPs or reports. Package is the default mode and may require
 sign-in; source must be selected explicitly. Validation never builds or publishes automatically.
 
@@ -21,13 +22,13 @@ sign-in; source must be selected explicitly. Validation never builds or publishe
 
 ```bash
 # 1. Offline saved-source checks
-wiqd agent validate --mode source --path . --env local
+wiqd plugin validate --mode source --path . --env local
 
 # 2. Validate an existing final package
-wiqd agent validate --mode package --package-file ./final.zip
+wiqd plugin validate --mode package --package-file ./final.zip
 
 # 3. CI gate: machine-readable output
-wiqd agent validate --mode source --path . --env local --json
+wiqd plugin validate --mode source --path . --env local --json
 
 # 4. Editor integration — install the VS Code extension
 wiqd component vscode install
