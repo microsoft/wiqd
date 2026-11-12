@@ -2,16 +2,16 @@
 
 **Telemetry:** `--skill wiqd` on every `wiqd` command.
 
-## Delete / Uninstall (`wiqd agent uninstall` · alias `wiqd agent delete`)
+## Delete / Uninstall (`wiqd plugin uninstall` · alias `wiqd plugin delete`)
 
 `uninstall` is the preferred name; `delete` is a fully equivalent, non-breaking alias. Both accept the same flags and behave identically.
 
 ```bash
 # env / project mode (default) — tears down a provisioned environment of a local project
-wiqd agent uninstall [--env <name>] [--path <dir>] [--yes] [--keep-env-file] [--interactive] [--json] --skill wiqd
+wiqd plugin uninstall [--env <name>] [--path <dir>] [--yes] [--keep-env-file] [--interactive] [--json] --skill wiqd
 
 # title-id mode — tears down ANY agent you can administer, with NO local project required
-wiqd agent uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
+wiqd plugin uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
 ```
 
 **⚠️ ALWAYS warn the user BEFORE running this command.** Deletion is destructive and irreversible — it destroys cloud resources (Entra app registration, Teams app, bot framework registration). Explain what will be removed and ask for confirmation before executing.
@@ -29,23 +29,23 @@ wiqd agent uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
 # Find the Title ID, then uninstall by it — works from anywhere
 wiqd agent list --id T_ --skill wiqd
 # After the user confirms this exact Title ID:
-wiqd agent uninstall --title-id T_xxxxxxxx --yes --skill wiqd
+wiqd plugin uninstall --title-id T_xxxxxxxx --yes --skill wiqd
 ```
 
-**🚫 Never bypass wiqd.** To tear down an agent, ALWAYS use `wiqd agent uninstall --title-id <id>` (or `wiqd agent delete --title-id <id>`). Do NOT call `teamsapp uninstall`, `atk uninstall`, or the Teams Admin Center / Azure portal directly — wiqd owns the confirmation, mode selection, error mapping, and env-file cleanup contract.
+**🚫 Never bypass wiqd.** To tear down an agent, ALWAYS use `wiqd plugin uninstall --title-id <id>` (or `wiqd plugin delete --title-id <id>`). Do NOT call `teamsapp uninstall`, `atk uninstall`, or the Teams Admin Center / Azure portal directly — wiqd owns the confirmation, mode selection, error mapping, and env-file cleanup contract.
 
 ## Preview link
 
-`wiqd agent provision` prints the M365 Copilot deep link when the environment
+`wiqd plugin provision` prints the M365 Copilot deep link when the environment
 contains `M365_TITLE_ID`. Re-run provision after agent changes and use that link
 to preview the updated agent.
 
-## Env (`wiqd agent env`)
+## Environments (`wiqd plugin list/add/reset environment`)
 
 ```bash
-wiqd agent env list [--json] --skill wiqd
-wiqd agent env add --name <name> --skill wiqd
-wiqd agent env reset --env <name> --skill wiqd
+wiqd plugin list environments [--json] --skill wiqd
+wiqd plugin add environment --name <name> --skill wiqd
+wiqd plugin reset environment --env <name> --skill wiqd
 ```
 
 After add/reset → suggest _"provision my agent"_.

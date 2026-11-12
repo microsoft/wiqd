@@ -62,14 +62,14 @@ wiqd feedback submit --type <type> --title "<title>" --description "<desc>" [--s
 
 ```bash
 wiqd feedback submit --type bug \
-  --title "agent provision fails on macOS when the project path has a space" \
+  --title "plugin provision fails on macOS when the project path has a space" \
   --description "**Problem**
-wiqd agent provision fails whenever the project directory path contains a
-space; ATK aborts before any resources are created.
+wiqd plugin provision fails whenever the project directory path contains a
+space; the command aborts before any resources are created.
 
 **Steps to reproduce**
 1. Create a project under \"~/My Projects/agent-demo\"
-2. Run \`wiqd agent provision --env dev\`
+2. Run \`wiqd plugin provision --env dev\`
 
 **Expected**
 Provisioning completes successfully, the same as it does for paths without

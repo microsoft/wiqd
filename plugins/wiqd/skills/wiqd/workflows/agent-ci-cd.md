@@ -3,7 +3,7 @@ name: agent-ci-cd
 description: >
   Prepare WIQD authentication, inputs and lifecycle commands for unattended agent
   development and org-catalog deployment in any CI/CD system.
-trigger-summary: 'CI/CD, pipeline authentication, automate agent deployment'
+trigger-summary: 'M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment'
 triggers: >
   set up agent CI/CD, create an agent pipeline, GitHub Actions for my agent,
   Azure Pipelines for my agent, automate agent deployment, unattended agent deployment
@@ -11,10 +11,14 @@ routing-label: 'Agent development CI/CD setup'
 routing-intent: 'Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands'
 routing-order: 11
 contract-version: 1
-routing-requires: [agent validate, agent provision, agent package, agent publish]
+routing-requires: [plugin validate, plugin provision, plugin package, plugin publish]
 ---
 
 # Agent development CI/CD setup
+
+Use this workflow only for WIQD/M365 agent development or deployment pipelines.
+A generic GitHub Actions or Azure Pipelines request does not establish that
+scope; do not assume an M365 agent or run WIQD project discovery to find one.
 
 Prepare **WIQD's part** of a pipeline: prerequisites, authentication, commands,
 state and results. Read `references/wiqd-core/ci-cd.md`. Use
@@ -33,11 +37,18 @@ configuration, without reading secrets. Confirm project path, exact approved
 WIQD version, lifecycle environment and desired operations. Follow the
 existing-project gate in `workflows/wiqd-core.md`; never replace/scaffold a project
 silently. Retain real project builds/tests; declarative projects have no universal
-compile command, and `agent package` produces the app ZIP.
+compile command, and `plugin package` produces the app ZIP.
 
 This example targets the **org admin catalog**, not public Marketplace submission.
 Resolve the destination before preparing commands. Setup does not authorize a
 deployment, secret-store write, remote pipeline creation or permissions change.
+
+For a fresh runner, include the reference's direct-npm-first host bootstrap and
+truthful host-status checks. Configure `wiqd eula accept wiqd --yes --json` only
+after the job owner explicitly authorizes acceptance of current WIQD terms.
+Never infer acceptance from installation/CI intent or a blocked command.
+Downstream consent remains separate; no mock acceptance, installer acceptance
+switch, hidden stamp or copied profile is permitted.
 
 ## 2. Configure the owning authentication mode
 
@@ -88,7 +99,8 @@ upload env/user-secret files, token caches or the entire workspace.
 
 Require native exit success, a valid JSON success envelope and package
 postconditions before continuing. Preserve native error codes and diagnostics;
-never infer success from prose. EULA consent remains outside CI.
+never infer success from prose. Host acceptance follows the explicit opt-in above;
+downstream EULA consent remains outside CI.
 
 ## 4. Adapt the WIQD pipeline snippets
 

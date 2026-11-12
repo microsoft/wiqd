@@ -15,14 +15,14 @@ Explicit validation, result interpretation and authorized repair belong to `work
 If validation surfaced errors and the user explicitly asks you to fix them:
 
 1. Hand the identified result, original mode and confirmed project/environment to `workflows/validation.md`. That workflow applies the smallest correct change for each diagnostic, including explicitly authorized JSON/YAML syntax repairs; a validation request alone does not authorize edits.
-2. **Always re-validate the original mode** after applying the fix — never report a fix as done without re-validating. For lifecycle source findings, re-run `wiqd agent validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd`. In your response, show the exact command re-run, not just "re-validating". Package/Marketplace repair follows `references/validate/autofix.md` with the explicit new ZIP and fresh applicable evidence.
+2. **Always re-validate the original mode** after applying the fix — never report a fix as done without re-validating. For lifecycle source findings, re-run `wiqd plugin validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd`. In your response, show the exact command re-run, not just "re-validating". Package/Marketplace repair follows `references/validate/autofix.md` with the explicit new ZIP and fresh applicable evidence.
 3. If the re-run still has errors, the validation workflow continues within its two-round repair limit or reports a concrete blocker. Core resumes a previously authorized lifecycle operation only after source passes; it does not start a second repair loop or infer deployment/publication consent.
 
 ## Environment Resolution
 
 Manifests often contain `${{VAR_NAME}}` placeholders (for example, `${{APP_NAME_SUFFIX}}`) that resolve at build/provision time from env files. If validation runs against **unresolved** placeholders, rego rules see literal `$`, `{`, `}` characters and may emit warnings such as `MVL30002` ("name field contains invalid characters").
 
-`wiqd agent validate --mode source` resolves env vars **before** running rego, using the `--env` flag to select which env files to load:
+`wiqd plugin validate --mode source` resolves env vars **before** running rego, using the `--env` flag to select which env files to load:
 
 ```
 env/.env.{env}          ← base values
@@ -45,9 +45,9 @@ env/.env.{env}.user     ← user-specific overrides (higher priority)
 ### Example commands
 
 ```bash
-wiqd agent validate --mode source --path "<project>" --json --skill wiqd                    # Uses --env local (default)
-wiqd agent validate --mode source --path "<project>" --json --skill wiqd --env dev          # Resolve against dev environment
-wiqd agent validate --mode source --path "<project>" --json --skill wiqd --env local        # Explicit local (same as default)
+wiqd plugin validate --mode source --path "<project>" --json --skill wiqd                    # Uses --env local (default)
+wiqd plugin validate --mode source --path "<project>" --json --skill wiqd --env dev          # Resolve against dev environment
+wiqd plugin validate --mode source --path "<project>" --json --skill wiqd --env local        # Explicit local (same as default)
 ```
 
 ## Validation Modes
@@ -55,11 +55,11 @@ wiqd agent validate --mode source --path "<project>" --json --skill wiqd --env l
 ### Source Mode (offline)
 
 ```bash
-wiqd agent validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd
-wiqd agent validate --mode source --json --skill wiqd --env dev --path ./my-agent
+wiqd plugin validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd
+wiqd plugin validate --mode source --json --skill wiqd --env dev --path ./my-agent
 ```
 
-Runs the shared diagnostics service on saved `appPackage/declarativeAgent.json`. No network, auth, ZIP or build is required. It does not launch LSP or write an HTML/report directory. Read the returned checked-file list rather than claiming whole-project or final-package coverage.
+Runs the shared diagnostics service on the saved DA file registered by `copilotAgents.declarativeAgents[].file` in `appPackage/manifest.json`. `declarativeAgent.json` is the default filename, not a requirement; a reference such as `agents/custom.json` selects `appPackage/agents/custom.json`. No network, auth, ZIP or build is required. It does not launch LSP or write an HTML/report directory. Read the returned checked-file list rather than claiming whole-project or final-package coverage.
 
 Checks include JSON syntax, schema validation, semantic rules, environment/file-reference resolution and type mismatches. Report the actual diagnostic codes, severities and locations. JSON locations are zero-based; human table locations are one-based.
 
@@ -68,9 +68,9 @@ Checks include JSON syntax, schema validation, semantic rules, environment/file-
 For an authorized source build, source-check the same project/environment before packaging:
 
 ```bash
-wiqd agent validate --mode source --path "<project>" --env dev --json --skill wiqd
+wiqd plugin validate --mode source --path "<project>" --env dev --json --skill wiqd
 # Only after source succeeds and the build is authorized:
-wiqd agent package --path "<project>" --json --skill wiqd --env dev --output "<new-absolute.zip>"
+wiqd plugin package --path "<project>" --json --skill wiqd --env dev --output "<new-absolute.zip>"
 ```
 
 Then hand the exact returned ZIP to `workflows/validation.md` for `--mode package --package-file "<zip>"`. Package validation uploads a read-only temporary copy of the captured ZIP to TDP through Core. It does not first run source validation or build automatically.
@@ -81,7 +81,7 @@ Then hand the exact returned ZIP to `workflows/validation.md` for `--mode packag
 
 Use `workflows/validation.md` for `--mode marketplace`: it owns listing confirmation, current-host evidence and TDP plus StoreOps checks on the same captured ZIP. Do not add Marketplace checks to an offline source gate. Validation does not publish, and a passing result is not official approval.
 
-Both `wiqd agent validate` and `wiqd plugin validate` use `source`, `package` (default), and `marketplace`. Old `static`, `deep`, `manifest`, comma-combined modes and `--provider` are unsupported, not aliases. Plugin source additionally requires readable `wiqd.plugin.json` and `appPackage/manifest.json`; no declarative-agent source means empty coverage, not whole-plugin acceptance. Package/Marketplace can validate a ZIP without source-project guards. Use compatible CLI/plugin releases and a fresh host session; CLI installation alone does not refresh plugin guidance. No validation experiment flag is required.
+`wiqd plugin validate` uses `source`, `package` (default), and `marketplace`. Old `static`, `deep`, `manifest`, comma-combined modes and `--provider` are unsupported, not aliases. Plugin source additionally requires structurally valid `m365agents.yml` and `appPackage/manifest.json`; no declarative-agent registration means empty coverage, not whole-plugin acceptance. Package/Marketplace can validate a ZIP without source-project guards. Use compatible CLI/plugin releases and a fresh host session; CLI installation alone does not refresh plugin guidance. No validation experiment flag is required.
 
 ## Validation Providers
 
@@ -129,7 +129,7 @@ When this reference is invoked as a **precondition** by another workflow such as
 
 ```
         ┌────────────────────────┐
-        │  wiqd agent validate   │◄──────────┐
+        │  wiqd plugin validate   │◄──────────┐
         │  (source; same project │           │
         │   and environment)     │           │
         └───────────┬────────────┘           │
@@ -151,7 +151,7 @@ When this reference is invoked as a **precondition** by another workflow such as
 
 ### Required loop
 
-1. **Validate** — run `wiqd agent validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd`. Never run default package validation or build a ZIP merely to satisfy this precondition.
+1. **Validate** — run `wiqd plugin validate --mode source --path "<project>" --env "<environment>" --json --skill wiqd`. Never run default package validation or build a ZIP merely to satisfy this precondition.
 2. **If validation passes** (exit `0`, completed source `validation.result: PASSED`, zero errors) — return PASS to the caller. Surface warnings, but do not block. Read success `data` or completed non-pass `error.data`; malformed output, cancellation or missing CLI/project is a blocker, not a pass.
 3. **If validation fails** (any errors):
    - **Inform** — present every diagnostic with code, file path, line/column, and message, grouped by file. Do not summarize away errors.
@@ -206,7 +206,7 @@ For finite offline CI checks, use source mode instead of a long-lived LSP server
 
 ## File-Based Fallback (when CLI is unavailable)
 
-If `wiqd agent validate` cannot be run because of shell-tool failure, missing CLI install, or sandbox constraints:
+If `wiqd plugin validate` cannot be run because of shell-tool failure, missing CLI install, or sandbox constraints:
 
 1. **Structural validation** — inspect files directly:
    - Verify `appPackage/` exists with required files such as `declarativeAgent.json` and `manifest.json`

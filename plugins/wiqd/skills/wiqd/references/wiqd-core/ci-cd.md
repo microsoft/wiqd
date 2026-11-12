@@ -1,4 +1,4 @@
-# WIQD agent lifecycle in CI/CD
+# WIQD plugin lifecycle in CI/CD
 
 Read `workflows/agent-ci-cd.md` first. This reference owns only WIQD's process
 inputs, authentication and commands, including focused GitHub Actions and Azure
@@ -11,6 +11,39 @@ Install the exact approved WIQD release on Node.js 24.15.0 or later and check
 `wiqd --version --skill wiqd --workflow agent-ci-cd`. Use the existing agent
 project and its lifecycle/environment files. Private feed access, if needed,
 is installation authentication, not delegated lifecycle authentication.
+
+### Host terms on a fresh runner
+
+Use caller-provisioned Node/npm and install an exact approved WIQD host through
+`npm install -g @microsoft/wiqd@<approved-exact-version>` first. Resolve
+the absolute installed launcher from `npm prefix -g` (`wiqd.cmd` on Windows,
+`bin/wiqd` on Unix), then verify its `--version --no-banner` matches that candidate.
+Use that launcher for acceptance, status and subsequent product commands, not a
+potentially shadowing bare `wiqd`.
+After the job owner reviews https://aka.ms/wiqd/eula and authorizes acceptance
+of the current WIQD terms, explicitly configure
+`wiqd eula accept wiqd --yes --json` and require exit 0 and its success envelope.
+This opt-in requires no prompt/phrase, records mutable local `explicit-yes`
+evidence, and preserves earlier method/time on repeats. It does not authenticate
+or accept Work IQ/Eval terms. Mock, downstream/unknown selectors and combining
+yes with consent/stamp refuse; write failure is exit 1 / `EULA_STORE_WRITE_FAILED`.
+Do not supply `--yes` autonomously to unblock installation.
+
+`wiqd eula status --json` is read-only. Inspect `data.wiqd` on exit-0 success.
+On exit 2, inspect `error.data.wiqd` only when `status` is `error`, envelope exit
+is 2, code is `EULA_STATUS_BINARY_UNRESOLVED`, and a downstream report row is
+`binary-unresolved`. Require host `tool: wiqd`, `state: accepted`; other errors
+never prove acceptance. Fresh npm installation can leave downstream managed
+binaries unresolved even after host acceptance. Then use a real local command,
+such as `wiqd plugin show --path <existing-plugin-project> --json` through that launcher, before any
+authorized tenant work. See https://aka.ms/wiqd/docs/getting-started/installation/
+for the Windows/Unix bootstrap and status checks.
+
+If full web-installer setup is needed, run it afterward for the same exact
+candidate and terms. Fresh unattended web installation still refuses without
+prior acceptance; reinstall Force is not consent. Do not use hidden stamp helpers
+or copy/edit an accepted user profile. Without `--yes`, human relay and CI
+refusal remain unchanged.
 
 | Input | Meaning |
 | --- | --- |
@@ -84,16 +117,16 @@ if (Test-Path Env:M365_REFRESH_TOKEN) {
   }
 }
 $common = @('--path', $project, '--env', $environment, '--json', '--skill', 'wiqd', '--workflow', 'agent-ci-cd')
-Invoke-WiqdJson 'validate-source' (@('agent', 'validate', '--mode', 'source') + $common) | Out-Null
-Invoke-WiqdJson 'provision' (@('agent', 'provision') + $common) | Out-Null
-Invoke-WiqdJson 'validate-provisioned-source' (@('agent', 'validate', '--mode', 'source') + $common) | Out-Null
-Invoke-WiqdJson 'package' (@('agent', 'package', '--output', "$PWD/agent.zip") + $common) | Out-Null
+Invoke-WiqdJson 'validate-source' (@('plugin', 'validate', '--mode', 'source') + $common) | Out-Null
+Invoke-WiqdJson 'provision' (@('plugin', 'provision') + $common) | Out-Null
+Invoke-WiqdJson 'validate-provisioned-source' (@('plugin', 'validate', '--mode', 'source') + $common) | Out-Null
+Invoke-WiqdJson 'package' (@('plugin', 'package', '--output', "$PWD/agent.zip") + $common) | Out-Null
 if (-not (Test-Path -LiteralPath agent.zip -PathType Leaf)) { throw 'Package output is missing.' }
-Invoke-WiqdJson 'validate-package' (@('agent', 'validate', '--mode', 'package', '--package-file', "$PWD/agent.zip") + $common) | Out-Null
-Invoke-WiqdJson 'publish' (@('agent', 'publish') + $common) | Out-Null
+Invoke-WiqdJson 'validate-package' (@('plugin', 'validate', '--mode', 'package', '--package-file', "$PWD/agent.zip") + $common) | Out-Null
+Invoke-WiqdJson 'publish' (@('plugin', 'publish') + $common) | Out-Null
 ```
 
-For secret-free offline checks, run only `agent validate --mode source` with the explicit project,
+For secret-free offline checks, run only `plugin validate --mode source` with the explicit project,
 environment and `--json` flags, without deployment credentials. Source diagnostics are one-shot,
 not LSP or final-ZIP validation. Package validation follows the successful build and uploads the
 explicit captured ZIP to TDP; missing authentication/service results block, not pass.
@@ -123,7 +156,7 @@ Set the non-secret `M365_TENANT_ID` variable to the intended tenant GUID and
 store the locally bootstrapped token as secret `M365_REFRESH_TOKEN`.
 
 ```yaml
-- name: WIQD agent lifecycle with refresh-token authentication
+- name: WIQD plugin lifecycle with refresh-token authentication
   shell: pwsh
   run: |
     & ./.ci/wiqd-agent.ps1
@@ -141,7 +174,7 @@ no token bootstrap. It omits `M365_TENANT_ID` to use `organizations`; add that
 non-secret variable only when selecting a tenant ID/domain explicitly.
 
 ```yaml
-- name: WIQD agent lifecycle with username/password authentication
+- name: WIQD plugin lifecycle with username/password authentication
   shell: pwsh
   run: |
     & ./.ci/wiqd-agent.ps1
@@ -171,7 +204,7 @@ them before invoking WIQD. Keep secrets out of the `pwsh` body.
     }
     & ./.ci/wiqd-agent.ps1
     exit $LASTEXITCODE
-  displayName: WIQD agent lifecycle with refresh-token authentication
+  displayName: WIQD plugin lifecycle with refresh-token authentication
   env:
     CI_ENABLED: 'true'
     M365_TENANT_ID: $(M365_TENANT_ID)
@@ -190,7 +223,7 @@ optional tenant omitted. Do not define `M365_REFRESH_TOKEN` at any inherited sco
     }
     & ./.ci/wiqd-agent.ps1
     exit $LASTEXITCODE
-  displayName: WIQD agent lifecycle with username/password authentication
+  displayName: WIQD plugin lifecycle with username/password authentication
   env:
     CI_ENABLED: 'true'
     M365_ACCOUNT_NAME: $(M365_ACCOUNT_NAME)
@@ -215,7 +248,8 @@ env files, user-secret files, developer caches or the checkout to preserve state
 The platform skill owns artifact publication and access configuration.
 
 Native exit codes and valid JSON success envelopes gate progression. Preserve
-failures and diagnostics; an EULA-required result stops for human consent outside
-CI. WIQD does not rotate the secret store. Resolve the chosen mode's credentials
+failures and diagnostics; an EULA-required result stops. Only an explicitly
+authorized host `--yes` operation may satisfy WIQD terms in CI; downstream consent
+remains outside CI. WIQD does not rotate the secret store. Resolve the chosen mode's credentials
 or policy rather than falling back; inspect current state after an uncertain
 deployment before any manually approved rerun. Never automatically retry mutations.

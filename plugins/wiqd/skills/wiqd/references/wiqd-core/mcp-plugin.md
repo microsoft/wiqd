@@ -43,7 +43,7 @@ For modes with static credentials, supply the required values through the suppor
 Before adding an MCP plugin, you **must** have a scaffolded agent project — _"create an agent"_ if you haven't already:
 
 ```bash
-wiqd agent create \
+wiqd plugin create \
   -n my-agent \
   -c declarative-agent \
   -i false
@@ -59,7 +59,7 @@ This creates `m365agents.yml` (and `m365agents.local.yml`) with the **5 required
 | 4    | `teamsApp/update`             | Uploads the package to Teams                                    |
 | 5    | `teamsApp/extendToM365`       | **Extends the app to M365 Copilot** — generates `M365_TITLE_ID` |
 
-**What breaks without `extendToM365`:** If this step is missing, `wiqd agent provision` will register the Teams app and generate `TEAMS_APP_ID`, but the agent will **never appear in Copilot Chat** because no `M365_TITLE_ID` is generated. This is the most common reason for "provision succeeded but agent not found" failures.
+**What breaks without `extendToM365`:** If this step is missing, `wiqd plugin provision` will register the Teams app and generate `TEAMS_APP_ID`, but the agent will **never appear in Copilot Chat** because no `M365_TITLE_ID` is generated. This is the most common reason for "provision succeeded but agent not found" failures.
 
 > **If you already have a project** but are missing `teamsApp/extendToM365`, add it to the `provision` lifecycle in `m365agents.yml` after `teamsApp/update`. See [deployment.md](deployment.md) for the full provisioning reference.
 
@@ -391,7 +391,7 @@ For each tool:
 
 ### Step 5: Logo Images (Optional)
 
-Logos are **not mandatory**. The default logos from `wiqd agent create` work fine. Ask the user casually:
+Logos are **not mandatory**. The default logos from `wiqd plugin create` work fine. Ask the user casually:
 
 > "Would you like to use a custom logo for [name], or is the default fine?"
 
@@ -519,7 +519,7 @@ still points to the plugin you augmented; do not add a duplicate action:
 ## Complete Workflow Checklist
 
 ```
-□ Step 0: Scaffold agent project with `wiqd agent create` (if not already scaffolded)      ← MANDATORY
+□ Step 0: Scaffold agent project with `wiqd plugin create` (if not already scaffolded)      ← MANDATORY
 □ Step 1: Get MCP server URL from user
 □ Step 2: Run `wiqd agent add action --mcp-server-url` with the selected auth mode           ← MANDATORY
 □       → Supply required credentials during add or defer entry to the generated environment user file
@@ -531,7 +531,7 @@ still points to the plugin you augmented; do not add a duplicate action:
 □ Step 6: For pinned tools, add inline tool descriptions and replace `run_for_functions: ["*"]`
 □ Step 7: Verify the generated action registration in declarativeAgent.json
 □       → Complete authentication setup: fill any required credential values deferred during add in env/.env.<environment>.user before validation or provisioning
-□ Step 8: Run wiqd agent provision --env local
+□ Step 8: Run wiqd plugin provision --env local
 ```
 
 ---

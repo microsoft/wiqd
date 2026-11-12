@@ -65,10 +65,16 @@ The Eval CLI (`runevals`) can score its four built-in LLM evaluators with two ju
 
 ### Eval CLI Check
 
-- Check the extension-managed CLI with `wiqd exec runevals --version`.
+- In a no-install walkthrough, do not call managed execution just to check the
+  version: `wiqd exec runevals --version` may install or refresh packages.
+  Follow Phase 0A in `workflows/eval.md`: use `wiqd ext show microsoft.eval --json`
+  and the resolved active generation's package metadata, not the extension
+  version or required pin as an installed-version claim. Defer initialization
+  and authentication; still explain the complete judge and schema/PRA guidance.
+- When installation is permitted, check the extension-managed CLI with `wiqd exec runevals --version`.
 - wiqd silently refreshes the exact extension pin when a newer one exists. If the refresh fails, run on the installed version; an older version is never a reason to stop. Do not install
   the Eval CLI globally.
-- Change to the agent project directory and run `wiqd exec runevals --init-only`
+- Only after initialization is authorized, change to the agent project directory and run `wiqd exec runevals --init-only`
   to complete Python environment and dependency downloads.
 
 ### Mandatory Dataset Choice

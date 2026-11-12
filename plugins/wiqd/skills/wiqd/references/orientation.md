@@ -7,13 +7,13 @@ When the user asks "how do I get started?", "what's the lifecycle?", "what can w
 1. Show the journey map and locate the user on it (use the journey map from the orchestrator's "Journey map" section).
 2. Identify their starting point: map the scenario to a journey **phase** and the **intent** to act on. Then dispatch that intent through the orchestrator's **Workflows** routing table — it maps intents to whatever workflows the installed extensions contribute. Don't name or assume a specific workflow file or capability here; if no workflow matches the intent, say so and suggest the closest ones.
 
-| Scenario                                        | Phase   | Intent to route                            |
-| ----------------------------------------------- | ------- | ------------------------------------------ |
-| "I want to build a new agent from scratch"      | Build   | create / scaffold a new agent project      |
-| "I already have a .zip or app package"          | Build   | migrate an existing package into a project |
-| "I have an agent project, want to keep editing" | Build   | edit the agent                             |
-| "I want to improve and test my agent"           | Improve | validate, then generate / run evals        |
-| "I want to preview with a small audience"       | Preview | package → provision → share                |
+| Scenario                                        | Phase   | Intent to route                                                                                                      |
+| ----------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------- |
+| "I want to build a new agent from scratch"      | Build   | create / scaffold a new agent project                                                                                |
+| "I already have a .zip or app package"          | Build   | migrate an existing package into a project                                                                           |
+| "I have an agent project, want to keep editing" | Build   | open it with a project-scoped `wiqd plugin` command; eligible retired projects are marked automatically on first use |
+| "I want to improve and test my agent"           | Improve | validate, then generate / run evals                                                                                  |
+| "I want to preview with a small audience"       | Preview | package → provision → share                                                                                          |
 
 | "I'm ready to publish" | Publish | publish |
 | "I want to add translations" | Build | localize |
@@ -21,6 +21,11 @@ When the user asks "how do I get started?", "what's the lifecycle?", "what can w
 3. **Install wiqd:** follow [Install & Update](install-update.md) for the target-specific CLI-only installer.
 4. **Discover all commands:** `wiqd --help` or `wiqd agent --help`
 5. **Explore extensions:** For extension inventory, activation, or capabilities, read `references/extensions.md`. Use `wiqd ext list` for an overview and `wiqd ext show <id>` for per-extension capabilities.
+
+Do not tell a user with an existing retired `agent create` project to recreate
+it because a WIQD marker file is absent. Run the intended project-scoped plugin
+workflow directly; the CLI performs bounded read-only structural recognition
+and preserves every existing project file.
 
 Key documentation:
 

@@ -1,8 +1,8 @@
-# Agent Provision
+# Plugin Provision
 
 **Telemetry:** `--skill wiqd` on every `wiqd` command.
 
-Provision a declarative agent to an environment (deploy to M365).
+Provision a plugin, with or without a declarative agent, to an environment (deploy to M365).
 
 ## Choose personal testing or shared deployment
 
@@ -18,16 +18,20 @@ replace configuration, or invent a `--scope shared` provision option.
 For a share request, first follow **Shared deployment readiness** in
 `references/wiqd-core/share.md`: confirm additional cloud preparation when
 needed and do not re-provision an already-ready shared deployment.
-For standalone plugins, retain these environment/confirmation rules and
-applicable version handling, but use `wiqd plugin validate --mode source` and
-`wiqd plugin provision` throughout. Keep the same explicit `--path` and `--env`.
+For standalone plugins, default to shared `dev` without asking the user to
+choose or confirm that default. Preserve an explicit personal/`local` or custom
+environment and any environment already selected for the current workflow.
+Retain the configuration checks, mutation-consent rules, and applicable version
+handling, but use `wiqd plugin validate --mode source` and `wiqd plugin provision`
+throughout. Keep the same explicit `--path` and `--env`; direct CLI defaults are
+unchanged. Shared scope does not itself authorize sharing or publication.
 
 ## Validation Gate — MANDATORY
 
 In this workflow, provisioning is **blocked** until saved source validates clean.
 Complete any authorized shared-version preparation below before this validation:
 
-1. Run `wiqd agent validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be provisioned.
+1. Run `wiqd plugin validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be provisioned.
 2. **PASS** → proceed. **FAIL** → stop, surface diagnostics, do NOT provision.
 3. For authorized repairs, use `workflows/validation.md` and return only after same-mode source revalidation passes. Do not build a ZIP merely to run this gate.
 
@@ -38,7 +42,7 @@ previously validated ZIP. Missing deployment IDs that provision creates are not 
 ## Command
 
 ```bash
-wiqd agent provision --json --skill wiqd --env <environment> [--path <path>]
+wiqd plugin provision --json --skill wiqd --env <environment> [--path <path>]
 ```
 
 ## Options
@@ -56,15 +60,25 @@ wiqd agent provision --json --skill wiqd --env <environment> [--path <path>]
    provisioned, run the [Shared Agent Version Bump](#shared-agent-version-bump)
    flow before validation. Do not bump a new environment merely to share it.
 2. Complete the validation gate above against the resulting files.
-3. Run `wiqd agent provision --json --skill wiqd --env <env> [--path <path>]`
+3. Run `wiqd plugin provision --json --skill wiqd --env <env> [--path <path>]`
 4. Read `M365_TITLE_ID` from `.env.<env>` under the project's configured
    environment folder (`env/.env.<env>` with the default `./env` folder).
-5. Present the test link: `https://m365.cloud.microsoft/chat?titleId={M365_TITLE_ID}`
+5. For every plugin project, including a declarative-agent project, present the successful command's returned
+   `data.deepLink` as **Cowork install/test**:
+   `https://copilot.cloud.microsoft/plugins?pluginsTab=cowork&coworkPage=detail&coworkPluginId=<M365_TITLE_ID>`.
+   Preserve the returned identifier, including any `T_` prefix.
+   Also present the returned `data.chatLink` as **Chat install/test**:
+   `https://copilot.cloud.microsoft/plugins?titleId=<M365_TITLE_ID>&pluginsTab=chat`.
+   Both links use the same API-returned title ID without changing `T_` or `P_`.
+   This includes personal/shared plugins and plugins containing a DA. Never
+   substitute a Chat URL or `SHARE_LINK` for a plugin's Cowork link. If either
+   returned link is missing or not its expected route, report it as unavailable or unexpected;
+   never fabricate it from `TEAMS_APP_ID` or provision again just to get a link.
 
 ## Bundled Reference Preflight
 
 Provision builds the app package that it uploads, so it applies the same extension-owned reference
-check as `wiqd agent package` before the fx-core provision method starts:
+check as `wiqd plugin package` before the fx-core provision method starts:
 
 - declarative-agent manifests come from
   `appPackage/manifest.json#copilotAgents.declarativeAgents[].file`, not a fixed filename;
@@ -105,7 +119,8 @@ validation:
 - Only the explicitly authorized shared-version preparation above may edit
   version fields here; route validation fixes through agent-validate.
 - **NEVER** create missing config files (`m365agents.yml`) without explicit consent
-- **ALWAYS** show the test link after successful provisioning
+- **ALWAYS** show the appropriate test link after successful provisioning, or
+  explicitly report that it is unavailable; never invent a missing link.
 - When returning to an explicitly requested or confirmed provisioning flow after
   files in `appPackage/` changed, revalidate before provisioning. This rule does
   not authorize provisioning after an ordinary edit.
@@ -113,7 +128,7 @@ validation:
   deployment, then validate the resulting files before provisioning.
 - **NEVER** set placeholder values for environment variables — leave empty, provisioning fills them
 
-**Preflight:** Requires `appPackage/manifest.json` and `m365agents.yml` or `teamsApp.yml`;
+**Preflight:** Requires `appPackage/manifest.json` and `m365agents.yml`;
 declarative-agent files are discovered through the app manifest.
 
 **Exit codes:** 0 = success, 1 = command error, 2 = infra error, 130 = cancelled.

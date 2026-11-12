@@ -26,10 +26,10 @@ triggers: >
   set quick response mode, set think deeper mode, review instructions, add a worker agent, connect a worker agent,
   remove a worker agent, disconnect a worker agent
 routing-label: "Agent lifecycle tasks"
-routing-intent: "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, connecting Worker Agents, adding capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation"
+routing-intent: "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding/removing Worker agents by reference, capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation"
 routing-order: 1
 contract-version: 1
-routing-requires: [agent create, agent add, agent validate, agent provision, agent package, agent share, agent env, agent show, agent delete, agent publish]
+routing-requires: [plugin create, plugin add, plugin validate, plugin provision, plugin package, plugin share, plugin show, plugin list, plugin reset, agent add, plugin delete, plugin publish]
 wiqd-lifecycle-theme: Build
 wiqd-lifecycle-order: 1
 journey: |
@@ -48,7 +48,7 @@ journey: |
   signal: No `appPackage/` at all => **Build** (start with create/migrate)
   signal: `appPackage/` exists, no evals yet => **Build** or **Improve**
   plan-step: 10 | validate manifest
-  readiness: Saved source validates clean | wiqd agent validate --mode source
+  readiness: Saved source validates clean | wiqd plugin validate --mode source
 
   [Preview]
   order: 3
@@ -63,7 +63,7 @@ journey: |
   signal: Agent packaged/provisioned => **Preview** [3p]
   plan-step: 40 | package + provision
   plan-step: 50 | share with preview users [3p]
-  readiness: Package builds successfully | wiqd agent package
+  readiness: Package builds successfully | wiqd plugin package
   readiness: Preview deployment ready | package + provision completed [3p]
   readiness: Preview audience has access | share completed for test users [3p]
 
@@ -200,28 +200,29 @@ of an approved secure credential-entry flow, or interactive sign-in/consent.
 
 # CREATE WORKFLOW
 
-Scaffold a new M365 Copilot declarative agent project.
+Scaffold a marked plugin container, then compose its one embedded declarative agent.
 
 ## Create Command
 
 ```bash
-wiqd agent create --name "<agent-name>" [--template <template>] [--output <path>]
+wiqd plugin create --name "<plugin-name>" [--output <path>]
+cd "<plugin-name>"
+wiqd plugin add agent --name "<agent-name>"
 ```
 
 ### Create Options
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--name`, `-n` | Agent display name | (required) |
-| `--template`, `-t` | Agent template (wiqd only supports declarative agents — the default is the only legal value) | `declarative-agent` |
-| `--output`, `-o` | Parent directory for the new project | `./` |
-| `-i, --interactive` | Run in interactive mode | `false` |
-| `-v, --verbose` | Show raw output for debugging | `false` |
+| Command | Flag | Description | Default |
+|---------|------|-------------|---------|
+| `plugin create` | `--name`, `-n` | Plugin project/container name | (required) |
+| `plugin create` | `--output`, `-o` | Parent directory for the new project | `./` |
+| `plugin add agent` | `--name`, `-n` | Embedded-agent display name | Plugin name |
+| `plugin add agent` | `--folder`, `-f` | Existing plugin project directory | `./` |
 
 ### List Available Templates
 
 ```bash
-wiqd agent create list
+wiqd plugin list templates
 ```
 
 ## Create Steps
@@ -230,21 +231,22 @@ wiqd agent create list
 2. **Check** target directory is empty
 3. **Ask** the user for:
    - Agent name (meaningful, descriptive — not "My Agent")
-   - Template preference is **not** needed by default — `--template` defaults to `declarative-agent`, the only family wiqd supports. Only ask about templates if the user explicitly raises the topic.
-4. **Run** `wiqd agent create --name "<name>"`
-5. **Enter the project directory** — `cd <name>` (wiqd creates a subfolder named after the project; all subsequent commands must run from inside it)
-6. **Verify** the project was created (`appPackage/declarativeAgent.json` exists)
-7. **Enrich** `declarativeAgent.json` with 3+ domain-relevant conversation starters (see Conversation Starters rules below) — MANDATORY
-8. **Drop** the LSP configuration (see below) — MANDATORY
-9. **Drop** the wiqd enforcer extension (see below) — MANDATORY
-10. **Report** the result and suggest next steps:
+   - Do not ask for a template: composition always uses the basic declarative-agent starter and has no template-selection option.
+4. **Run** `wiqd plugin create --name "<name>"`
+5. **Enter the project directory** — `cd <name>` (all subsequent commands run inside it)
+6. **Run** `wiqd plugin add agent --name "<agent-name>"`. For requested MCP/OpenAPI actions, follow the action-authoring steps below using `wiqd agent add action` in this final project; pass MCP authentication/credential options only to that command. `plugin add agent` does not accept template, MCP/auth or connector-package options.
+7. **Verify** `m365agents.yml`, `appPackage/manifest.json`, and the app-manifest-referenced declarative-agent file exist.
+8. **Enrich** the referenced declarative-agent manifest with 3+ domain-relevant conversation starters (see Conversation Starters rules below) — MANDATORY
+9. **Drop** the LSP configuration (see below) — MANDATORY
+10. **Drop** the wiqd enforcer extension (see below) — MANDATORY
+11. **Report** the result and suggest next steps:
    - _"Edit my agent's instructions"_
    - _"Add a capability to my agent"_ (e.g., WebSearch, OneDriveAndSharePoint)
    - _"Provision my agent locally"_
 
 ## ⛔ LSP Configuration — MANDATORY Post-Create Step
 
-After `wiqd agent create` succeeds, you MUST create the LSP configuration file
+After `wiqd plugin create` and `wiqd plugin add agent` succeed, you MUST create the LSP configuration file
 at `<project>/.github/lsp.json` with **exactly** the following content:
 
 ```json
@@ -271,9 +273,9 @@ at `<project>/.github/lsp.json` with **exactly** the following content:
 
 ## ⛔ wiqd Enforcer — MANDATORY Post-Create Step
 
-After `wiqd agent create` succeeds, you MUST drop a project-scoped Copilot
+After `wiqd plugin create` and `wiqd plugin add agent` succeed, you MUST drop a project-scoped Copilot
 CLI extension into the new project. This extension routes future edits of
-agent files (`appPackage/`, `wiqd.plugin.json`, `m365agents.yml`,
+agent files (`appPackage/`, `m365agents.yml`,
 `m365agents.local.yml`, `teamsapp.yml`, `teamsapp.local.yml`) through the Edit
 workflow so manifests are mutated correctly.
 
@@ -318,7 +320,6 @@ const MARKER_FILES = new Set([
     "m365agents.local.yml",
     "teamsapp.yml",
     "teamsapp.local.yml",
-    "wiqd.plugin.json",
 ]);
 
 function isAgentOwnedPath(rawPath) {
@@ -389,7 +390,7 @@ await joinSession({
                 permissionDecisionReason:
                     "This file is part of an M365 declarative agent project. " +
                     "You MUST invoke skill(wiqd) before editing files under " +
-                    "appPackage/, wiqd.plugin.json, m365agents.yml, or teamsapp.yml. " +
+                    "appPackage/, m365agents.yml, or teamsapp.yml. " +
                     "Call skill(wiqd) first to load the wiqd workflow, " +
                     "then retry this edit.",
             };
@@ -410,7 +411,7 @@ content above ever drifts from that file, the asset wins.
 
 ## ⛔ Scaffolding Output Rules — MANDATORY
 
-These rules govern the file structure produced after `wiqd agent create` succeeds. Apply them every time, no exceptions.
+These rules govern the file structure produced after `wiqd plugin add agent` succeeds. Apply them every time, no exceptions.
 
 ### Instructions Externalization
 
@@ -420,8 +421,8 @@ These rules govern the file structure produced after `wiqd agent create` succeed
 
 ### Schema Version
 
-- **ALWAYS** keep the `$schema` and `version` that `wiqd agent create` scaffolds into `declarativeAgent.json` **verbatim** — the CLI selects the schema for the project, which may not be the newest published version.
-- **NEVER downgrade** the scaffolded `$schema` / `version`. `wiqd agent create` also generates `declarativeAgent.json` content that only validates against the scaffolded (newer) schema, so lowering the version produces a schema/content mismatch that makes `wiqd agent validate` fail.
+- **ALWAYS** keep the `$schema` and `version` that `wiqd plugin add agent` scaffolds into the referenced declarative-agent manifest **verbatim** — the CLI selects the schema for the project, which may not be the newest published version.
+- **NEVER downgrade** the scaffolded `$schema` / `version`. `wiqd plugin add agent` also generates content that only validates against the selected schema, so lowering the version produces a schema/content mismatch that makes `wiqd plugin validate` fail.
 - Only **upgrade** the schema deliberately — and only when a newer capability you are adding explicitly requires it — never below the scaffolded version.
 
   The scaffolded `$schema` line has this shape (the version segment is whatever the CLI wrote — it is illustrative, NOT a value to hard-code):
@@ -640,11 +641,11 @@ Select the user's target environment, defaulting to `local`, and use that same e
 and project path for the source check and any authorized provision. Run:
 
 ```bash
-wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core
+wiqd plugin validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core
 ```
 
 If validation fails, report the findings and do not provision. If validation succeeds, run
-`wiqd agent provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
+`wiqd plugin provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
 unless the user explicitly opted out of provision or deployment. An opt-out suppresses provision
 only; the valid edit and validation still happen. See
 [Default response mode](../references/wiqd-core/editing-workflow.md#default-response-mode) for the canonical
@@ -772,7 +773,7 @@ Supply the credentials required by the selected authentication mode during add, 
 ### Adding Agent Skills
 
 Agent skills are embedded under `appPackage/skills/`; they are not standalone `wiqd plugin`
-skills. For a new agent with a skill, run `wiqd agent create` first, then the command below. For a
+skills. For a new agent with a skill, run `wiqd plugin create` and `wiqd plugin add agent` first, then the command below. For a
 new skill, ask for its name and description. For an import, use a directory already under the target
 `appPackage` or an external ZIP; package an external directory as a ZIP first.
 Use exactly one of `--name` or `--from`:
@@ -798,7 +799,7 @@ the generated frontmatter and replace the placeholder comments with the user's a
 instructions. Verify `appPackage/skills/<skill-name>/SKILL.md` and the matching
 `appPackage/declarativeAgent.json#agent_skills[]` entry.
 
-Then run `wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json`. Source validation currently
+Then run `wiqd plugin validate --mode source --path <project-directory> --env <selected-environment> --json`. Source validation currently
 checks only `declarativeAgent.json`, not the referenced `SKILL.md` or top-level `agentSkills[]`, and
 may report the preview `agent_skills` property as unrecognized even when the add command succeeded.
 Do not provision unless asked.
@@ -990,7 +991,7 @@ Always update the app name and description to something meaningful. Never leave 
 
 ## Safety Rules
 
-- **NEVER** create `declarativeAgent.json` manually — always use `wiqd agent create`
+- **NEVER** create `declarativeAgent.json` manually — always use `wiqd plugin add agent`
 - **NEVER** scaffold into a non-empty directory with existing project files
 - **NEVER** use placeholder names — always ask the user for a meaningful name
 - **NEVER** embed instructions inline in `declarativeAgent.json` — always use `$[file('instructions.txt')]`
@@ -1030,7 +1031,7 @@ After building your agent, you may want to:
 - **[Authentication](../references/wiqd-core/authentication.md)** — OAuth configuration
 
 ### Lifecycle
-- **[Agent Show](../references/wiqd-core/show.md)** — View agent details
+- **[Plugin Show](../references/wiqd-core/show.md)** — View local plugin and embedded-agent details
 - **[Agent Lifecycle](../references/wiqd-core/lifecycle.md)** — Delete, open, env management
 - **[Agent Provision](../references/wiqd-core/provision.md)** — Deploy to M365
 - **[Agent Package](../references/wiqd-core/package.md)** — Build app package

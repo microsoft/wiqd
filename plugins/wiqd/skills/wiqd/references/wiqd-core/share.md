@@ -1,8 +1,8 @@
-# Agent Share
+# Plugin Share
 
 **Telemetry:** `--skill wiqd` on every `wiqd` command.
 
-Share a provisioned agent with specific people, a security group, or the entire tenant.
+Share a provisioned plugin with specific people, a security group, or the entire tenant.
 
 ## Guided target selection (inspection-first)
 
@@ -13,7 +13,7 @@ When the user asks to share, resolve the target from what they already said befo
 - They asked to share with **everyone / the whole org / the tenant** → tenant share (use with caution; confirm first).
 - Nothing is explicit → ask **one** question. This target-agnostic question offers three targets: _"Share with specific email address(es), a security group, or your whole tenant?"_ — then collect only the missing input. On a **first-party** install a separate overlay **extends this same question with a fourth, discoverable menu item** (a supported common audience); that fourth option is owned entirely by the overlay (see the note below).
 
-> First-party agents have an **additional** common-audience target contributed by a separate first-party overlay when installed. This core reference stays **target-agnostic**: it covers only the email/group/tenant targets exposed by `wiqd agent share`, and deliberately does **not** name the specific common audiences or the package sidecar that back them. When the active install includes the overlay, that overlay **extends this one question with a fourth, discoverable menu item** on 1P installs (it is not a hidden path requiring magic words) and owns the common-audience branch end-to-end — including its execution dependency. On a pure third-party install the menu stays at the three targets above.
+> First-party agents have an **additional** common-audience target contributed by a separate first-party overlay when installed. This core reference stays **target-agnostic**: it covers only the email/group/tenant targets exposed by `wiqd plugin share`, and deliberately does **not** name the specific common audiences or the package sidecar that back them. When the active install includes the overlay, that overlay **extends this one question with a fourth, discoverable menu item** on 1P installs (it is not a hidden path requiring magic words) and owns the common-audience branch end-to-end — including its execution dependency. On a pure third-party install the menu stays at the three targets above.
 
 ### Composition handoff — where the fourth target comes from
 
@@ -36,14 +36,20 @@ composed in from the first-party overlay. Resolve it like this:
 
 This reference is the active owner for the three standard share targets. The optional
 first-party overlay may extend the guided menu, but all standard branches continue through the
-core-backed `wiqd agent share` commands below.
+core-backed `wiqd plugin share` commands below.
 
 ## Shared deployment readiness
 
 This checkpoint applies to **direct sharing**, not command-help or read-only
 collaborator-list requests. For a standalone plugin, use the same checks with
 `wiqd plugin validate --mode source`, `wiqd plugin provision`, and `wiqd plugin share`; do not
-substitute agent commands or invent plugin collaborator/list subcommands.
+substitute retired agent commands or invent access-list subcommands.
+For standalone-plugin authoring with no selected environment, default to shared
+`dev` without asking the user to choose or confirm that default. Preserve the
+environment already selected for the current workflow and explicit personal/local
+or custom choices; the personal-to-shared preparation checkpoint below still
+applies. Default selection does not authorize additional cloud provisioning or
+tenant-wide sharing.
 
 1. Resolve the existing project path and intended environment. Explain the
    standard scaffold defaults before any provisioning: `local` is personal
@@ -78,21 +84,23 @@ to prepare a shared environment. For help-only requests, explain this flow
 without running it. For read-only access requests, follow the listing section
 below without provisioning.
 
-Direct `wiqd agent share` and `wiqd plugin share` also enforce this prerequisite
-in the CLI: the selected environment file must contain `AGENT_SCOPE=shared`.
+Direct `wiqd plugin share` also enforces this prerequisite for real execution in
+the CLI: the selected environment file must contain `AGENT_SCOPE=shared`.
 Missing, invalid, duplicate, or non-shared scope returns `INVALID_AGENT_SCOPE`
-(exit `1`) before fx-core sharing. The CLI does not provision automatically or
+(exit `1`) before fx-core sharing. The guard does not apply to access removal.
+Mock execution is exempt from the CLI scope guard; mocked success does not
+establish real deployment readiness. The CLI does not provision automatically or
 accept process environment values as deployment evidence. Correct the shared
 deployment configuration, then validate and provision with the same explicit
-project path and environment before retrying; do not relabel an existing
-personal deployment.
+project path and environment before retrying real sharing; do not relabel an
+existing personal deployment.
 
 ## Commands
 
 ### Share with specific users (recommended starting point)
 ```bash
 # Share with specific users — they get immediate access
-wiqd agent share --json --skill wiqd --scope users --email "user1@org.com,user2@org.com" --env <env>
+wiqd plugin share --json --skill wiqd --scope users --email "user1@org.com,user2@org.com" --env <env>
 ```
 
 ### Share with a security group
@@ -103,7 +111,7 @@ group's **mail address** through `--email` under `--scope users`:
 
 ```bash
 # Share with a mail-enabled security group / distribution list
-wiqd agent share --json --skill wiqd --scope users --email "eng-copilot@org.com" --env <env>
+wiqd plugin share --json --skill wiqd --scope users --email "eng-copilot@org.com" --env <env>
 ```
 
 - Do **not** invent a `--scope group` flag or any group-specific option.
@@ -113,13 +121,30 @@ wiqd agent share --json --skill wiqd --scope users --email "eng-copilot@org.com"
 ### Share with entire tenant
 ```bash
 # Share with everyone in the tenant — use with caution
-wiqd agent share --json --skill wiqd --scope tenant --env <env>
+wiqd plugin share --json --skill wiqd --scope tenant --env <env>
 ```
 
 ### Remove shared access
 ```bash
-wiqd agent share remove --json --skill wiqd --users "user@org.com" --env <env>
+wiqd plugin remove access --json --skill wiqd --users "user@org.com" --env <env>
 ```
+
+## Plugin recipient links
+
+After successful `wiqd plugin share`, present both returned links:
+
+- **Cowork** (`data.deepLink`):
+  `https://m365.cloud.microsoft/cowork#/extensions/plugins/<M365_TITLE_ID>`
+- **Chat** (`data.chatLink`):
+  `https://m365.cloud.microsoft/chat/?titleId=<M365_TITLE_ID>`
+
+Both use the exact `M365_TITLE_ID` from the selected environment; never add,
+strip, or convert its `T_` or `P_` prefix. These are recipient links, not the
+`copilot.cloud.microsoft/plugins` install/test links returned by provisioning.
+If either link is missing or unexpected, report it as unavailable or unexpected.
+Never fabricate a URL from `TEAMS_APP_ID`, substitute an old `SHARE_LINK`, or
+provision again just to obtain a link. Projects containing declarative agents
+use these same plugin sharing links.
 
 ## Options
 
@@ -130,7 +155,7 @@ wiqd agent share remove --json --skill wiqd --users "user@org.com" --env <env>
 | `--env` | Environment to share | `local` |
 | `--path` | Agent project directory | `./` |
 
-`share remove` is a different subcommand with a different option set — it accepts only `--users`, `--owners`, `--env`, `--path`. It does **not** accept `--email` or `--scope`; revoke by listing the addresses in `--users` (or `--owners`), and revoke a tenant-wide share by removing the users that share granted.
+`plugin remove access` is a different subcommand with a different option set — it accepts only `--users`, `--owners`, `--env`, `--path`. It does **not** accept `--email` or `--scope`; revoke by listing the addresses in `--users` (or `--owners`).
 
 ## Collaborator Management
 
@@ -141,32 +166,33 @@ agent**, this is a read-only lookup. Run the command directly and report — do
 NOT enumerate project files, re-provision, or take any mutating action:
 
 ```bash
-wiqd agent share collaborator list --json --skill wiqd --env <env>
+wiqd plugin list collaborators --json --skill wiqd --env <env>
 ```
 
 The command reports collaborators that can administer the agent. There is no
-separate `wiqd agent share list` command for enumerating the end-user audience;
+separate `wiqd plugin share list` command for enumerating the end-user audience;
 do not invent one. If no environment is provisioned yet, say so instead of
 provisioning.
 
 ### Managing collaborators
 
 ```bash
-wiqd agent share collaborator add --json --skill wiqd --email "dev@org.com"
-wiqd agent share collaborator list --json --skill wiqd --env <env>
+wiqd plugin add collaborator --json --skill wiqd --email "dev@org.com" --env <env>
+wiqd plugin list collaborators --json --skill wiqd --env <env>
 ```
 
 The CLI currently exposes collaborator add/list, not a
-`share collaborator remove` subcommand. To revoke explicit owner access, use
-`wiqd agent share remove --owners ...`; do not invent a collaborator-remove
-command.
+`plugin remove collaborator` subcommand. `wiqd plugin remove access --owners ...`
+uses the SDK's shared-access removal semantics and can affect resources beyond
+title co-ownership; it is not the inverse of `plugin add collaborator`. Report
+the actual affected resources and do not invent a title-only removal command.
 
 ## Audience Management
 
 ```bash
-wiqd agent share --json --skill wiqd --scope users --email "new@org.com"       # Add users
-wiqd agent share remove --json --skill wiqd --users "user@org.com" --env <env>  # Revoke user access
-wiqd agent share remove --json --skill wiqd --owners "dev@org.com" --env <env> # Revoke owner access
+wiqd plugin share --json --skill wiqd --scope users --email "new@org.com" --env <env> # Add users
+wiqd plugin remove access --json --skill wiqd --users "user@org.com" --env <env>  # Revoke user access
+wiqd plugin remove access --json --skill wiqd --owners "dev@org.com" --env <env> # Revoke owner access
 ```
 
 ## Error Recovery

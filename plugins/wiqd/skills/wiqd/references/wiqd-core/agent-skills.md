@@ -81,8 +81,8 @@ wiqd config flags set agent-skills true
 ```
 
 The flag matters for `wiqd agent add skill` and for every fx-core path that builds an app package:
-`wiqd agent package`, `wiqd agent provision`, `wiqd plugin package`, and
-`wiqd plugin provision`, plus normal `wiqd agent publish` and `wiqd plugin publish`. If a
+`wiqd plugin package`, `wiqd plugin provision`, `wiqd plugin package`, and
+`wiqd plugin provision`, plus normal `wiqd plugin publish` and `wiqd plugin publish`. If a
 hand-edited DA manifest contains `agent_skills[].folder` and that
 folder is not already registered as a top-level `agentSkills[]` Cowork skill, enable the flag
 before package, provision, or publish. WIQD fails before fx-core with the command above when the
@@ -118,7 +118,7 @@ command based on the host and project you already have:
 
 | Question                                                                                   | Command                                                                 | What it does                                                                                                                                                         |
 | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Composing a **new, independent** skill (or a skill-only package), with no existing agent? | `wiqd plugin add skill`                                                 | Composes a capability into a **standalone plugin project** (`wiqd.plugin.json`) from scratch. A plugin can be skill-only — it doesn't require a declarative agent.       |
+| Composing a **new, independent** skill (or a skill-only package), with no existing agent? | `wiqd plugin add skill`                                                 | Composes a capability into a structurally recognized **standalone plugin project**. A plugin can be skill-only — it doesn't require a declarative agent.       |
 | Extending an agent project you **already have**?                                          | `wiqd agent add skill`                                                  | Adds the skill directly into that **existing agent project**, in place, through the in-process wiqd core lifecycle backend. Also supports `--from` to import an existing skill directory or `.zip`.                |
 | Want the skill **exposed to Copilot directly**, on top of however it got there?           | Add `expose_skill_to_copilot: true` to the matching `agent_skills[]` entry | The entry itself is already written for you by `wiqd agent add skill` — it just doesn't set this property. See [The Declarative-Agent Registration](#the-declarative-agent-registration-agent_skills). |
 
@@ -135,7 +135,7 @@ Agent Skills attach to the same `appPackage/` a declarative agent already uses. 
 project yet:
 
 ```bash
-wiqd agent create --name my-agent
+wiqd plugin create --name my-agent
 ```
 
 ### Step 2: Run `wiqd agent add skill`
@@ -193,14 +193,14 @@ see [Companion Files](#companion-files) for host-specific limits.
 ### Step 5: Validate and Package
 
 ```bash
-wiqd agent validate --mode source --path . --env local
-wiqd agent package --path . --env local --output ./appPackage/build/skills.zip
-wiqd agent validate --mode package --package-file ./appPackage/build/skills.zip
+wiqd plugin validate --mode source --path . --env local
+wiqd plugin package --path . --env local --output ./appPackage/build/skills.zip
+wiqd plugin validate --mode package --package-file ./appPackage/build/skills.zip
 ```
 
-Use `wiqd agent validate --mode package` for this **agent** authoring workflow.
+Use `wiqd plugin validate --mode package` for this **agent** authoring workflow.
 Plugin validation uses the same mode contract; only plugin source mode requires
-`wiqd.plugin.json` and `appPackage/manifest.json`. Package validation submits the captured ZIP
+`m365agents.yml` and `appPackage/manifest.json`. Package validation submits the captured ZIP
 to TDP through Core; report actual returned platform diagnostics rather than promising a particular
 rule inventory. Source checks only the saved declarative-agent manifest, not top-level
 `agentSkills[]` or `SKILL.md` content. See [Validation](#validation-the-askill--codes).
@@ -390,7 +390,7 @@ Grounded facts about this registration:
 
 The `ASKILL-*` codes are the Microsoft 365 Copilot platform's own Agent Skills validation codes —
 emitted by **AVL** (App Validation Library) and at upload/submission time, not defined or
-implemented by wiqd. `wiqd agent validate --mode source` does not check top-level `agentSkills[]`
+implemented by wiqd. `wiqd plugin validate --mode source` does not check top-level `agentSkills[]`
 or `SKILL.md` content. Build first, then use `--mode package --package-file "<zip>"` and inspect
 the platform diagnostics actually returned. Plugin package validation uses the same captured-ZIP
 runtime and does not require a plugin source project.
@@ -453,15 +453,15 @@ which flag state originally produced it.
 | Package/provision/publish refuses a DA-only skill folder | WIQD's `agent-skills` flag is disabled and no top-level `agentSkills[]` Cowork registration would include that exact archive path | Run `wiqd config flags set agent-skills true`, then retry. Do not add an unrelated top-level registration just to bypass the check. |
 | `wiqd agent add skill` fails or produces an incomplete manifest    | WIQD's `agent-skills` flag is disabled | Enable the flag — see [Enable the `agent-skills` Feature Flag First](#enable-the-agent-skills-feature-flag-first) — and re-run the command |
 | Skill never triggers in conversation                               | `description` is too generic, or doesn't contain the phrases users actually say | Rewrite `description` around real trigger phrases, not a summary of the skill's purpose             |
-| Source validation passes but the upload still fails | Source does not check top-level `agentSkills[]` or `SKILL.md` | Build, then run `wiqd agent validate --mode package --package-file "<zip>"`; inspect returned diagnostics |
+| Source validation passes but the upload still fails | Source does not check top-level `agentSkills[]` or `SKILL.md` | Build, then run `wiqd plugin validate --mode package --package-file "<zip>"`; inspect returned diagnostics |
 | Manifest edit didn't produce a working skill                       | A skill registration was hand-edited without also creating a matching `SKILL.md` folder | Use `wiqd agent add skill` for `agent_skills[]` or `wiqd plugin add skill` for root `agentSkills[]`; if you must hand-edit, create the folder and the matching entry together |
 | Imported skill (`--from`) behaves differently than expected | `--from` registers content as-is; it does not validate or rewrite `SKILL.md` | Build and validate the final package; the frontmatter contract still applies to imported skills |
 
 ## Best Practices
 
 1. **Enable the flag before add, package, provision, or publish.** Confirm WIQD's `agent-skills` flag is
-   enabled before attempting the DA skills path and before `wiqd agent package`,
-   `wiqd agent provision`, `wiqd agent publish`, `wiqd plugin package`,
+   enabled before attempting the DA skills path and before `wiqd plugin package`,
+   `wiqd plugin provision`, `wiqd plugin publish`, `wiqd plugin package`,
    `wiqd plugin provision`, or `wiqd plugin publish` when a DA-only folder is present.
 2. **Keep `name` and folder in lockstep.** Treat the frontmatter `name` and the containing folder
    name as a single value — rename both together, always.
@@ -473,9 +473,9 @@ which flag state originally produced it.
    DA-only entry, keep the flag enabled before package/provision rather than adding an unrelated
    top-level registration. Add
    `expose_skill_to_copilot: true` only when that DA behavior is intended.
-5. **Run package validation before publishing.** `wiqd agent validate --mode source` cannot see
-   `agentSkills[]` or `SKILL.md` content — always follow `wiqd agent package` with
-   `wiqd agent validate --mode package --package-file "<zip>"` before a submission.
+5. **Run package validation before publishing.** `wiqd plugin validate --mode source` cannot see
+   `agentSkills[]` or `SKILL.md` content — always follow `wiqd plugin package` with
+   `wiqd plugin validate --mode package --package-file "<zip>"` before a submission.
 6. **Prefer the matching command over hand-editing.** `wiqd agent add skill` creates the folder and
    DA registration together; `wiqd plugin add skill` creates the folder and Cowork registration
    together.

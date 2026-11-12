@@ -90,7 +90,7 @@ Collapsed by default — large lists hurt scannability. Wrap in a `<details>` el
 
 ## Methodology
 
-- **Schema validation:** assumed passing — run `wiqd agent validate --skill wiqd` first if you have not.
+- **Schema validation:** assumed passing — run `wiqd plugin validate --skill wiqd` first if you have not.
 - **Network checks:** <enabled | disabled> (rules U1–U3 are skipped when `--no-network` is set).
 - **Citations:** every finding links to its policy source. Refer to [`store-ops/references.md`](references.md) for the policy texts and last-validated dates.
 - **Rule registry:** [`store-ops/rules.md`](rules.md) (changelog at bottom).
@@ -112,14 +112,14 @@ Emit one of three blocks based on counts:
 ```
 1. Review Good-to-fix findings and decide which to act on (some are advisory).
 2. Open the relevant review-gate work items in the owning tracking system.
-3. Proceed to publish via `wiqd agent publish` or your Partner Center workflow.
+3. Proceed to publish via `wiqd plugin publish` or your Partner Center workflow.
 ```
 
 **Case C — `must_fail == 0` and `good_fail == 0`:**
 
 ```
 1. Open the relevant review-gate work items in the owning tracking system.
-2. Proceed to publish via `wiqd agent publish` or your Partner Center workflow.
+2. Proceed to publish via `wiqd plugin publish` or your Partner Center workflow.
 ```
 
 ---

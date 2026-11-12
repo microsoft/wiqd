@@ -302,7 +302,7 @@ and any requested provisioning has passed its canonical workflow.
 When provisioning is part of the request, validate the exact target first:
 
 ```bash
-wiqd agent validate --mode source --env "<requested-environment>" --path "<project-directory>" --json --skill wiqd --workflow wiqd-core
+wiqd plugin validate --mode source --env "<requested-environment>" --path "<project-directory>" --json --skill wiqd --workflow wiqd-core
 ```
 
 For validation-only requests with no target environment, omit `--env`.

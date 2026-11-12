@@ -2,15 +2,15 @@
 
 **Telemetry:** `--skill wiqd` on every `wiqd` command.
 
-> 📐 **Design note — this is a skill, by design, not a CLI flag.** A `wiqd agent validate --certify` flag was explored and explicitly rejected: the deterministic half of the rule registry is federating to Teams Developer Platform (TDP) server-side validation APIs, so investing in a C# rule engine inside `wiqd-validate` today would become a sunk cost within ~6-12 months. This skill is the v1 surface and the durable artifact is the rule registry itself.
+> 📐 **Design note — this is a skill, by design, not a CLI flag.** A `wiqd plugin validate --certify` flag was explored and explicitly rejected: the deterministic half of the rule registry is federating to Teams Developer Platform (TDP) server-side validation APIs, so investing in a C# rule engine inside `wiqd-validate` today would become a sunk cost within ~6-12 months. This skill is the v1 surface and the durable artifact is the rule registry itself.
 
 Audit a built declarative-agent app package (`.zip`) against the publicly-documented Microsoft Store / Commercial Marketplace / Teams Store / Copilot agent review policies **before** Partner Center submission.
 
-This is the bridge between `wiqd agent validate` (schema-level, runs today) and `wiqd agent review` (six human compliance gates). It catches the policy-level rejections that store-ops actually issues: missing privacy URL, banned branding, prohibited domain wildcards, prompt-injection patterns in instructions, missing AI disclosure, invalid icons, unsafe URLs.
+This is the bridge between `wiqd plugin validate` (schema-level, runs today) and `wiqd agent review` (six human compliance gates). It catches the policy-level rejections that store-ops actually issues: missing privacy URL, banned branding, prohibited domain wildcards, prompt-injection patterns in instructions, missing AI disclosure, invalid icons, unsafe URLs.
 
 ## When to use
 
-Run after `wiqd agent package` produces a `.zip`, before submitting to Partner Center / AppSource. Typical triggers:
+Run after `wiqd plugin package` produces a `.zip`, before submitting to Partner Center / AppSource. Typical triggers:
 
 - "Run a store-ops check on my package"
 - "Will my agent pass review?"
@@ -21,22 +21,22 @@ Run after `wiqd agent package` produces a `.zip`, before submitting to Partner C
 
 Do **not** use for:
 
-- Schema-only validation → run `wiqd agent validate` through the active backend's validation reference
+- Schema-only validation → run `wiqd plugin validate` through the active backend's validation reference
 - Compliance gate workflow → the agent-review reference (six human gates)
 - Eval-time runtime checks → the eval extension
 
 ## Inputs
 
-| Input                              | Required          | Notes                                                                                                          |
-| ---------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
-| Path to a built `.zip` app package | Yes               | If only a project path is given, run `wiqd agent package --skill wiqd` first to produce the zip, then proceed. |
-| Target store                       | No (default: all) | `marketplace`, `teams`, `appsource`, `all`. Some rules are store-specific (see `store-ops/rules.md`).          |
-| Network reachability checks        | No (default: yes) | Disable for offline / air-gapped runs.                                                                         |
+| Input                              | Required          | Notes                                                                                                           |
+| ---------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| Path to a built `.zip` app package | Yes               | If only a project path is given, run `wiqd plugin package --skill wiqd` first to produce the zip, then proceed. |
+| Target store                       | No (default: all) | `marketplace`, `teams`, `appsource`, `all`. Some rules are store-specific (see `store-ops/rules.md`).           |
+| Network reachability checks        | No (default: yes) | Disable for offline / air-gapped runs.                                                                          |
 
 ## Preconditions
 
-1. The package validates clean via `wiqd agent validate --skill wiqd` (this skill assumes a build that already passes schema validation — do not duplicate that work here).
-2. The TeamsFx-style `${{...}}` placeholders inside `manifest.json` have already been substituted by `wiqd agent package` / `wiqd agent provision`. Packages with unsubstituted placeholders surface as one Must-fix submission-readiness finding rather than dozens of cascading failures.
+1. The package validates clean via `wiqd plugin validate --skill wiqd` (this skill assumes a build that already passes schema validation — do not duplicate that work here).
+2. The TeamsFx-style `${{...}}` placeholders inside `manifest.json` have already been substituted by `wiqd plugin package` / `wiqd plugin provision`. Packages with unsubstituted placeholders surface as one Must-fix submission-readiness finding rather than dozens of cascading failures.
 
 ## Workflow
 
@@ -46,7 +46,7 @@ A **single linear pass** through 17 rule categories. Run them in order so earlie
 
 Ask the user (or accept from invocation):
 
-1. Path to the `.zip` (or project root — offer to run `wiqd agent package`).
+1. Path to the `.zip` (or project root — offer to run `wiqd plugin package`).
 2. Target store(s). Default: all three.
 3. Whether to perform network reachability checks. Default: yes.
 
@@ -140,7 +140,7 @@ but do not determine permission to publish:
    warning for publishing, not a publication blocker. Never relabel the audit as
    passed or require policy repair/approval merely to continue publishing.
 5. Return to the publishing caller. It must independently require source
-   validation before building and `wiqd agent validate --mode package` to pass
+   validation before building and `wiqd plugin validate --mode package` to pass
    on the exact final ZIP before upload/submission guidance or publishing mutation.
    This legacy audit cannot satisfy that package gate. Missing, malformed,
    mismatched, failed or incomplete package validation still stops publication.
@@ -182,7 +182,7 @@ NOT READY — fix Must-fix items, then re-run.
 
 ## What this audit is NOT
 
-- **Not a replacement for `wiqd agent validate`.** Run that first.
+- **Not a replacement for `wiqd plugin validate`.** Run that first.
 - **Not a replacement for human review gates.** RAI / Privacy / Tenant Trust still require human reviewers via the agent-review workflow.
 - **Not a runtime / latency check.** Use the eval extension for response-quality and latency budgets.
 - **Not authoritative for §1140.x rule numbering.** Microsoft renumbers sections periodically. Always cite URL + heading and check `last_validated` in [`store-ops/references.md`](store-ops/references.md).
@@ -195,8 +195,8 @@ NOT READY — fix Must-fix items, then re-run.
 
 ## See also
 
-- `wiqd agent validate` — schema-level validation through the active backend.
-- `wiqd agent package` — how `.zip` packages are produced through the active backend.
+- `wiqd plugin validate` — schema-level validation through the active backend.
+- `wiqd plugin package` — how `.zip` packages are produced through the active backend.
 - [`store-ops/rules.md`](store-ops/rules.md) — the rule registry (the meat of this audit). Scope: declarative agents only; custom-engine agents (CEAs) are out of scope.
 - [`store-ops/report-template.md`](store-ops/report-template.md) — Markdown + HTML + JSON output contract.
 - [`store-ops/references.md`](store-ops/references.md) — policy sources, URLs, and validation dates.

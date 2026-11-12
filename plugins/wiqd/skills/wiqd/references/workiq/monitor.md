@@ -115,8 +115,8 @@ determined (see the table below), and ask one short question at a time.
 | Folder holds several agent projects                             | Find the folders that contain `appPackage/manifest.json`. One: pass it as `--path`. Several: ask which one.                                         |
 | "All my agents" / "compare my agents"                           | Monitor covers one agent at a time. Say so, list the agents, and ask which one to start with.                                                       |
 | Follow-up ("why?", "what about last week?", "show the details") | Reuse the same agent and environment. Send a new query that names the agent and carries the follow-up. Do not re-ask for the agent or environment.  |
-| The user wants configuration, not usage ("what can it do?")     | Use `wiqd agent show` instead.                                                                                                                      |
-| The user wants to try the agent ("test it", "does it know X?")  | Use `wiqd agent ask` instead. Monitor talks to the Insights Agent, never to the user's agent.                                                       |
+| The user wants configuration, not usage ("what can it do?")     | Use `wiqd agent show --id <id>` or `--name <name>` instead.                                                                                         |
+| The user wants to try the agent ("test it", "does it know X?")  | Use `wiqd plugin ask --component agent` instead. Monitor talks to the Insights Agent, never to the user's agent.                                    |
 
 Insights Agent v2 reports usage analytics and user feedback for agents the user
 owns. Feedback results can be a sample; if the user wants everything, ask the
@@ -260,9 +260,9 @@ The user's request may be:
   smart default. Otherwise use the matching row of the Query Formulation Guide
   below. Do not ask the user to pick a question first.
 - **A detail request** ("show me agent details", "what can it do?") — use
-  `wiqd agent show` instead of monitor. Show capabilities, version, etc.
+  `wiqd agent show --id <id>` or `--name <name>` instead of monitor. Show capabilities, version, etc.
 - **A request to try the agent** ("test it", "does it know about X?") — use
-  `wiqd agent ask`. The Insights Agent answers about usage, not about the
+  `wiqd plugin ask --component agent`. The Insights Agent answers about usage, not about the
   agent's own knowledge.
 
 **Be generous with query interpretation.** If the user says "check metrics",
@@ -298,7 +298,7 @@ inventing metrics or claiming that the selected title was analyzed.
 ──────────────────────────────────────────────────────
 ```
 
-For `wiqd agent show` results, present as a structured summary:
+For `wiqd agent show --id <id>` or `--name <name>` results, present as a structured summary:
 
 ```
 🔍 Sales Bot
@@ -333,23 +333,23 @@ agent-scoped queries:
 | "show all the feedback"  | "Show all verbatim user feedback about you, not a sample."                                                                |
 
 Requests like "test it", "does it know about X?", or "ask it about [topic]" are
-**not** monitor requests. Send them with `wiqd agent ask`.
+**not** monitor requests. Send them with `wiqd plugin ask --component agent`.
 
 ## Error Recovery
 
-| Error                                           | Action                                                                                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| workiq CLI not found                            | Route to `/wiqd-install` — wiqd + workiq both needed                                                                                  |
-| Not an agent project (no declarativeAgent.json) | Switch to **standalone mode**. Ask the user for the agent name if not provided, then include it in the query.                         |
-| Agent not provisioned (no env files)            | Explain that the question will be unscoped; monitoring can still run. Provision only if the user requests it.                         |
-| Missing m365agents.yml                          | Warn but continue — the CLI handles this gracefully.                                                                                  |
-| Auth error from workiq                          | Tell user: _"log me in"_                                                                                                              |
-| `unknown command 'monitor'`                     | The `workiq-monitor` flag is off. Run `wiqd config flags set workiq-monitor true --skill wiqd`, then retry.                           |
-| `MONITOR_INSIGHTS_UNAVAILABLE`                  | Both v2 and its v1 fallback failed. Report both errors, do not retry, and do not call `wiqd agent ask` as a substitute.               |
-| Insights Agent has no data for the agent        | Say so plainly. A new, unpublished, or unshared agent may not have usage yet. Do not invent numbers or call `wiqd agent ask` instead. |
-| Feedback asked for but not returned             | Report what Insights said. Feedback needs verified ownership and tenant-enabled sharing; do not guess which is missing.               |
-| Timeout                                         | Suggest `--verbose` to debug; the query may be too complex                                                                            |
-| No valid single title ID in selected env        | Continue without the prefix or title attribution. Do not guess, switch environments, or re-provision automatically.                   |
+| Error                                           | Action                                                                                                                                                   |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| workiq CLI not found                            | Route to `/wiqd-install` — wiqd + workiq both needed                                                                                                     |
+| Not an agent project (no declarativeAgent.json) | Switch to **standalone mode**. Ask the user for the agent name if not provided, then include it in the query.                                            |
+| Agent not provisioned (no env files)            | Explain that the question will be unscoped; monitoring can still run. Provision only if the user requests it.                                            |
+| Missing m365agents.yml                          | Warn but continue — the CLI handles this gracefully.                                                                                                     |
+| Auth error from workiq                          | Tell user: _"log me in"_                                                                                                                                 |
+| `unknown command 'monitor'`                     | The `workiq-monitor` flag is off. Run `wiqd config flags set workiq-monitor true --skill wiqd`, then retry.                                              |
+| `MONITOR_INSIGHTS_UNAVAILABLE`                  | Both v2 and its v1 fallback failed. Report both errors, do not retry, and do not call `wiqd plugin ask --component agent` as a substitute.               |
+| Insights Agent has no data for the agent        | Say so plainly. A new, unpublished, or unshared agent may not have usage yet. Do not invent numbers or call `wiqd plugin ask --component agent` instead. |
+| Feedback asked for but not returned             | Report what Insights said. Feedback needs verified ownership and tenant-enabled sharing; do not guess which is missing.                                  |
+| Timeout                                         | Suggest `--verbose` to debug; the query may be too complex                                                                                               |
+| No valid single title ID in selected env        | Continue without the prefix or title attribution. Do not guess, switch environments, or re-provision automatically.                                      |
 
 ## Safety Rules
 
@@ -359,7 +359,7 @@ Requests like "test it", "does it know about X?", or "ask it about [topic]" are
 - **MUST** remember the environment across calls in the same session
 - **MUST** run monitor straight away for any usage, performance, or feedback question about the user's agent, however it is phrased
 - **MUST** turn vague requests into clear, agent-scoped queries yourself — don't pass vague text, and don't make the user write the query
-- **MUST NOT** send "test it" or "does it know about X" requests to monitor — they go to `wiqd agent ask`
+- **MUST NOT** send "test it" or "does it know about X" requests to monitor — they go to `wiqd plugin ask --component agent`
 - **MUST** frame all insights, analytics, and trend queries about THIS agent specifically
 - **MUST** include the agent name EXACTLY as provided/confirmed (preserving original capitalization and any parenthetical suffixes such as `(Prod)`), wrapped in single quotes, in the query when running in standalone mode — e.g., `"I want to learn about the usage of the 'Contoso Sales Agent' agent"`
 - **MUST NOT** modify any project files — monitor is read-only
