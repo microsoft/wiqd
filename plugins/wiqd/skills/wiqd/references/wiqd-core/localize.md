@@ -156,7 +156,7 @@ Cross-check everything:
 ### Phase 7: Deploy
 
 ```bash
-wiqd agent provision --skill wiqd --env local
+wiqd plugin provision --skill wiqd --env local
 ```
 
 Read `M365_TITLE_ID` from `env/.env.local` and present the test link: `https://m365.cloud.microsoft/chat?titleId={M365_TITLE_ID}`
@@ -278,7 +278,7 @@ If the user wants to add more languages later, they can invoke this skill again 
 - [ ] Every additional language file has the EXACT SAME `localizationKeys` keys
 - [ ] `manifest.json` has `localizationInfo` with `defaultLanguageTag`, `defaultLanguageFile`, and `additionalLanguages`
 - [ ] Translations were shown to user for review
-- [ ] Deployed with `wiqd agent provision --skill wiqd --env local`
+- [ ] Deployed with `wiqd plugin provision --skill wiqd --env local`
 - [ ] Presented the test link
 
 **If any box is unchecked, you are NOT done.**
@@ -294,7 +294,7 @@ If the user wants to add more languages later, they can invoke this skill again 
 1. ⛔ Tokenize `declarativeAgent.json` → replace `name`, `description`, all `conversation_starters[].title` and `.text` with `[[token]]` syntax
 2. ⛔ Create language files → `en.json` (default) + one per additional language, each with `name.short`, `description.short`, `description.full` (required), `name.full` (recommended), and `localizationKeys` mapping EVERY token using `[[TOKEN]]` format as keys
 3. ⛔ Update `manifest.json` → add `localizationInfo` with `defaultLanguageTag`, `defaultLanguageFile`, `additionalLanguages`
-4. ⛔ Deploy → `wiqd agent provision --env local`
+4. ⛔ Deploy → `wiqd plugin provision --env local`
 
 **For adding a language to an already-localized agent (Workflow B):**
 
@@ -508,7 +508,7 @@ Add the `localizationInfo` section to `manifest.json`:
 After completing ALL localization changes, deploy the agent:
 
 ```bash
-wiqd agent provision --env local
+wiqd plugin provision --env local
 ```
 
 Then read `M365_TITLE_ID` from `env/.env.local` and present the test link. **⛔ Never skip deployment after localization changes.**
@@ -555,7 +555,7 @@ Add the new language to the `additionalLanguages` array:
 Deploy the agent:
 
 ```bash
-wiqd agent provision --env local
+wiqd plugin provision --env local
 ```
 
 Then present the test link. **⛔ Never skip deployment.**
@@ -654,7 +654,7 @@ my-agent/
 - [ ] A default language file exists (e.g., `en.json`) with `name.short`, `description.short`, `description.full` (required), `name.full` (recommended), and ALL `localizationKeys` using `[[TOKEN]]` format as keys
 - [ ] Every additional language file has the EXACT SAME set of `localizationKeys` keys (in `[[TOKEN]]` format) as the default
 - [ ] `manifest.json` has `localizationInfo` with `defaultLanguageTag`, `defaultLanguageFile`, and `additionalLanguages`
-- [ ] I deployed with `wiqd agent provision --env local`
+- [ ] I deployed with `wiqd plugin provision --env local`
 - [ ] I presented the test link
 
 **If you cannot check ALL boxes, you are NOT done.** Go back and complete the missing steps.

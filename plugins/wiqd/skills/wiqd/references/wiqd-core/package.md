@@ -8,7 +8,7 @@ Build a distributable .zip app package for publishing or sideloading.
 
 In this workflow, packaging is **blocked** until saved source validates clean. Before running the package command:
 
-1. Run `wiqd agent validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be packaged.
+1. Run `wiqd plugin validate --mode source --json --skill wiqd --env <environment> --path <path>` as a precondition, using the same environment and explicit project path that will be packaged.
 2. **PASS** → proceed to package. **FAIL** → stop, surface diagnostics, do NOT package.
 3. For authorized repairs, use `workflows/validation.md` and return only after same-mode source revalidation passes. Do not call default package validation before building or recurse through packaging.
 
@@ -19,7 +19,7 @@ do not prove final ZIP acceptance; validate the returned ZIP with `--mode packag
 ## Command
 
 ```bash
-wiqd agent package --json --skill wiqd --env <environment> [--output <path>] [--path <path>] [--include-file <path>]
+wiqd plugin package --json --skill wiqd --env <environment> [--output <path>] [--path <path>] [--include-file <path>]
 ```
 
 ## Options
@@ -35,7 +35,7 @@ wiqd agent package --json --skill wiqd --env <environment> [--output <path>] [--
 ## Workflow
 
 1. Ask which environment to resolve variables from (local, dev, staging)
-2. Run `wiqd agent package --json --skill wiqd --env <env>`
+2. Run `wiqd plugin package --json --skill wiqd --env <env>`
 3. Report the output path of the generated .zip file
 4. Suggest next steps: publish, sideload, or submit for certification
 
@@ -76,7 +76,7 @@ Only files referenced by the manifest are automatically packaged. To include one
 additional file without manual ZIP editing:
 
 ```bash
-wiqd agent package --include-file ./appPackage/release-metadata.json --output ./dist/agent.zip --skill wiqd --workflow wiqd-core
+wiqd plugin package --include-file ./appPackage/release-metadata.json --output ./dist/agent.zip --skill wiqd --workflow wiqd-core
 ```
 
 The path resolves from the selected project (`--path`), not the shell directory.
@@ -88,3 +88,36 @@ Inclusion builds and verifies a staged archive before replacing the final ZIP;
 errors, changed inputs, and cancellation leave any previous final ZIP intact.
 Omitting the option preserves ordinary packaging. `wiqd plugin package` supports
 the same option. Packaging is not a store-policy or publication approval.
+
+## Local-only preview plugin packaging
+
+For manual upload testing without Teams registration or provisioning:
+
+```bash
+wiqd plugin package --offline --path ./my-plugin --output ./plugin.zip --json
+```
+
+This is **plugin-only** and does not change `plugin validate`. It supports
+`devPreview` remote MCP and OpenAPI connector arrays (including ConnectionVault)
+and top-level registered skill folders. Normal packaging is unchanged.
+Declarative agents, bots, tabs, localization and TypeSpec/generated manifests
+are not supported in offline mode; they fail rather than lose files.
+
+A literal manifest GUID is reused; otherwise an absent/empty ID or `${{TEAMS_APP_ID}}`
+automatically uses a locally generated GUID saved in project-root `wiqd.plugin.id`.
+Keep that file with the project: future packages reuse it, including after a failed
+packaging attempt. An invalid saved or authored ID is rejected, not replaced.
+No app ID input, Teams setup, env file, or cloud registration is required. The local
+identity file is not included in the ZIP. Only the archived manifest resolves
+`${{TEAMS_APP_ID}}` and removes `${{APP_NAME_SUFFIX}}`; other unresolved manifest
+variables/macros fail. `--env` labels the output and never loads credentials.
+
+Only the manifest, referenced icons/tool-description files, registered skill
+trees and explicit `--include-file` are included. Links, unsafe paths,
+secret-like filenames, unsupported surfaces and duplicate archive names fail.
+Limits are 64 MiB, 1 MiB per JSON, 2,000 visited entries and 32 directory levels.
+An existing ZIP is replaced atomically only after validation and byte checks.
+
+Validation uses the unmodified DevPreview schema packaged with the SDK,
+not the live schema URL. The ZIP is **not server-validated**; producing
+it does not certify Cowork, AVL or Store acceptance. No upload is performed.

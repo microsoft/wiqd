@@ -12,7 +12,7 @@ description: >
   validate → provision / package / publish / share, plus export back out to Open Plugin, Claude,
   or Cursor format, including remote MCP connectors and references to existing OpenAPI custom
   connectors.
-trigger-summary: 'create a plugin, cowork plugin, standalone plugin, reusable plugin, plugin project, build a plugin, plugin with a skill, plugin with a connector, discover connectors, add an existing connector, custom connector plugin, openapi connector, MCP plugin project, package a plugin, validate a plugin, publish a plugin, share a plugin, delete a plugin, tear down a plugin, import an open plugin, export to claude, export to cursor, convert a plugin'
+trigger-summary: 'create a plugin, create a connector, cowork plugin, standalone plugin, reusable plugin, plugin project, build a plugin, plugin with a skill, plugin with a connector, discover connectors, add an existing connector, custom connector plugin, openapi connector, MCP plugin project, package a plugin, validate a plugin, publish a plugin, share a plugin, delete a plugin, tear down a plugin, import an open plugin, export to claude, export to cursor, convert a plugin'
 triggers: >
   create a plugin, create a standalone plugin, new plugin, new plugin project, build a plugin,
   build a standalone plugin, author a plugin, make a reusable plugin, reusable plugin,
@@ -21,6 +21,8 @@ triggers: >
   add an openapi connector to my plugin, connection vault connector,
   discover connectors, use an existing catalog connector, add an existing connector to my plugin,
   add the Azure DevOps connector to my plugin, add Azure DevOps MCP to my plugin,
+  create a connector, create a connector from my MCP server, register my MCP server as a connector,
+  create a custom connector from an OpenAPI definition, create a connector from a swagger file,
   cowork plugin, build a cowork plugin, create a cowork plugin, copilot cowork plugin,
   build a plugin for cowork, microsoft copilot plugin, m365 copilot plugin,
   add a skill to my plugin, add a connector to my plugin, add an agent to my plugin,
@@ -47,6 +49,7 @@ routing-requires:
     plugin add connector,
     connector list,
     connector show,
+    connector add,
     plugin add agent,
     plugin validate,
     plugin show,
@@ -62,7 +65,7 @@ routing-requires:
 
 # Plugin — Standalone Plugin Authoring (alpha)
 
-Author a **standalone, reusable M365 Copilot plugin** as a first-class, independently shippable unit — not something bolted inside one agent project. A plugin is a **Teams app package** (the same `appPackage/` infrastructure `wiqd agent` uses) that composes one or more capabilities: a **declarative agent**, one or more **skills** (`SKILL.md` folders), and one or more **agent connectors** (a remote MCP server or a reference to an existing OpenAPI custom connector). It is marked by a light `wiqd.plugin.json` descriptor and flows through the familiar lifecycle: `create → add → validate → provision → package → publish / share`, with `show` / `list` available for inspection at any point. `publish` submits to the tenant organization app catalog for administrator approval; `share` grants direct access and is not the same operation. Two interoperability commands bracket that lifecycle: `import` is an alternate **entry point** (in place of `create`) that converts an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project, and `export` is an **exit point** that converts a wiqd plugin project back out to those formats.
+Author a **standalone, reusable M365 Copilot plugin** as a first-class, independently shippable unit — not something bolted inside one agent project. A plugin is a **Teams app package** (the same `appPackage/` infrastructure `wiqd agent` uses) that composes one or more capabilities: a **declarative agent**, one or more **skills** (`SKILL.md` folders), and one or more **agent connectors** (a remote MCP server or a reference to an existing OpenAPI custom connector). WIQD recognizes the project structurally from contained `m365agents.yml` and `appPackage/manifest.json`; the root manifest owns its name and capabilities. It flows through the familiar lifecycle: `create → add → validate → provision → package → publish / share`, with `show` / `list` available for inspection at any point. `publish` submits to the tenant organization app catalog for administrator approval; `share` grants direct access and is not the same operation. Two interoperability commands bracket that lifecycle: `import` is an alternate **entry point** (in place of `create`) that converts an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project, and `export` is an **exit point** that converts a wiqd plugin project back out to those formats.
 
 > **Convention:** When calling `wiqd` commands from this skill, always pass `--skill wiqd --workflow plugin`, and add `--json` for any command whose output you need to parse (structured, machine-readable output instead of lossy table text).
 
@@ -112,7 +115,7 @@ Run these checks before scaffolding. If the shell tool is unavailable, fall back
 
 1. **wiqd CLI available** — see the shared `references/preflight.md` version check.
 2. **Plugin command available** — `wiqd plugin --help` must succeed without feature-flag configuration. If it does not, the installed wiqd is too old or incomplete; update/reinstall wiqd rather than mutating flag state.
-3. **Not already inside a project** — for `create`, verify the target directory does not already contain a `wiqd.plugin.json` or an `appPackage/`. If it does, this is an existing project: switch to the relevant `add …` step instead of `create`.
+3. **Not already inside a project** — for `create`, verify the target directory is empty. If it already contains `m365agents.yml` or `appPackage/manifest.json`, switch to the relevant project-scoped plugin step instead of recreating it. Projects produced by the retired `agent create` are compatible when they satisfy the same structural contract.
 4. **wiqd runtime available** — if `plugin create` reports missing runtime assets, reinstall wiqd.
 
 ## Authoring flow
@@ -120,6 +123,17 @@ Run these checks before scaffolding. If the shell tool is unavailable, fall back
 The primitive is **composition**: `create` scaffolds a bare plugin container, then each `add …` composes one capability into it.
 
 **Do not infer capabilities.** If the user asks only for a standalone plugin and does not explicitly request an agent, skill, or connector, run `plugin create` and stop. A reusable or packageable plugin does not implicitly require `plugin add agent`, `plugin add skill`, or `plugin add connector`.
+
+**Default to shared `dev`, without asking.** For a new standalone-plugin flow,
+select `dev` for shared deployment and briefly state that choice; do not ask the
+user to choose or confirm the default. Preserve an explicit personal/`local` or
+custom environment choice, including the environment already selected for this
+workflow. Pass that selected `--env` explicitly to every environment-sensitive
+command below, including source validation and confirmed teardown. Bare CLI
+commands still default to `local`; never rely on that omission in this workflow.
+This selection does not authorize extra provisioning, sharing, publishing, or
+deletion. Inspect effective scope before deployment as described in step 4;
+never relabel an existing personal deployment or copy its IDs into `dev`.
 
 ### 1. Create the plugin container
 
@@ -130,7 +144,7 @@ wiqd plugin create --name "<plugin-name>" [--output <dir>]
 - `--name` / `-n` — plugin project name (**required**).
 - `--output` / `-o` — parent directory (defaults to CWD). The project is scaffolded at `<output>/<name>`.
 
-This scaffolds the blank plugin project, then writes `wiqd.plugin.json` with `capabilities: []`. **Enter the project directory** afterward — every `add …` / `validate` command operates on the plugin in the working directory (or takes `--folder` / `--path`):
+This scaffolds a blank structural plugin project with zero manifest-derived capabilities. **Enter the project directory** afterward — every `add …` / `validate` command operates on the plugin in the working directory (or takes `--folder` / `--path`):
 
 ```bash
 cd <output>/<name>
@@ -165,6 +179,11 @@ wiqd plugin add skill --name "<Skill Name>" [--folder <dir>]
 # A remote MCP agent connector (root agentConnectors[] entry)
 wiqd plugin add connector --name "<Connector Name>" --description "<what it does>" --url "https://<mcp-server>/mcp" [--folder <dir>]
 
+# An existing remote MCP connector reference: omitting --auth-type infers ConnectionVault.
+# Supply the actual endpoint and connector reference; this does not discover or create either.
+wiqd plugin add connector --kind remote-mcp --name "<Connector Name>" --description "<what it does>" \
+  --url "https://<mcp-server>/mcp" --auth-reference-id "<existing-connector-reference>" --dev-preview
+
 # The same, but authenticated: point at a credential already registered in the Teams
 # Developer Portal (Tools → OAuth client registration) or by an oauth/register step.
 # The manifest carries only the reference id — never a client id, secret, or token.
@@ -193,11 +212,20 @@ wiqd plugin add connector --kind openapi --name "<Connector Name>" \
   --description "<what the existing custom connector does>" \
   --auth-reference-id "<logical-name>" --dev-preview
 
-# A declarative agent component (copilotAgents.declarativeAgents)
-wiqd plugin add agent [--folder <dir>]
+# A basic declarative agent component (copilotAgents.declarativeAgents).
+# Add MCP/OpenAPI actions afterward
+# with `wiqd agent add action` against this project, including its auth options.
+wiqd plugin add agent [--name "<Agent Name>"] [--folder <dir>]
 ```
 
-Each `add …` updates `wiqd.plugin.json`'s `capabilities` array after its artifacts are written.
+Each `add …` updates only the root app manifest and the selected component artifacts; capabilities are derived from the manifest on every read.
+`plugin add agent` accepts only name and folder options. It does not
+accept MCP/authentication or connector-package inputs and cannot prepare a
+connector-package source host. Template selection is not supported.
+The basic `declarative-agent` starter uses WIQD-owned templates directly, without
+loading fx-core or initializing Microsoft 365 authentication. Edit
+`appPackage/instruction.txt` to define the agent's persona, scope and rules;
+`plugin create` remains the separate fx-core-backed blank-container step.
 
 Prefer catalog discovery (`wiqd connector list/show`) plus `plugin add connector --selector` when the
 requested connector already exists in the catalog. The catalog
@@ -239,7 +267,8 @@ DevOps connector to my plugin"**:
 5. If several results remain, show only their title, connector name, kind, authorization type, and
    selector, then ask the user to choose one. Never choose by response order.
 6. If no result matches, report that the catalog did not return the named connector. Only then offer the
-   manual `plugin add connector` paths.
+   manual `plugin add connector` paths, or [create a new connector](#create-a-new-connector-connector-add)
+   when the user owns the MCP server or REST API.
 7. After successful composition, run `wiqd plugin validate --mode source --path <plugin-dir> --env <env>`
    and report the actual validation scope and result.
 
@@ -255,6 +284,45 @@ is a different artifact. The preview authoring path does not prove public schema
 numbered-manifest support, or Store/Partner Center acceptance. Package and package-validate the result,
 and report any upstream rollout failure rather than rewriting the connector.
 
+#### Create a new connector (`connector add`)
+
+Use this only when the user asks to **create** or **register** a connector — for example, **"Create
+a connector from my MCP server at https://contoso.com/mcp"** or **"Create a custom connector from
+this Swagger file"**. Adding an existing catalog connector uses the flow above instead. `connector
+add` runs outside a plugin project and creates a server-side connector on the MCP Platform
+production service; it does not modify any plugin.
+
+1. Build a private input JSON file with exactly one source:
+   - **MCP server:** `serverUrl` (HTTPS), `displayName`, optional `description`.
+   - **REST API:** `apiDefinition` as an embedded **Swagger 2.0** JSON object, plus `displayName`
+     and optional `description`. Do not convert OpenAPI 3.x or YAML yourself; ask the user for a
+     Swagger 2.0 export.
+2. Add an `authentication` object. Ask which type applies; never guess it:
+   - `NoAuth` — `type` only.
+   - `APIKey` — `apiKeyName` and `apiKeyLocation` (`header` or `query`); never the key value.
+   - `EntraOAuth` — `clientAppId`, `clientAppSecret`, `scope`.
+   - `ExternalOAuth` — the OAuth fields plus HTTPS `externalIdpAuthorizationUrl` and
+     `externalIdpTokenUrl`, and optional HTTPS `externalIdpRefreshUrl` when the provider
+     refreshes tokens at a different endpoint.
+
+   Have the user write secrets into the file themselves. Never echo secrets in chat, pass them as
+   flags, or commit the file.
+3. Validate offline first, then create once:
+   ```bash
+   wiqd connector add --input-file <file> --dry-run --json --skill wiqd --workflow plugin
+   wiqd connector add --input-file <file> --json --skill wiqd --workflow plugin
+   ```
+   Creation requires `wiqd auth login --interactive` and tenant consent for the MCP Platform
+   permission. On exit 2, branch on `error.code`: `CONNECTOR_ADD_INPUT_UNREADABLE` means the input
+   path or file must be fixed; `CONNECTOR_ADD_AUTH_REQUIRED` means report the sign-in or permission
+   remediation. Do not retry either automatically.
+4. Report `connectorId`, `displayName`, and `correlationId`. Never retry automatically: after a
+   timeout or `CONNECTOR_ADD_OUTCOME_UNKNOWN`, the connector may already exist, so give the user
+   the correlation ID.
+5. Explain that creation does not prove catalog publication, a connection, or tool readiness. To
+   reference the result in a plugin, use the explicit OpenAPI preview path above with
+   `--auth-reference-id "<connectorId>"` after the user confirms the preview choice.
+
 ### 3. Validate
 
 ```bash
@@ -262,7 +330,7 @@ wiqd plugin validate --mode source --path <dir> --env <env> --json
 ```
 
 Use explicit `source` before provisioning/packaging, with the same project and environment.
-It reuses agent saved-source diagnostics plus plugin project guards, not full descriptor/schema,
+It reuses agent saved-source diagnostics plus structural plugin project guards, not full app-package schema,
 skill, connector or app-package validation. A skill-only/connector-only plugin has no
 declarative-agent source coverage; report that limitation, not a fully validated plugin.
 A declared but missing DA blocks validation. Fix reported errors and re-run the same mode.
@@ -281,8 +349,9 @@ Inspection is available at any point; the deploy lifecycle runs in this order:
 
 **Choose the deployment environment before provisioning.** Explain the standard
 scaffold defaults: `local` is personal testing; `dev` is shared deployment.
-Ask which outcome the user needs only when their intent does not already settle
-it. These are defaults, not scope guarantees: inspect the selected project's
+Use the shared `dev` authoring default without a question unless the user or
+current workflow already selected another environment. These are defaults, not
+scope guarantees: inspect the selected project's
 effective lifecycle/environment configuration and `AGENT_SCOPE`, using its
 configured `environmentFolderPath` (default `./env`). Respect an explicitly
 selected shared environment. If configuration is missing, malformed, or conflicts
@@ -299,7 +368,7 @@ wiqd plugin package --env <env> [--path <dir>]   # 2. package that same deployme
 wiqd plugin publish --env <env> [--path <dir>]   # 3a. submit to the org catalog for admin approval
 wiqd plugin share --env <shared-env> --scope users --email <e> [--path <dir>] # 3b. shared deployments only
 
-wiqd plugin delete [--env local]               # 4. tear down what provision created
+wiqd plugin delete --env <env> [--path <dir>]   # 4. after confirmation, tear down that deployment
 ```
 
 > **`provision` comes before `package`, `publish`, and `share`.** `provision` is the only command that writes the selected `.env.<env>` under the configured `environmentFolderPath`. `package` needs it to resolve manifest variables; `publish` and `share` require it as provisioning evidence.
@@ -309,6 +378,18 @@ wiqd plugin delete [--env local]               # 4. tear down what provision cre
 Read **Shared deployment readiness** in `references/wiqd-core/share.md` before
 executing a share request. Apply that checkpoint with **`wiqd plugin` commands**,
 not `wiqd agent` commands.
+
+Read the selected environment's `.env.<env>` under `environmentFolderPath` and
+confirm it contains exactly one `AGENT_SCOPE=shared` assignment before **every** share,
+including an already-provisioned
+deployment. Provisioned IDs and share's `--scope users` do not establish shared
+deployment scope. Missing or unknown deployment scope blocks real sharing; never
+probe it by attempting a real share. Mock execution is exempt from the CLI scope
+guard, so do not block an already-mocked share solely because `AGENT_SCOPE` is
+absent. Mocked success does not establish real deployment readiness. A value
+present only in `.env.<env>.user` does not satisfy the CLI's real-deployment
+prerequisite. After provisioning, re-read the selected deployment file before
+real sharing.
 
 If the current deployment is personal, explain: "This deployment is for personal
 testing and cannot be shared. We need to prepare a shared deployment first
@@ -340,10 +421,10 @@ for a check rather than an actual tenant change:
 
 ```bash
 # Fully offline project/path + applicable static DA checks
-wiqd plugin publish --dry-run --no-runtime --no-network --json --skill wiqd --workflow plugin
+wiqd plugin publish --dry-run --env <env> --no-runtime --no-network --json --skill wiqd --workflow plugin
 
 # Full applicable runtime validation for a plugin containing a DA
-wiqd plugin publish --dry-run --env local --json --skill wiqd --workflow plugin
+wiqd plugin publish --dry-run --env <env> --json --skill wiqd --workflow plugin
 ```
 
 A skill/connector-only plugin returns an explicit DA-not-applicable skip. Do not
@@ -366,8 +447,8 @@ intentionally fails for this connector kind because Open Plugin has no verified
 `wiqd plugin delete` (alias `wiqd plugin uninstall`) is the inverse of `provision` — it removes the cloud resources (M365 app, app registration, bot registration) that provisioning created. It is the only plugin command that destroys tenant state. Ask the user to confirm the exact target first; because agent command execution has no interactive TTY, add `--yes` only after that affirmative reply.
 
 ```bash
-wiqd plugin delete --yes --skill wiqd                             # project mode: reads env/.env.local, deletes, removes the env file
-wiqd plugin delete --env dev --keep-env-file --yes --skill wiqd   # delete the cloud side but keep the local env file
+wiqd plugin delete --env <env> --yes --skill wiqd                 # project mode: delete the confirmed environment
+wiqd plugin delete --env <env> --keep-env-file --yes --skill wiqd # delete the cloud side but keep the local env file
 wiqd plugin delete --title-id T_xxx --yes --skill wiqd            # title-id mode: no local project needed
 ```
 
@@ -378,7 +459,7 @@ Two modes, chosen by whether `--title-id` is present:
 | **env**      | yes                    | `env/.env.<env>`  | you still have the project you provisioned from                 |
 | **title-id** | no                     | nothing local     | the project is gone, or you're cleaning up someone else's upload |
 
-Teardown **never touches plugin source** — `appPackage/`, `wiqd.plugin.json`, skills, and connectors all survive. Only cloud resources and (unless `--keep-env-file`) the env file for that environment are removed, so a delete can always be followed by a fresh `wiqd plugin provision`.
+Teardown **never touches plugin source** — `appPackage/`, `m365agents.yml`, skills, and connectors all survive. Only cloud resources and (unless `--keep-env-file`) the env file for that environment are removed, so a delete can always be followed by a fresh `wiqd plugin provision`.
 
 ## Interoperability: Open Plugin / Claude / Cursor
 
@@ -423,7 +504,7 @@ Pick `--format` from the user's stated destination: "for Claude" → `claude-plu
 
 **Round-tripping is lossless.** The Open Plugin standard has no slot for a declarative agent, so wiqd carries the DA manifest and its instructions file under `<export>/agent/` and records them in a wiqd-owned `x-wiqd` key in the exported manifest. Hosts that don't know the key ignore it and still see a valid standard plugin; `wiqd plugin import` reads it back and restores the agent. So `export` → `import` returns an equivalent project — but **only if the whole export directory is kept together**. If the user copies just the manifest, the agent is lost and import fails loudly rather than producing an agent-less project.
 
-Run `wiqd plugin validate --mode source` before exporting and report its limited DA coverage;
+Run `wiqd plugin validate --mode source --env <env>` before exporting and report its limited DA coverage;
 this is not full skill/connector or export-format validation.
 
 ## Authoring a skill that calls an MCP server
@@ -444,9 +525,11 @@ A common request is _"build a skill that calls the MCP server at `https://…`."
 
    Then edit the generated `appPackage/skills/<slug>/SKILL.md` to describe the end-to-end workflow — how the agent should use the connector's tools, the steps, inputs, and guardrails.
 
-**Inspect the MCP server first.** Before designing the skill, inspect the server's advertised tools (fetch its tool list / manifest from the `--url`) so the SKILL.md instructions reference real tool names and shapes. Iterate on the SKILL.md until the plugin is coherent, then run `wiqd plugin validate --mode source` and resolve every finding. Report the scope limitation: source success does not validate skill/connector content or deployment readiness.
+**Inspect the MCP server first.** Before designing the skill, inspect the server's advertised tools (fetch its tool list / manifest from the `--url`) so the SKILL.md instructions reference real tool names and shapes. Iterate on the SKILL.md until the plugin is coherent, then run `wiqd plugin validate --mode source --env <env>` and resolve every finding. Report the scope limitation: source success does not validate skill/connector content or deployment readiness.
 
-**If the server requires authentication.** `agentConnectors` supports `OAuthPluginVault`, `ApiKeyPluginVault`, and `DynamicClientRegistration` — all of which reference a credential stored elsewhere by id. The credential itself must be registered first, either in the Teams Developer Portal (**Tools → OAuth client registration**) or by an `oauth/register` step in `m365agents.yml` — see [authentication.md](../references/wiqd-core/authentication.md). Then wire the id in:
+**If an existing remote MCP connector reference is supplied.** Omit `--auth-type` to write `ConnectionVault` using that reference and the supplied `--url`. Do not replace it with an OAuth credential or switch to OpenAPI. The reference must be nonblank and at most 128 characters; this does not create or discover a connector. This authorization is **devPreview-only**: the manifest must already have canonical `devPreview` version/schema fields, or the user must opt in with `--dev-preview` to update both fields. Without opt-in, a numbered or inconsistent manifest fails before writes. The published DevPreview schema supports this shape; this does not establish live deployment or runtime acceptance. Open Plugin export refuses remote MCP ConnectionVault until the pinned exporter can preserve its reference.
+
+**If the server instead needs an explicit OAuth/API-key credential.** Preserve the user's `--auth-type oauth` or `api-key`; these write `OAuthPluginVault` or `ApiKeyPluginVault` rather than `ConnectionVault`. Register the credential first, either in the Teams Developer Portal (**Tools → OAuth client registration**) or by an `oauth/register` step in `m365agents.yml` — see [authentication.md](../references/wiqd-core/authentication.md). Then wire the id in:
 
 ```bash
 wiqd plugin add connector --name "<Server> MCP" --description "<what it does>" \
@@ -456,7 +539,7 @@ wiqd plugin add connector --name "<Server> MCP" --description "<what it does>" \
 Three things to tell the user up front, because each one is commonly discovered far too late:
 
 - **`applicableToApps: AnyApp`** — if you register through `oauth/register`, set it explicitly. Left implicit it can bind the registration to the Teams app id, which Copilot never resolves, so every tool call 404s after a green provision.
-- **Entra-protected servers cannot use DCR.** Entra publishes no RFC 7591 `registration_endpoint`, so `DynamicClientRegistration` is unusable against **any** Entra-protected MCP server — including every first-party Microsoft one. A client id must be registered by hand, and `agentConnectors` has no `microsoftEntra`/SSO type, so this is unavoidable. For servers that genuinely support DCR, use `--auth-type dcr`, which omits the authorization node — do not hand-author `{"type": "DynamicClientRegistration"}`.
+- **Entra-protected servers cannot use DCR.** Entra publishes no RFC 7591 `registration_endpoint`, so `DynamicClientRegistration` is unusable against **any** Entra-protected MCP server — including every first-party Microsoft one. The explicit OAuth credential path requires a client registration; reusing an existing ConnectionVault connector does not create one. For servers that genuinely support DCR, use `--auth-type dcr`, which omits the authorization node — do not hand-author `{"type": "DynamicClientRegistration"}`.
 - **Admin consent is not verified at provision time.** A scope nobody in the tenant can consent to still provisions cleanly and fails later at a "Need admin approval" page.
 
 **Never** put a client id, client secret, or token in the manifest — only the reference id belongs there.
@@ -465,22 +548,48 @@ Three things to tell the user up front, because each one is commonly discovered 
 
 After each step, report the outcome and suggest the logical next action:
 
+**Return both plugin links.** After successful `wiqd plugin provision`,
+present the returned `data.deepLink` as **Cowork install/test**:
+`https://copilot.cloud.microsoft/plugins?pluginsTab=cowork&coworkPage=detail&coworkPluginId=<M365_TITLE_ID>`.
+The returned identifier includes any `T_` prefix; do not add or strip it.
+After `wiqd plugin provision`, also present the returned `data.chatLink` as
+**Chat install/test**:
+`https://copilot.cloud.microsoft/plugins?titleId=<M365_TITLE_ID>&pluginsTab=chat`.
+Provisioning returns both links using the same API-returned title ID; never
+convert a `T_` prefix to `P_` or vice versa.
+After `wiqd plugin share`, present both returned recipient links:
+**Cowork** (`data.deepLink`):
+`https://m365.cloud.microsoft/cowork#/extensions/plugins/<M365_TITLE_ID>`
+and **Chat** (`data.chatLink`):
+`https://m365.cloud.microsoft/chat/?titleId=<M365_TITLE_ID>`.
+These links apply to both personal and shared plugins, even when they contain a
+declarative-agent component. Never substitute a Chat URL or an env `SHARE_LINK`
+for the Cowork link,
+including when reusing agent provision/deployment references. If `data.deepLink`
+is missing or is not the operation's Cowork route, or `data.chatLink` is missing
+or is not the operation's Chat route, report that the affected link is
+unavailable or unexpected and surface the CLI version/result for diagnosis;
+do not fabricate a URL from `TEAMS_APP_ID` or provision again to obtain a link.
+Keep the selected project and environment when suggesting next commands, even
+if CLI next-step text omits `--env`. Declarative-agent projects also use the
+plugin-owned lifecycle and these returned links.
+
 - After `create` **or `import`** → "Add a skill", "Add a connector", "Add a declarative agent".
 - After `add …` → "Add another capability", or "Validate the plugin".
-- After clean source validation → "Provision the plugin" or "Export it for Claude/Cursor". If the manifest contains `openApiConnector`, omit the export suggestion and explain that Open Plugin cannot represent its `ConnectionVault` reference; source validation does not establish packaging or deployment readiness.
-- After personal `provision` → present the returned Cowork install/test link so
+- After clean source validation → "Provision the plugin" or "Export it for Claude/Cursor". If the manifest contains `openApiConnector` or remote MCP `ConnectionVault` authorization, omit the export suggestion and explain that the pinned Open Plugin exporter cannot preserve its connector reference; source validation does not establish packaging or deployment readiness.
+- After personal `provision` → present both returned install/test links so
   the user can install and test the plugin; explain that sharing needs a shared
   deployment and offer preparation without starting it.
 - After shared `provision` → "Package the plugin", then "Share it" using the same
   project path and shared environment, subject to the readiness checkpoint above.
-  Present the returned Cowork install/test link after provisioning or sharing.
+  Present both returned links after provisioning or sharing, using the routes above.
 - After `export` → tell the user **where** the output landed and that the whole directory must travel together for a lossless round trip.
 
 ## Anti-patterns
 
 - ❌ Don't scaffold a `wiqd agent` when the user asked for a **standalone plugin** — that produces an agent, not a reusable plugin.
 - ❌ Don't tell the user a **Cowork plugin** needs a different platform, SDK, or toolchain — it is the same Microsoft 365 app package this workflow builds (see Terminology). Treating a host surface as a separate product is never a reason to decline.
-- ❌ Don't hand-author plugin manifest files — always go through `wiqd plugin add …` so `manifest.json` and `wiqd.plugin.json` stay in sync.
+- ❌ Don't hand-author component registrations — use `wiqd plugin add …` so root manifest references and component artifacts stay consistent.
 - ❌ Don't declare a plugin "ready" from source validation alone; disclose unvalidated skill/connector content and require the appropriate final-ZIP checks.
 - ❌ Don't silently enable the alpha flag — tell the user first (Preflight step 2).
 - ❌ Don't `create` and then hand-copy an existing Open Plugin's files into it — use `plugin import`, which is the supported entry point and preserves round-trip data.

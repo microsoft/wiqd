@@ -62,7 +62,7 @@ in the explanation. Dataset selection and approval to write are separate steps.
 ## Pre-requisites
 
 1. Confirm Node.js 24.12.0 or newer.
-2. Run `wiqd exec runevals --version` and report the extension-managed version. wiqd silently refreshes its exact extension pin when a newer one is available; if the refresh fails, continue with the installed version and do not block the run or install a separate global package. Change to the agent project directory, verify the version, then run `wiqd exec runevals --init-only`.
+2. Before a consented run, use `wiqd exec runevals --version` and report the extension-managed version. This can install or refresh packages even with `--version`; for a no-install walkthrough use the read-only metadata procedure in Phase 0A instead. wiqd silently refreshes its exact extension pin when a newer one is available; if the refresh fails, continue with the installed version and do not block the run or install a separate global package. Change to the agent project directory, verify the version, then run `wiqd exec runevals --init-only` only when initialization is authorized.
 3. For run or analysis requests, locate a prompts document in `evals/prompts.json`, `evals/evals.json`, or the path supplied with `--config`. For manifest-aware generation requests, a missing prompts document is expected: do **not** run `wiqd agent eval init`, because that command emits a fixed seven-item bootstrap for the default ATK template rather than the requested generated count.
 4. Resolve the deployed agent ID from `--agent-id`, `M365_TITLE_ID`, `AGENT-ID`, `AGENT_ID`, or `M365_AGENT_ID`. The environment file may be in the project root or `env/`.
 5. Discover `.env.local` and `.env.dev` in both the project root and `env/`. Pair the selected base with its corresponding `.env.local.user` or `.env.dev.user` credentials file in the same supported locations. If both local and dev bases exist and the user did not pass `--env`, ask which environment to use before reading values or running. Resolve the tenant ID from `TEAMS_APP_TENANT_ID` or `TENANT_ID` without printing any other environment values.
@@ -128,6 +128,33 @@ Store the exact selected or generated relative path as `$selectedDataset` and us
 
 ### Phase 0A: First-Run Onboarding
 
+**Respect walkthrough boundaries first.** A request to explain setup or check an
+installed version is not permission to install packages, initialize Python,
+authenticate, or accept a EULA. When installation is prohibited, do not execute
+`wiqd exec runevals --version` or `--init-only`: managed execution can lazily
+install or refresh dependencies before the upstream flag runs.
+
+For a non-mutating version check, run
+`wiqd ext show microsoft.eval --json`, then inspect its `data.upstream`:
+`requiredVersion` is the supported range, not the installed version. If
+`available` is true, use `resolvedPath` to locate the active generation's
+`node_modules/@microsoft/m365-copilot-eval/package.json` and read only `name` and
+`version`; do not execute that binary. Confirm the package name before reporting
+the version. `data.packagePath` locates the extension's
+`package.json`, whose dependency is the exact managed pin
+(currently at least 1.15.0), not proof it is installed. Do not scan unrelated
+profile directories or read credentials. If metadata is absent, invalid, or the
+upstream is unavailable, report the installed version as unverified, never infer
+it from the extension's own version or the pin.
+
+Explain the commands below as **deferred, not executed**, until the user permits
+installation/initialization. Report an installed version below the supported
+range as incompatible with that range, without repairing it during the
+walkthrough. An older but supported retained generation remains usable if a
+later consented refresh fails. Still cover every judge route, environment
+selection, credential-name-only check, agent token ownership, account selection,
+EULA boundary, and the tracked schema/PRA/judge links in this walkthrough.
+
 When the Eval CLI is missing, outdated by explicit user request, uninitialized, or the selected judge is not ready:
 
 1. Run `wiqd exec runevals --version` to silently install or refresh the exact extension-managed pin; if that refresh fails, keep using the installed version.
@@ -144,7 +171,7 @@ When the Eval CLI is missing, outdated by explicit user request, uninitialized, 
    - When the user needs a specific cached identity, pass `--account <email-or-UPN>` without displaying tokens.
 6. Explain that Eval CLI EULA acceptance is separate from authentication and requires explicit human consent. Never accept it automatically or present it as an authentication retry.
 7. Validate only the credential names required by the chosen path. Never print or echo secret values.
-8. Link users to the tracked [judge onboarding guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#judge-onboarding).
+8. Link users to the tracked [judge onboarding guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#judge-onboarding), [Eval CLI schema](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#eval-document-schema), and [PRA framework](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#perceive-reason-act-pra-framework), including in advice-only responses.
 
 Do not block a GitHub Copilot judge run on absent Azure credentials.
 
@@ -317,7 +344,23 @@ When presenting methodology to the user, use the tracked [result interpretation 
 
 ### Phase 6: Remediation
 
-Generate prioritized, targeted recommendations grouped by root cause. Distinguish confirmed evidence from hypotheses and cite the relevant artifact path/field when available. Do not recommend instruction changes for missing capabilities or knowledge sources. Prefer the smallest change likely to improve the failed evaluator.
+First load `references/eval/result-analysis.md` and
+`references/eval/remediation-patterns.md`, including for recommendation-only
+requests with supplied findings and no new eval run. Resolve the actual agent
+manifest and its instruction reference before naming a target: a
+`$[file('...')]` reference is relative to that manifest's directory, while inline
+instructions target its `instructions` field. Name the resolved project-relative
+path, not "the instructions file" or alternative guessed filenames. If evidence
+is missing, label the target unresolved instead of inventing it.
+
+Generate prioritized, targeted recommendations grouped by root cause. Distinguish confirmed evidence from hypotheses and cite the relevant artifact path/field when available. Do not recommend instruction changes for missing capabilities or knowledge sources. Prefer the smallest change likely to improve the failed evaluator. State impact and effort for each recommendation.
+
+When a refusal matches the declared scope but the expectation demands an
+out-of-scope answer, flag the exact selected eval document/item for human review,
+not broader agent capabilities. Explicitly state that **any eval edit requires
+human approval**; merely labeling an expectation stale is not approval. Preserve
+boundary checks, evaluators and thresholds. Recommendations do not authorize
+file changes, especially when the user requested no edits.
 
 For each major issue use:
 
@@ -336,9 +379,7 @@ Finish with the clickable scorecard link:
 [Open evaluation scorecard](file:///C:/absolute/path/to/.evals/scorecard-<timestamp>.html)
 ```
 
-Load `references/eval/result-analysis.md` and `references/eval/remediation-patterns.md`.
-
-When presenting methodology to the user, use the tracked [remediation guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#remediation-targeting).
+Include the tracked [remediation guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#remediation-targeting) in the final recommendations, even when no new scorecard was produced. Link a scorecard only when one actually exists; never invent a report for supplied findings.
 
 ### Phase 7: Update Proposal
 
@@ -365,7 +406,7 @@ Read `{M365_TITLE_ID}` from the selected `.env.local` or `.env.dev` base file.
 | Error                                | Behavior                                                                    |
 | ------------------------------------ | --------------------------------------------------------------------------- |
 | Not a supported agent project        | Allow run/analyze with prompts + tenant/agent IDs; stop generation only     |
-| Not provisioned (no `M365_TITLE_ID`) | Run `wiqd agent provision` through the active backend, then re-check        |
+| Not provisioned (no `M365_TITLE_ID`) | Run `wiqd plugin provision` through the active backend, then re-check       |
 | Missing GHCP auth                    | Run `gh auth login` or use `GITHUB_TOKEN`; do not require Azure credentials |
 | Missing Azure credentials            | Offer guided setup only when Azure/custom evaluator is selected             |
 | Missing instructions                 | Stop — cannot generate evals                                                |

@@ -46,7 +46,6 @@ const MARKER_FILES = new Set([
   'm365agents.local.yml',
   'teamsapp.yml',
   'teamsapp.local.yml',
-  'wiqd.plugin.json',
 ]);
 
 function isAgentOwnedPath(rawPath) {
@@ -121,7 +120,9 @@ try {
             permissionDecisionReason:
               'This file is part of an M365 declarative agent project. ' +
               'You MUST invoke skill(wiqd) before editing files under ' +
-              'appPackage/, wiqd.plugin.json, m365agents.yml, or teamsapp.yml. ' +
+              'appPackage/, m365agents.yml, or teamsapp.yml. ' +
+              'Project-scoped plugin commands recognize compatible projects structurally; ' +
+              'do not create a second identity file or recreate a compatible project. ' +
               'Call skill(wiqd) first to load the wiqd skill, ' +
               'then retry this edit.',
           };

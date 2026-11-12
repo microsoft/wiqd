@@ -56,7 +56,13 @@ Higher score = higher priority. When scores are tied, prefer the recommendation 
 
 **Signals:** Low Relevance, Coherence, or Groundedness where grounding sources exist but are not used, or where response does not follow expected behavioral patterns.
 
-**Target file:** System instructions — typically the `instructions` field in `appPackage/declarativeAgent.json`, or the referenced `.txt` or `.md` instructions file if instructions are stored externally.
+**Target file:** Resolve the actual manifest's `instructions` value before
+recommending a change. Inline text targets that manifest's `instructions` field.
+A `$[file('...')]` reference targets the file relative to the manifest's
+directory: for example, `instructions.txt` referenced by
+`appPackage/declarativeAgent.json` resolves to `appPackage/instructions.txt`.
+Use the resolved path, never a generic "instructions file" or a list of possible
+locations. If it cannot be resolved, state the evidence gap.
 
 **Change patterns:**
 
@@ -141,7 +147,8 @@ Place this instruction near the section that describes how the agent should resp
 
 **Signals:** One or more of the bad eval heuristics triggered (scope clarification pattern, capability disclaimer, consistent category failures, instruction echo), or the actual_response appears correct but scores poorly against expected_response.
 
-**Target file:** `evals/evals.json`
+**Target file:** The exact selected eval document and affected item, not an
+assumed default when a different dataset was selected.
 
 **Change:** Update `expected_response` at the flagged index to reflect what a correctly functioning agent actually produces.
 
@@ -150,6 +157,12 @@ Place this instruction near the section that describes how the agent should resp
 1. Present the flagged eval to the user with the specific heuristic that triggered
 2. Show the current `expected_response` and the `actual_response` side by side
 3. Propose a revised `expected_response` but wait for user confirmation before recommending the edit
+
+State explicitly in the recommendations that any eval edit requires human
+approval. A correct out-of-scope refusal is evidence of a stale expectation, not
+permission to remove boundary coverage or relax evaluators and thresholds.
+For advice-only requests, make no edits and mark the proposal pending approval.
+Include the user-facing [remediation guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#remediation-targeting).
 
 **Template for presenting to user:**
 

@@ -73,11 +73,11 @@ Follow these best practices for successful M365 Copilot agent development.
 
 ## Agent Skills
 
-- **Enable the Flag First:** Turn on WIQD's `agent-skills` feature flag before `wiqd agent add skill` and keep it enabled for `wiqd agent package` — core sets the SDK environment during those operations, and the flag gates packaging too
+- **Enable the Flag First:** Turn on WIQD's `agent-skills` feature flag before `wiqd agent add skill` and keep it enabled for `wiqd plugin package` — core sets the SDK environment during those operations, and the flag gates packaging too
 - **Scope Skills Narrowly:** Each `SKILL.md` should cover one focused, reusable procedure, not a catch-all
 - **Name for Triggering:** Write `description` around the phrases a user would actually say, not a summary of the skill's purpose
 - **Keep Name and Folder in Lockstep:** The frontmatter `name` and the containing folder name are one value — rename both together
 - **Add `expose_skill_to_copilot`, Don't Hand-Author `agent_skills[]`:** `wiqd agent add skill` writes the DA `agent_skills[]` entry with `folder` only; add `expose_skill_to_copilot: true` to that entry when you want the DA skill exposed to Copilot directly. It does not write the root Cowork `agentSkills[]` registration; use `wiqd plugin add skill` for that independent surface
-- **Validate source, then the final ZIP:** Before `wiqd agent package`, run `wiqd agent validate --mode source` with the same project/environment. After packaging, use `--mode package --package-file "<zip>"`; Marketplace readiness uses `--mode marketplace`, including package checks. Source does not check skill contents or prove ZIP acceptance. `wiqd plugin validate` uses the same modes and defaults to package; explicitly select source for a pre-build plugin check.
+- **Validate source, then the final ZIP:** Before `wiqd plugin package`, run `wiqd plugin validate --mode source` with the same project/environment. After packaging, use `--mode package --package-file "<zip>"`; Marketplace readiness uses `--mode marketplace`, including package checks. Source does not check skill contents or prove ZIP acceptance. `wiqd plugin validate` uses the same modes and defaults to package; explicitly select source for a pre-build plugin check.
 
 **Reference:** [agent-skills.md](agent-skills.md)

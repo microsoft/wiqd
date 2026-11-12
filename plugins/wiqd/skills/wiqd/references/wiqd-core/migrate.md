@@ -25,13 +25,13 @@ If either file is missing → **STOP immediately.** Do NOT scaffold. Report clea
 
 ### Phase 2 — Scaffold via create workflow (MANDATORY)
 
-4. **Scaffold the project skeleton with `wiqd agent create`** — this is the only supported way to lay down a valid project. Read `references/wiqd-core/scaffolding-workflow.md` for the full rules, then run the canonical command, substituting the agent name from `manifest.json#name.short`:
+4. **Scaffold the project skeleton with `wiqd plugin create`** — this is the only supported way to lay down a valid project. Read `references/wiqd-core/scaffolding-workflow.md` for the full rules, then run the canonical command, substituting the agent name from `manifest.json#name.short`:
 
    ```bash
-   wiqd agent create -n <project-name> -c declarative-agent -with-plugin no -i false --skill wiqd
+   wiqd plugin create -n <project-name> -c declarative-agent -with-plugin no -i false --skill wiqd
    ```
 
-   Do NOT hand-author `manifest.json`/`declarativeAgent.json` yourself — always let `wiqd agent create` generate the skeleton first, then merge the source content in Phase 3.
+   Do NOT hand-author `manifest.json`/`declarativeAgent.json` yourself — always let `wiqd plugin create` generate the skeleton first, then merge the source content in Phase 3.
 
 ### Phase 3 — Merge content into scaffold
 
@@ -46,7 +46,7 @@ If either file is missing → **STOP immediately.** Do NOT scaffold. Report clea
 
 ### Phase 4 — Validate & report
 
-11. Run `wiqd agent validate --mode source --path "<project>" --env "<selected-environment>" --json --skill wiqd`
+11. Run `wiqd plugin validate --mode source --path "<project>" --env "<selected-environment>" --json --skill wiqd`
 12. Report summary: project path, files migrated, files skipped, new app id
 
 ## Instructions Handling — Core Contract

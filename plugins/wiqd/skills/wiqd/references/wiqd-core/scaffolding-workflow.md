@@ -8,12 +8,14 @@ Step-by-step instructions for scaffolding a new M365 Copilot agent project.
 
 Check if wiqd CLI is available by running `wiqd --version`. If the command is not found, **STOP and tell the user** that the wiqd CLI is required but not installed. Do NOT attempt to install it yourself — the user must install wiqd separately before you can proceed.
 
-### The Only Valid Command
+### The Only Valid Command Sequence
 
 Copy this command EXACTLY. Replace `<project-name>` with the user's project name:
 
 ```bash
-wiqd agent create --name <project-name>
+wiqd plugin create --name <project-name>
+cd <project-name>
+wiqd plugin add agent --name <agent-name>
 ```
 
 ### Forbidden Commands — These Do Not Exist
@@ -21,10 +23,10 @@ wiqd agent create --name <project-name>
 | ❌ Invalid Command            | Why It Fails                                                         |
 | ---------------------------- | -------------------------------------------------------------------- |
 | `wiqd agent init`            | DOES NOT EXIST — there is no init command                            |
-| `wiqd agent init --template` | DOES NOT EXIST — there is no `init` command; use `wiqd agent create` |
-| `wiqd create`                | DOES NOT EXIST — the verb is `wiqd agent create`                     |
+| `wiqd agent init --template` | DOES NOT EXIST — there is no `init` command; use `wiqd plugin create` |
+| `wiqd create`                | DOES NOT EXIST — the verb is `wiqd plugin create`                     |
 | `wiqd agent scaffold`        | DOES NOT EXIST — there is no scaffold command                        |
-| `wiqd agent new`             | DOES NOT EXIST — the verb is `wiqd agent create`                     |
+| `wiqd agent new`             | DOES NOT EXIST — the verb is `wiqd plugin create`                     |
 
 ---
 
@@ -73,16 +75,16 @@ wiqd agent create --name <project-name>
 
 **Action:** Execute the scaffolding command.
 
-wiqd runs the scaffolding non-interactively by default — there is no interactive prompt to suppress, and `wiqd agent create` has no `--interactive` flag — so no extra flags are needed.
+wiqd runs the scaffolding non-interactively by default — there is no interactive prompt to suppress, and `wiqd plugin create` has no `--interactive` flag — so no extra flags are needed.
 
-> **Note:** `wiqd agent create` creates a **subfolder** named after the project. All subsequent `wiqd agent` commands must run from inside that subfolder.
+> **Note:** `wiqd plugin create` creates a **subfolder** named after the project. All subsequent `wiqd plugin` lifecycle and `wiqd agent add` authoring commands run from inside that subfolder.
 
 **Commands to execute sequentially:**
 
 1. **Create the project:**
 
 ```bash
-wiqd agent create --name <project-name>
+wiqd plugin create --name <project-name>
 ```
 
 2. **Enter the project directory (REQUIRED before any further commands):**
@@ -91,9 +93,16 @@ wiqd agent create --name <project-name>
 cd <project-name>
 ```
 
-3. **Verify success:**
+3. **Compose the embedded agent:**
 
-- Check that key files exist in the project directory (`m365agents.yml`, `appPackage/declarativeAgent.json`)
+```bash
+wiqd plugin add agent --name <agent-name>
+```
+
+4. **Verify success:**
+
+- Check that `m365agents.yml`, `appPackage/manifest.json`, and the declarative-agent file
+  referenced by `appPackage/manifest.json` exist
 - If the command fails, report the error and stop — do NOT retry automatically
 
 > **Alternative approach — move files to current directory:**
@@ -138,8 +147,8 @@ For declarative-agent lifecycle tasks, invoke the `wiqd` skill before editing ag
 - Localizing an agent into multiple languages
 - Adding a new language to an already-localized agent
 - Writing or updating agent instructions
-- Deploying and provisioning with `wiqd agent provision`
-- Checking saved source with `wiqd agent validate --mode source --path "<project>" --env "<selected-environment>"`
+- Deploying and provisioning with `wiqd plugin provision`
+- Checking saved source with `wiqd plugin validate --mode source --path "<project>" --env "<selected-environment>"`
 - Fixing manifest errors or validation failures
 
 **Do NOT:**
@@ -207,5 +216,5 @@ not here.
 | wiqd CLI not installed            | Stop. Tell the user to install wiqd first.             |
 | Directory not empty               | Stop. Show error message. Do not proceed.              |
 | Invalid project name              | Warn and suggest a corrected name.                     |
-| `wiqd agent create` command fails | Report the error with full output. Do not retry.       |
+| `wiqd plugin create` command fails | Report the error with full output. Do not retry.       |
 | File move fails                   | Report the error. Files may still be in the subfolder. |

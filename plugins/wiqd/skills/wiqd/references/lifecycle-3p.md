@@ -7,7 +7,7 @@ The end-to-end journey for third-party (3P) developers building and publishing M
 | Stage            | What Happens                                                       | Reference                                                                      |
 | ---------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
 | **1. Ideation**  | Understand requirements, identify data sources, plan capabilities  | `references/orientation.md`                                                    |
-| **2. Scaffold**  | Create a new agent project with `wiqd agent create`                | Active core workflow → scaffolding reference                                   |
+| **2. Scaffold**  | Create a plugin container, then compose its embedded agent         | Active core workflow → scaffolding reference                                   |
 | **3. Build**     | Add capabilities, API plugins, instructions, conversation starters | Active core workflow → editing reference                                       |
 | **4. Validate**  | Check saved source; repair only when authorized                    | `workflows/validation.md`; Core source prechecks retain their lifecycle caller |
 | **5. Provision** | Register agent in M365, generate test URL                          | Active core workflow → provision reference                                     |
@@ -22,19 +22,26 @@ The end-to-end journey for third-party (3P) developers building and publishing M
 
 Most development time is spent in the **Build → Validate → Provision → Test** loop:
 
+An existing complete project created by the retired `wiqd agent create` can
+enter this loop directly. Project-scoped plugin commands recognize its structural
+lifecycle/root-manifest identity read-only and continue; do not recreate or
+flatten the project. If the CLI refuses malformed, incomplete or unsafe
+structural data, preserve the project and resolve that exact failure.
+
 1. Edit `declarativeAgent.json` (capabilities, instructions, conversation starters)
-2. Run `wiqd agent validate --mode source --path "<project>" --env local` to check saved source
-3. Run `wiqd agent provision --env local` to deploy changes
-4. Test via the M365 Copilot deep link or `wiqd agent ask`
+2. Run `wiqd plugin validate --mode source --path "<project>" --env local` to check saved source
+3. Run `wiqd plugin provision --env local` to deploy changes
+4. Test via the M365 Copilot deep link or
+   `wiqd plugin ask --component agent`
 5. Repeat until satisfied
 
 ## Publishing Paths (3P)
 
-| Method                | When to Use           | Steps                                             |
-| --------------------- | --------------------- | ------------------------------------------------- |
-| **Sideload**          | Personal testing      | `wiqd agent package` → upload zip in Teams        |
-| **Org Admin Catalog** | Org-wide distribution | `wiqd agent publish --env <env>` → admin approval |
-| **Partner Center**    | Public store listing  | `wiqd agent package` → submit via Partner Center  |
+| Method                | When to Use           | Steps                                              |
+| --------------------- | --------------------- | -------------------------------------------------- |
+| **Sideload**          | Personal testing      | `wiqd plugin package` → upload zip in Teams        |
+| **Org Admin Catalog** | Org-wide distribution | `wiqd plugin publish --env <env>` → admin approval |
+| **Partner Center**    | Public store listing  | `wiqd plugin package` → submit via Partner Center  |
 
 ## Prerequisites
 
@@ -45,13 +52,15 @@ Most development time is spent in the **Build → Validate → Provision → Tes
 ## Key Commands Quick Reference
 
 ```bash
-wiqd agent create --template declarative-agent --name my-agent
-wiqd agent validate --mode source --path . --env local
-wiqd agent provision --env local
-wiqd agent ask -q "test message" --json
+wiqd plugin create --name my-plugin
+cd my-plugin
+wiqd plugin add agent --name my-agent
+wiqd plugin validate --mode source --path . --env local
+wiqd plugin provision --env local
+wiqd plugin ask --component agent -q "test message" --json
 wiqd agent eval --env local
-wiqd agent package --env dev
-wiqd agent validate --mode package --package-file "<built.zip>"
-wiqd agent share --scope users --email "user@org.com" --env dev
-wiqd agent publish --env prod
+wiqd plugin package --env dev
+wiqd plugin validate --mode package --package-file "<built.zip>"
+wiqd plugin share --scope users --email "user@org.com" --env dev
+wiqd plugin publish --env prod
 ```

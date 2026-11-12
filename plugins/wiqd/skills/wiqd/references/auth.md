@@ -114,7 +114,7 @@ policies.
 
 ## Relationship to Other Commands
 
-- **Prerequisite for:** `wiqd agent provision`, `wiqd agent share`, `wiqd agent publish`, `wiqd agent ask`, `wiqd agent monitor`
+- **Prerequisite for:** `wiqd plugin provision`, `wiqd plugin share`, `wiqd plugin publish`, `wiqd plugin ask --component agent`, `wiqd agent monitor`
 - **Configured by:** `wiqd config set disableBrokeredAuth=true` switches Core and supporting providers from native broker to browser flow
 - **Diagnosed by:** `wiqd auth status`
 

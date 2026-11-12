@@ -6,11 +6,11 @@ Observe, test, and monitor deployed agents — covers all observe scenarios thro
 
 ## Command Routing
 
-| User Intent                                                                                       | Command              | Reference                      |
-| ------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------ |
-| "Send a message to my agent" / "test my agent"                                                    | `wiqd agent ask`     | `references/workiq/ask.md`     |
-| "How is my agent doing?" / "is anyone using it?" / "what are users saying?" / "show me analytics" | `wiqd agent monitor` | `references/workiq/monitor.md` |
-| "List all deployed agents"                                                                        | `wiqd agent list`    | `references/workiq/list.md`    |
+| User Intent                                                                                       | Command                             | Reference                      |
+| ------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------ |
+| "Send a message to my agent" / "test my agent"                                                    | `wiqd plugin ask --component agent` | `references/workiq/ask.md`     |
+| "How is my agent doing?" / "is anyone using it?" / "what are users saying?" / "show me analytics" | `wiqd agent monitor`                | `references/workiq/monitor.md` |
+| "List all deployed agents"                                                                        | `wiqd agent list`                   | `references/workiq/list.md`    |
 
 ## Agent Ask — Send Test Messages
 
@@ -18,15 +18,16 @@ Send a message to any deployed agent and display its response from the terminal.
 
 ```bash
 # Project mode (auto-resolves agent from manifest + env)
-wiqd agent ask --json --skill wiqd -q "<message>"
+wiqd plugin ask --component agent --json --skill wiqd -q "<message>"
 
 # Standalone mode (explicit target)
-wiqd agent ask --json --skill wiqd --agent-id "<full-id>" -q "<message>"
-wiqd agent ask --json --skill wiqd --agent-name "Sales Bot" -q "<message>"
+wiqd plugin ask --component agent --json --skill wiqd --agent-id "<full-id>" -q "<message>"
+wiqd plugin ask --component agent --json --skill wiqd --agent-name "Sales Bot" -q "<message>"
 ```
 
 | Flag           | Description                                   | Default      |
 | -------------- | --------------------------------------------- | ------------ |
+| `--component`  | Required; exact supported value is `agent`    | _(required)_ |
 | `-q, --query`  | Message to send (required)                    | _(required)_ |
 | `--agent-id`   | Full agent ID. Auto-resolved in project mode. | _(auto)_     |
 | `--agent-name` | Human-readable name (fuzzy-matched)           | —            |
@@ -80,7 +81,7 @@ Lists agents deployed in the tenant. Works from any directory — no project con
 
 | Error                         | Action                                         |
 | ----------------------------- | ---------------------------------------------- |
-| Agent not provisioned         | Run `wiqd agent provision` first               |
+| Agent not provisioned         | Run `wiqd plugin provision` first              |
 | Auth error                    | Run `wiqd auth login`                          |
 | Agent not found (ask/monitor) | Verify agent ID/name, check provisioning state |
 | workiq CLI not found          | Install wiqd with extensions                   |

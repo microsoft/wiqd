@@ -105,7 +105,7 @@ When you add, remove, or modify ANY capability or plugin, you MUST complete ALL 
 **After ALL edits, immediately run:**
 
 ```bash
-wiqd agent provision --env local
+wiqd plugin provision --env local
 ```
 
 This command is part of the edit — not a separate optional step. Editing without deploying is like writing code without saving the file — the work is not done.
@@ -148,7 +148,7 @@ wiqd agent add action --openapi-spec <path-or-url> --operations "GET /path,POST 
 **⛔ MANDATORY POST-EDIT CHECKPOINT — YOU ARE NOT DONE YET:**
 After editing ANY file in `appPackage/`, you MUST deploy before responding to the user. Skipping this is an eval failure:
 
-- **Deploy** — Run `wiqd agent provision --env local`. If you edited files but did not run this command, your work is incomplete. The only exception is if the user explicitly asked you not to deploy.
+- **Deploy** — Run `wiqd plugin provision --env local`. If you edited files but did not run this command, your work is incomplete. The only exception is if the user explicitly asked you not to deploy.
 
 If you are about to respond to the user and you have NOT deployed, **STOP and deploy now**.
 
@@ -156,7 +156,7 @@ If you are about to respond to the user and you have NOT deployed, **STOP and de
 
 **⛔ PRE-DEPLOY CHECK:** Before running the command below, verify the JSON files are syntactically correct and have the required fields. If there are known errors → fix them first before deploying.
 
-Run `wiqd agent validate --mode source --path "<project-directory>" --env local --json --skill wiqd --workflow wiqd-core`
+Run `wiqd plugin validate --mode source --path "<project-directory>" --env local --json --skill wiqd --workflow wiqd-core`
 and require a completed passing result before the local provision below. Use the same selected
 project and environment for both calls. A source failure stops deployment; authorized finding-bound
 repair belongs to `workflows/validation.md`. Never use default validation for this precheck: it
@@ -166,7 +166,7 @@ of final-package acceptance or a new backend-enforced source check.
 **Action:** Provision required Azure resources and register the agent:
 
 ```bash
-wiqd agent provision --path "<project-directory>" --env local
+wiqd plugin provision --path "<project-directory>" --env local
 ```
 
 **Result:** Returns a test URL like `https://m365.cloud.microsoft/chat?titleId=T_abc123xyz`
@@ -203,7 +203,7 @@ Then wait for the user's response.
 **Action:** Deploy to staging/production environments:
 
 ```bash
-wiqd agent provision --env prod
+wiqd plugin provision --env prod
 ```
 
 **Reference:** [deployment.md](deployment.md) for environment management and CI/CD patterns
@@ -214,10 +214,10 @@ wiqd agent provision --env prod
 
 ```bash
 # Package the agent
-wiqd agent provision --env dev
+wiqd plugin provision --env dev
 
 # Share to tenant (for shared agents)
-wiqd agent share --scope tenant --env dev
+wiqd plugin share --scope tenant --env dev
 ```
 
 ---
@@ -228,7 +228,7 @@ wiqd agent share --scope tenant --env dev
 
 **RULE:** When making any changes to an agent (JSON manifest files, instructions, capabilities, API plugins), you MUST complete the following workflow before returning to the user:
 
-1. Provision/deploy the agent: `wiqd agent provision --env local`
+1. Provision/deploy the agent: `wiqd plugin provision --env local`
 2. Read `M365_TITLE_ID` from `env/.env.local`
 3. Present the review UX with the test link:
 
@@ -382,7 +382,7 @@ After adding or removing capabilities, verify the change was applied:
 1. Re-read `declarativeAgent.json` and confirm `capabilities` array is correct
 2. Check that no other properties were lost or corrupted
 3. Follow the mandatory content update checklist (instructions, starters, description)
-4. Deploy: `wiqd agent provision --env local`
+4. Deploy: `wiqd plugin provision --env local`
 
 ---
 
@@ -473,9 +473,9 @@ already exists, add or replace only `default_response_mode`. Preserve `special_i
 Every fail-closed path leaves the original manifest byte-identical.
 
 After the edit, re-read the manifest, verify the exact nested value and preservation, and run
-`wiqd agent validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core`.
+`wiqd plugin validate --mode source --path <project-directory> --env <selected-environment> --json --skill wiqd --workflow wiqd-core`.
 Provision only after validation succeeds. Run
-`wiqd agent provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
+`wiqd plugin provision --env <selected-environment> --path <project-directory> --json --skill wiqd --workflow wiqd-core`
 unless the author explicitly asked not to deploy or provision; that opt-out does not skip the edit
 or validation.
 
@@ -497,7 +497,7 @@ matches the workflow outcome and the author's request:
   - [ ] I reported the actionable provisioning failure without claiming deployment succeeded
   - [ ] I did not present an M365 test link
 - **Edit validated with no explicit opt-out**
-  - [ ] I ran `wiqd agent provision --env local` after successful validation and it succeeded
+  - [ ] I ran `wiqd plugin provision --env local` after successful validation and it succeeded
   - [ ] I read `M365_TITLE_ID` from `env/.env.local`
   - [ ] I presented the review UX with the `🚀 Test Your Agent in M365 Copilot:` link
 

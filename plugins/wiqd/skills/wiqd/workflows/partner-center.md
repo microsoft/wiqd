@@ -1,12 +1,11 @@
 ---
 name: partner-center
 description: >
-  Guide third-party (3P) partners and ISVs through publishing a declarative
-  agent to the Microsoft commercial marketplace via Partner Center. Covers
-  prerequisites, building the submittable package with wiqd, enrolling and
-  setting up a Partner Center account, creating the Microsoft 365 and Copilot
-  offer, uploading the package, completing the store listing, submitting for
-  certification, going live, and troubleshooting rejections.
+  Guide third-party partners through direct Partner Center publishing when
+  available, with portal guidance when disabled or unavailable. Covers exact
+  package validation, publisher setup, listing choices, verified Draft
+  preparation, separate submission authorization, certification observation,
+  and rejection troubleshooting.
 trigger-summary: 'publish to partner center, submit to appsource, list in the store, certify my agent, get my agent in the marketplace, why did certification fail'
 triggers: >
   how do I publish my agent, publish to Partner Center, submit to Partner Center,
@@ -21,7 +20,7 @@ routing-label: 'Partner Center publishing (3P)'
 routing-intent: 'Publishing a declarative agent to the Microsoft commercial marketplace via Partner Center'
 routing-order: 8
 contract-version: 1
-routing-requires: [agent validate, agent package]
+routing-requires: [plugin validate, plugin package]
 wiqd-lifecycle-theme: Publish
 wiqd-lifecycle-order: 2
 journey: |
@@ -44,26 +43,28 @@ Guides **third-party partners and ISVs** through publishing a declarative agent 
 the **Microsoft commercial marketplace** (AppSource / the Microsoft 365, Teams,
 and Copilot store) using **Partner Center**.
 
-wiqd owns the lifecycle **up to and including building the submittable package**.
-**Partner Center owns certification and the store listing** — wiqd does not submit
-on the partner's behalf. The goal of this workflow is to get a validated package,
-then drive it through the Partner Center submission and certification flow.
+wiqd can prepare and submit a verified Draft through **`wiqd publish pc`** when
+the installed Marketplace extension is available. **Partner Center owns
+certification and store publication.** Submission needs separate, explicit
+authority for the exact operation. When direct commands are disabled or removed,
+use the portal journey below without silently activating an extension or flag.
 
 > **Convention:** When calling wiqd commands from a skill context, always use
-> `--json` for commands that produce output the model needs to parse.
+> `--json` for commands that produce output the model needs to parse. Pass
+> `--skill wiqd --workflow partner-center` on every ordinary CLI call here.
 
 > **Scope:** This is the public 3P path. Publishing to an org's own admin catalog
-> is a different flow (`wiqd agent publish --env <env>`), and Microsoft-internal
+> is a different flow (`wiqd plugin publish --env <env>`), and Microsoft-internal
 > first-party publishing (ring-based rollout to M365 tenants) is out of scope.
 
 ## Routing
 
 | User intent | Action |
 |-------------|--------|
-| "How do I publish / submit / ship my agent to the store", "publish to AppSource", "get into the marketplace" | Follow the **Publishing journey** below |
+| "How do I publish / submit / ship my agent to the store", "publish to AppSource", "get into the marketplace" | Check installed direct-command availability, then follow **Direct publishing** or the portal journey below |
 | Detailed store-listing checklist, icon/URL requirements, per-field guidance | Read `references/wiqd-core/partner-center.md` → Store listing checklist |
 | "Certification failed", "my agent was rejected", troubleshooting a submission | Read `references/wiqd-core/partner-center.md` → Troubleshooting rejections |
-| Build the submittable `.zip` | Read `references/wiqd-core/package.md` — run `wiqd agent package` |
+| Build the submittable `.zip` | Read `references/wiqd-core/package.md` — run `wiqd plugin package` |
 | Fix identified validation findings before submitting | Hand off to `workflows/validation.md` for authorized same-mode repair; return to this publishing journey afterward. |
 | Pre-submission readiness check ("will my agent pass review?") | Hand off to `workflows/validation.md` for Marketplace validation, including package checks on the same final ZIP. |
 
@@ -76,9 +77,9 @@ Build & validate → Package → Package validation + policy advice → Enroll i
 
 | Phase | Partner does | Tool / surface |
 |-------|--------------|----------------|
-| Build & validate | Finalize the agent, fix saved-source errors | `wiqd agent validate --mode source` with the packaging path/environment |
-| Package | Build the distributable `.zip` | `wiqd agent package` |
-| Package validation | Require the final `.zip` to pass package validation | `wiqd agent validate --mode package --package-file "<final.zip>"` |
+| Build & validate | Finalize the agent, fix saved-source errors | `wiqd plugin validate --mode source` with the packaging path/environment |
+| Package | Build the distributable `.zip` | `wiqd plugin package` |
+| Package validation | Require the final `.zip` to pass package validation | `wiqd plugin validate --mode package --package-file "<final.zip>"` |
 | Marketplace readiness | Show policy findings as non-blocking warnings | `workflows/validation.md` when listing/evidence inputs are available |
 | Enroll | Get a verified Partner Center account | Partner Center |
 | Create offer | Start a Microsoft 365 and Copilot offer | Partner Center |
@@ -95,12 +96,13 @@ Before touching Partner Center, confirm the partner has:
 1. **A working, tested agent.** Provision and preview it first ("provision my
    agent", "share my agent") so it behaves correctly before external users can
    install it.
-2. **Clean saved source.** Run `wiqd agent validate --mode source` with the same
+2. **Clean saved source.** Run `wiqd plugin validate --mode source` with the same
    project/environment as packaging and resolve errors. This checks source, not final ZIP acceptance.
 3. **Icons that meet store requirements:** color icon **192×192 px** PNG, outline
    icon **32×32 px** transparent monochrome PNG.
-4. **A publicly reachable Privacy Policy URL and Terms of Use URL** — both are
-   mandatory for the store listing.
+4. **A publicly reachable Privacy Policy URL and an explicit terms choice** —
+   Microsoft Standard Contract or a custom EULA. Only custom EULA requires a
+   publisher-provided public HTTPS Terms of Use URL.
 5. **A Partner Center account** (Step 3) — enrollment and verification take time,
    so start early.
 6. **Company / publisher details** — display name, support contact, and website.
@@ -116,16 +118,16 @@ Partner Center. Require source validation to pass before building.
 
 ```bash
 # Check saved source for the same project and environment before building
-wiqd agent validate --mode source --path "<project>" --env prod
+wiqd plugin validate --mode source --path "<project>" --env prod --skill wiqd --workflow partner-center
 
 # Build the package (use the production environment)
-wiqd agent package --path "<project>" --env prod --output "<final.zip>"
+wiqd plugin package --path "<project>" --env prod --output "<final.zip>" --skill wiqd --workflow partner-center
 ```
 
 The build produces an app package `.zip` under the project's `appPackage/`
 directory containing the manifest, icons, and declarative agent / plugin
-definitions. **This is the file the partner submits.** If `wiqd agent package`
-reports errors, resolve them first — re-run `wiqd agent validate --mode source` with the same path/environment for
+definitions. **This is the file the partner submits.** If `wiqd plugin package`
+reports errors, resolve them first — re-run `wiqd plugin validate --mode source` with the same path/environment for
 manifest-level problems and use `--verbose` for the full upstream output. For
 packaging details, read `references/wiqd-core/package.md`.
 
@@ -134,7 +136,7 @@ packaging details, read `references/wiqd-core/package.md`.
 Before guiding any Partner Center upload or submission, run:
 
 ```bash
-wiqd agent validate --mode package --package-file "<final.zip>" --json
+wiqd plugin validate --mode package --package-file "<final.zip>" --json --skill wiqd --workflow partner-center
 ```
 
 Require `validation.result == "PASSED"` from this independent package run on the
@@ -159,6 +161,70 @@ source/ZIP changes, rerun applicable source/package validation before resuming.
 Marketplace policy checks are not a prerequisite for tenant LOB or org-catalog
 publishing, sideloading, or ordinary audience/ring sharing.
 
+## Direct publishing
+
+Before choosing this path, inspect the installed command help using ordinary
+CLI discovery. If `publish pc` is absent because Marketplace is disabled,
+removed, or unavailable, explain that limitation and continue with the portal
+steps below. Do not enable it, install another provider, or infer availability
+from successful authentication.
+
+After Steps 0-2 have validated the exact final ZIP:
+
+1. Confirm Partner Center enrollment, publisher profile and program access with
+   the partner. Authentication is not enrollment, legal acceptance, or readiness.
+2. Direct the human to run `wiqd auth login --interactive --skill wiqd --workflow partner-center` from the intended
+   project in a real terminal, optionally with `--tenant <seller-tenant-guid>`.
+   Generic missing-profile login initially offers Skip Marketplace setup before
+   touching protected storage. Discovery/another directory starts setup; verify
+   the returned Seller Id separately and confirm the exact binding destination.
+   Sign in with the home work account, targeting the seller tenant, never a guest
+   object as a separate password-bearing account. No embedded sign-in or
+   borrowed credentials. Never run interactive login from a redirected agent tool.
+3. Initialize the verified binding, then collect the partner's explicit listing
+   choices in `partner-center.json`: language, title/description/short summary,
+   categories, privacy/support URLs, standard Microsoft or custom terms, a custom
+   terms URL only for custom terms, release notes, availability at least 24 hours
+   ahead, a listing logo, one to five screenshot paths/captions, whether a separate
+   service purchase or in-app purchases are required, and up to two
+   publisher-confirmed industries. Do not invent legal choices, purchase answers,
+   industries, placeholder URLs, screenshots, or publisher identifiers.
+4. Pass the exact validated ZIP and explicit release notes to preflight and
+   preparation. Ask for Draft-work authority before using standalone `--yes`.
+   Preparation must complete with a verified Draft before any submission.
+
+```bash
+wiqd publish pc init --path "<project>" --json --skill wiqd --workflow partner-center
+wiqd publish pc preflight --path "<project>" --package "<final.zip>" --release-notes "<approved notes>" --json --skill wiqd --workflow partner-center
+wiqd publish pc prepare --path "<project>" --package "<final.zip>" --release-notes "<approved notes>" --yes --json --skill wiqd --workflow partner-center
+```
+
+5. Obtain **explicit submission authority** for the exact verified Product,
+   publisher, package and terms. `--yes` confirms preparation only.
+   `submit --yes --interactive` belongs in the human's real terminal and requires
+   typed confirmation. Only when the user explicitly authorizes unattended
+   submission for that exact operation may you relay `--authorize-submit`.
+   Never derive that authority from preparing a Draft, login, validation,
+   defaults, saved configuration, or a broad request for help. Bare `publish pc`
+   composes preparation/submission and must not be used for a prepare-only request.
+6. Read `wiqd publish pc status --product-id "<prepared product/GUID>" --json
+   --skill wiqd --workflow partner-center`. Report accepted submission, active
+   certification, rejection and independently verified Live state separately.
+   A successful job is not certification or publication.
+
+Stop on pending/unknown outcomes and preserve the Product/job identifiers and
+local receipts. Do not repeat create/upload/submit blindly or delete receipts
+to retry. `resume` is simulated, not live recovery. Use status or Partner Center
+portal recovery and explain current limits. A changed package requires fresh
+validation and preparation; neither authorization mode permits stale Drafts.
+Read `references/wiqd-core/partner-center.md` for listing and rejection details.
+
+## Portal alternative
+
+Use Steps 3-8 when direct commands are disabled/unavailable or the partner
+chooses the portal. The exact-package validation and advisory-policy boundaries
+from Steps 1-2 still apply.
+
 ## Step 3 — Enroll in and set up Partner Center
 
 1. Go to the **Partner Center dashboard**: <https://partner.microsoft.com/dashboard>
@@ -172,6 +238,22 @@ publishing, sideloading, or ordinary audience/ring sharing.
    apps, and Copilot agents.
 
 ## Step 4 — Create the offer
+
+Ask the publisher: **Microsoft Standard Contract or your own custom EULA?**
+Present both choices without a default or inferred recommendation, including for
+an existing offer. If already configured, confirm the saved choice rather than
+silently changing it. Link the
+[Partner Center Standard Contract guidance](https://learn.microsoft.com/en-us/partner-center/marketplace-offers/standard-contract)
+so the publisher can review the implications, including restrictions after
+publication. This is not legal advice or agreement acceptance.
+
+For Standard Contract, select `standardMicrosoft` in the offer's terms settings
+and do not ask for or supply a Terms of Use URL. For custom EULA, ask for the
+publisher's own publicly reachable HTTPS URL and select `custom` with that URL.
+Reject malformed URLs or embedded credentials; never invent, write or host an
+EULA. These names describe the terms choices, not a command on the public 3P
+CLI. The partner makes and confirms the portal selection; the assistant never
+accepts agreements on their behalf.
 
 1. In Partner Center, open **Marketplace offers** and create a **new Microsoft 365
    and Copilot offer** (Teams app / Office Store offer).
@@ -187,17 +269,30 @@ publishing, sideloading, or ordinary audience/ring sharing.
 2. Partner Center reads the manifest to pre-populate offer metadata (app name,
    version, capabilities). Verify these look correct.
 3. To push a new version later, **bump the `version` field in the app manifest**
-   (`appPackage/manifest.json`) and re-run `wiqd agent package` before uploading
+   (`appPackage/manifest.json`) and re-run `wiqd plugin package` before uploading
    again — Partner Center rejects a re-upload with the same version.
 
 ## Step 6 — Complete the store listing
 
 Fill in the customer-facing listing. Certification checks these, so be thorough:
 app name and descriptions, screenshots, category / search terms, icons (matching
-the package), the mandatory Privacy Policy and Terms of Use URLs, support contact,
+the package), the mandatory Privacy Policy URL and confirmed terms choice
+(Terms of Use URL only for custom EULA), support contact,
 publisher website, and supported languages / markets. For the complete
 field-by-field checklist and asset requirements, read
 `references/wiqd-core/partner-center.md`.
+
+Ask the partner explicitly: **does the plugin require purchasing a separate
+service, or offer in-app purchases?** Have them confirm the Associated service
+purchase answer in Partner Center; never assume No for a third-party publisher.
+
+Offer optional **Industries** only when the plugin serves industry-specific
+needs. Use the supported labels in the field reference, allow at most two, and
+require partner confirmation of suggestions. Confirm **Apps** applicability and
+ensure the description supports each selected industry. Leave industries unset
+for a general-purpose plugin. **Clouds for Industry is managed-partner-only**;
+never select it without that eligibility. Apply the same confirmed choices to
+the direct configuration and the portal listing.
 
 ## Step 7 — Submit for certification
 
@@ -234,11 +329,11 @@ privacy/terms URLs, consent/permission flags, responsible-AI feedback), read
 
 ## Related commands
 
-- `wiqd agent validate --mode source` — same-path/environment pre-build workflow gate.
-- `wiqd agent validate --mode package --package-file "<final.zip>"` — required final ZIP package gate.
-- `wiqd agent validate --mode marketplace --package-file "<final.zip>"` — package plus policy readiness through the canonical workflow; policy findings are advisory for publishing.
-- `wiqd agent package` — builds the `.zip` uploaded to Partner Center.
-- `wiqd agent provision` / `wiqd agent share` — provision and preview with early
+- `wiqd plugin validate --mode source` — same-path/environment pre-build workflow gate.
+- `wiqd plugin validate --mode package --package-file "<final.zip>"` — required final ZIP package gate.
+- `wiqd plugin validate --mode marketplace --package-file "<final.zip>"` — package plus policy readiness through the canonical workflow; policy findings are advisory for publishing.
+- `wiqd plugin package` — builds the `.zip` uploaded to Partner Center.
+- `wiqd plugin provision` / `wiqd plugin share` — provision and preview with early
   users before publishing publicly.
-- `wiqd agent publish --env <env>` — different path: publish to an org's own admin
+- `wiqd plugin publish --env <env>` — different path: publish to an org's own admin
   catalog (tenant-internal), **not** the public store.

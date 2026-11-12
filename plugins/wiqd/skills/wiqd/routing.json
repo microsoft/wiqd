@@ -7,7 +7,7 @@
       "id": "wiqd-core",
       "file": "workflows/wiqd-core.md",
       "routingLabel": "Agent lifecycle tasks",
-      "routingIntent": "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, connecting Worker Agents, adding capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation",
+      "routingIntent": "Creating, general editing, setting response behavior, coordinating Azure-hosted OpenAPI servers, adding/removing Worker agents by reference, capabilities, actions, skills, and authentication, provisioning, packaging, sharing, deleting, showing agents; explicit validation and report-bound repair belong to validation",
       "order": 1,
       "triggers": [
         "create agent",
@@ -62,16 +62,18 @@
         "disconnect a worker agent"
       ],
       "requires": [
-        "agent create",
+        "plugin create",
+        "plugin add",
+        "plugin validate",
+        "plugin provision",
+        "plugin package",
+        "plugin share",
+        "plugin show",
+        "plugin list",
+        "plugin reset",
         "agent add",
-        "agent validate",
-        "agent provision",
-        "agent package",
-        "agent share",
-        "agent env",
-        "agent show",
-        "agent delete",
-        "agent publish"
+        "plugin delete",
+        "plugin publish"
       ],
       "journeyPhases": [
         "Build",
@@ -108,6 +110,11 @@
         "add an existing connector to my plugin",
         "add the Azure DevOps connector to my plugin",
         "add Azure DevOps MCP to my plugin",
+        "create a connector",
+        "create a connector from my MCP server",
+        "register my MCP server as a connector",
+        "create a custom connector from an OpenAPI definition",
+        "create a connector from a swagger file",
         "cowork plugin",
         "build a cowork plugin",
         "create a cowork plugin",
@@ -156,6 +163,7 @@
         "plugin add connector",
         "connector list",
         "connector show",
+        "connector add",
         "plugin add agent",
         "plugin validate",
         "plugin show",
@@ -203,7 +211,7 @@
       "id": "workiq",
       "file": "workflows/workiq.md",
       "routingLabel": "WorkIQ tasks",
-      "routingIntent": "Monitoring, asking, listing deployed agents",
+      "routingIntent": "Monitoring, asking, listing deployed agents, and remote card lookup",
       "order": 4,
       "triggers": [
         "monitor my agent",
@@ -228,6 +236,7 @@
         "list my agents",
         "show deployed agents",
         "find agent by name",
+        "show deployed agent card",
         "ask work iq",
         "organization context",
         "people information",
@@ -240,8 +249,9 @@
       ],
       "requires": [
         "agent monitor",
-        "agent ask",
-        "agent list"
+        "plugin ask",
+        "agent list",
+        "agent show"
       ],
       "journeyPhases": [
         "Publish"
@@ -301,8 +311,8 @@
         "ISV publishing"
       ],
       "requires": [
-        "agent validate",
-        "agent package"
+        "plugin validate",
+        "plugin package"
       ],
       "journeyPhases": [
         "Publish"
@@ -368,7 +378,7 @@
         "validate and fix my agent"
       ],
       "requires": [
-        "agent validate"
+        "plugin validate"
       ],
       "journeyPhases": [
         "Improve"
@@ -389,10 +399,10 @@
         "unattended agent deployment"
       ],
       "requires": [
-        "agent validate",
-        "agent provision",
-        "agent package",
-        "agent publish"
+        "plugin validate",
+        "plugin provision",
+        "plugin package",
+        "plugin publish"
       ],
       "journeyPhases": []
     }
@@ -755,6 +765,31 @@
     },
     {
       "phrase": "add azure devops mcp to my plugin",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a connector",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a connector from my mcp server",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "register my mcp server as a connector",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a custom connector from an openapi definition",
+      "workflowId": "plugin",
+      "workflowFile": "workflows/plugin.md"
+    },
+    {
+      "phrase": "create a connector from a swagger file",
       "workflowId": "plugin",
       "workflowFile": "workflows/plugin.md"
     },
@@ -1135,6 +1170,11 @@
     },
     {
       "phrase": "find agent by name",
+      "workflowId": "workiq",
+      "workflowFile": "workflows/workiq.md"
+    },
+    {
+      "phrase": "show deployed agent card",
       "workflowId": "workiq",
       "workflowFile": "workflows/workiq.md"
     },

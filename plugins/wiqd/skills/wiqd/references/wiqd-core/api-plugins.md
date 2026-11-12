@@ -21,7 +21,7 @@ After running `wiqd agent add action`, complete the following before delivering 
 3. **Customize adaptive cards** in `appPackage/adaptiveCards/` for each operation — different layouts per HTTP verb (list view for GET collections, detail view for GET by ID, confirmation for DELETE, etc.)
 4. **Add `confirmation` dialogs** for all destructive operations (POST, PUT, PATCH, DELETE)
 5. **Verify authentication and required inputs** using [Configure and Verify API Plugin Authentication](#configure-and-verify-api-plugin-authentication).
-6. **Provision when requested**, after required configuration is complete, using `wiqd agent provision --env local` for the local environment or the environment requested by the user.
+6. **Provision when requested**, after required configuration is complete, using `wiqd plugin provision --env local` for the local environment or the environment requested by the user.
 
 The `wiqd agent add action` command generates scaffolding, not a finished integration. Apply the customization requirements below when customization is in scope; do not claim the action is provision-ready while required configuration remains incomplete.
 
@@ -1113,7 +1113,7 @@ Content-Type: application/json
 
 ```bash
 # Provision the agent
-wiqd agent provision --env local
+wiqd plugin provision --env local
 
 # Use the returned test URL to test in M365 Copilot
 ```
