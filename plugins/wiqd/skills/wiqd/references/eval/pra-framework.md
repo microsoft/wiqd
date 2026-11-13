@@ -1,4 +1,4 @@
-# PRA Framework: Perceive-Reason-Act for Agent Evaluation
+# PRA Framework: Perceive-Reason-Act for Agent and Plugin Evaluation
 
 ## Overview
 
@@ -49,7 +49,10 @@ Using PRA ensures eval suites are structurally complete — they cover the agent
 
 **What it tests:** Whether the agent follows its system instructions, avoids hallucination, and produces logically coherent responses.
 
-**Applicability:** Always applicable when system instructions exist. Because system instructions are required for eval generation, Reason evals are always included.
+**Applicability:** Applies to Agent instructions and Plugin skill/instruction
+constraints. For connector-only Plugins, derive Reason from verified tool task
+descriptions, required inputs and constraints; missing instructions alone must not
+block generation. A usable behavioral definition is still required.
 
 **Tests:**
 
@@ -112,19 +115,29 @@ Using PRA ensures eval suites are structurally complete — they cover the agent
 
 The following table determines which PRA categories apply based on manifest contents.
 
-| Manifest Contents                              | Perceive | Reason | Act | Notes                                               |
-| ---------------------------------------------- | -------- | ------ | --- | --------------------------------------------------- |
-| System instructions + grounding + capabilities | YES      | YES    | YES | Full PRA                                            |
-| System instructions + grounding only           | YES      | YES    | NO  | No actions declared                                 |
-| System instructions + capabilities only        | NO       | YES    | YES | No grounding sources                                |
-| System instructions only                       | NO       | YES    | NO  | No grounding or actions                             |
-| No system instructions                         | ERROR    | —      | —   | Cannot generate evals; system instructions required |
+| Manifest Contents                              | Perceive    | Reason | Act | Notes                                   |
+| ---------------------------------------------- | ----------- | ------ | --- | --------------------------------------- |
+| System instructions + grounding + capabilities | YES         | YES    | YES | Full PRA                                |
+| System instructions + grounding only           | YES         | YES    | NO  | No actions declared                     |
+| System instructions + capabilities only        | NO          | YES    | YES | No grounding sources                    |
+| System instructions only                       | NO          | YES    | NO  | No grounding or actions                 |
+| Connector-only Plugin with verified tools      | If grounded | YES    | YES | Reason uses tool/task/input constraints |
+| Agent without system instructions              | ERROR       | —      | —   | Ask for Agent instructions              |
 
 **Grounding sources** include: SharePoint sites, Graph connectors, knowledge bases, file uploads, web search plugins when scoped.
 
 **Capabilities/actions** include: plugins, API connectors, function tools, external service integrations declared in the manifest.
 
-If the manifest is ambiguous (e.g., a plugin that could be either grounding or action), treat it as an action (Act) and note the assumption.
+Do not infer grounding from a connector's existence or tools from a skill name.
+Read the registered definitions. An MCP URL without tool metadata leaves callable
+inventory unknown; obtain metadata or clarify before recommending tool coverage.
+Root Plugin `agentSkills[]`/`agentConnectors[]` are distinct from an Agent's
+embedded skills/actions. Resolve the evaluation target before applying this table.
+For Plugin grounding/reference-answer scenarios, use Groundedness with actual
+source context or Similarity with a specific reference response, never Citations
+or Retrieval evaluators. These alternatives assess answers, not citation
+correctness or retrieval queries/results/ranking. Report that coverage limitation;
+do not fabricate source/reference content or silently rewrite an existing suite.
 
 ---
 
@@ -172,7 +185,10 @@ For each category, allocate slots in this order:
 2. **Edge cases second:** After coverage is satisfied, fill remaining slots with edge cases, adversarial prompts, and boundary conditions.
 3. **Reasoning:** For Reason, prioritize one eval per distinct constraint or persona rule declared in system instructions before adding general coherence/hallucination tests.
 
-If the number of declared sources or capabilities exceeds the slot allocation for that category, generate one eval per source/capability and use any remaining slots for the most impactful edge cases.
+Include declared skill starter prompts within the approved total. If sources,
+callable tools, constraints or starters exceed the available slots, explain the
+coverage tradeoff and ask whether to increase the count or prioritize coverage.
+Never silently exceed the exact approved total.
 
 ---
 
@@ -191,9 +207,12 @@ Report exclusions to the user only when a PRA category is omitted due to missing
 - Do not announce that Reason evals are included (they always are).
 - Do not list all three categories and mark them included/excluded unless the user requests a summary.
 
-**Error case — no system instructions:**
-If the manifest contains no system instructions, halt eval generation and inform the user:
+**Error case — Agent without system instructions:**
+If the Agent contains no system instructions, halt Agent generation and inform the user:
 "Cannot generate evals — no system instructions found in manifest. System instructions are required to determine agent scope, constraints, and persona."
+
+This error does not apply to a connector-only Plugin with sufficient verified tool
+and task constraints; use Reason/Act and include Perceive only with grounding.
 
 ---
 
@@ -216,13 +235,23 @@ PRA ensures the eval suite covers the right failure modes. Eval CLI metrics scor
 
 When generating evals, translate each PRA category into the following evaluator configuration. Apply this mapping to every prompt in the eval suite. See [eval-templates.md](eval-templates.md) for full JSON examples including the `context` field.
 
-| PRA Category                        | Evaluators to assign                                      | `evaluators_mode`  | Notes                                                                                                                                                                                                                                                  |
-| ----------------------------------- | --------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Perceive**                        | `Groundedness` (threshold: 4), `Citations`                | `extend` (default) | Add to file-level defaults (Relevance + Coherence + Groundedness). Raise Groundedness threshold. Add Citations. Populate `context` with actual knowledge source text.                                                                                  |
-| **Reason**                          | `Coherence` (threshold: 4, optional)                      | `extend` (default) | Defaults usually suffice. Only add Coherence override for structure-critical prompts. May omit `evaluators` entirely if no threshold override needed.                                                                                                  |
-| **Act**                             | `Similarity` (no dedicated tool-call evaluator available) | `extend` (default) | `ToolCallAccuracy` is currently unsupported (see [gaps.md](gaps.md)); add `Similarity` on top of file-level defaults and write a precise `expected_response` naming the expected action so Relevance/Coherence/Similarity can approximate correctness. |
-| **Boundary** (out-of-scope refusal) | `PartialMatch`                                            | **`replace`**      | Replace all LLM evaluators — only string match is meaningful for refusal responses.                                                                                                                                                                    |
-| **Deterministic** (exact output)    | `ExactMatch`                                              | **`replace`**      | Replace all LLM evaluators — only exact string match is appropriate.                                                                                                                                                                                   |
+| PRA Category                        | Evaluators to assign                                              | `evaluators_mode`  | Notes                                                                                                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Perceive**                        | `Groundedness` (threshold: 4); Agent-only `Citations`             | `extend` (default) | Raise Groundedness and provide actual source `context`. Add Citations only for Agents, never Plugins.                                                 |
+| **Reason**                          | `Coherence` (threshold: 4, optional)                              | `extend` (default) | Defaults usually suffice. Only add Coherence override for structure-critical prompts. May omit `evaluators` entirely if no threshold override needed. |
+| **Act**                             | Optional `Similarity`, V2 `ToolCallSelection`/`ToolCallExecution` | `extend` (default) | Use schema V2 and verified tool identities/runtime evidence; review arguments separately.                                                             |
+| **Boundary** (out-of-scope refusal) | `PartialMatch`                                                    | **`replace`**      | Replace all LLM evaluators — only string match is meaningful for refusal responses.                                                                   |
+| **Deterministic** (exact output)    | `ExactMatch`                                                      | **`replace`**      | Replace all LLM evaluators — only exact string match is appropriate.                                                                                  |
+
+Plugin defaults and every item/turn override allow only Relevance, Coherence,
+Groundedness, Similarity, PartialMatch, ExactMatch, ToolCallSelection and
+ToolCallExecution. Tool-call checks require V2 preview/schema V2 and configured
+`calls[].tool` identities; see [eval-templates.md](eval-templates.md).
+Do not generate Citations, Retrieval or ToolCallAccuracy for Plugins. Check
+existing datasets at all scopes and propose a separately approved adaptation rather
+than silently dropping evaluators. Agent-only examples must not be copied unchanged
+into Plugin suites. Skill output-format constraints are Reason scenarios;
+Groundedness checks factual content, not JSON/schema syntax.
 
 ### `extend` vs `replace` mode
 
@@ -248,7 +277,12 @@ The `context` field supplies the actual source text to the Groundedness evaluato
 
 When source content is not available at generation time:
 
-1. Use the knowledge source's declared URL/path and the topic of the prompt to write a representative excerpt.
-2. If you still cannot provide real source text, set `context` to a standardized placeholder string such as `[[TO_BE_REPLACED_WITH_REAL_SOURCE_CONTEXT]]` and ensure this is replaced with actual source content before the eval suite is run. This keeps the JSON valid without adding comments or extra fields.
+1. Obtain actual source text through an authorized read or request a source fixture.
+2. If unavailable, flag the gap in the preview. A draft may use
+   `[[TO_BE_REPLACED_WITH_REAL_SOURCE_CONTEXT]]`, but it must be replaced with actual
+   source text before execution. Never synthesize source evidence from a URL/topic.
 
-Do not conflate PRA category with evaluator assignment. A Perceive scenario includes the Groundedness evaluator because Groundedness is already in the file-level `default_evaluators` — the per-prompt `evaluators` field for Perceive prompts raises the threshold (`"Groundedness": { "threshold": 4 }`) and adds `Citations`. It does not add Groundedness from scratch. If you omit the per-prompt `evaluators` field on a Perceive prompt, Groundedness still runs (at the default threshold) because it is a file-level default.
+Do not conflate PRA category with evaluator assignment. Groundedness is already
+a file-level default; Perceive overrides its threshold to 4 with actual context.
+Only Agents add Citations. Plugins never do. Omitting the override leaves
+Groundedness at the default threshold, not the required Perceive threshold.

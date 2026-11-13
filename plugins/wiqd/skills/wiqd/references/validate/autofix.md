@@ -27,6 +27,12 @@ diagnostics, confirmed project and selected environment, not ZIP/report paths.
 Package/Marketplace also retain exact report paths, normalized provider modes,
 ZIP path/hash, optional listing and actual build environment when source is used.
 Validation's default `--env local` is not proof of how a ZIP was built.
+For a source rebuild, also recover the original packaging command and explicit
+supplemental-file inclusion requirements. Compare the retained ZIP entries with
+the authoring inputs: a supplemental release-metadata sidecar
+can be unreferenced and omitted by an ordinary rebuild. Missing inclusion
+provenance or an unavailable supplemental source is a blocker, not permission
+to silently drop the entry.
 
 For a new session ask for the exact result/report and missing applicable context;
 never select the newest report or ZIP. Simulated output and execution failures
@@ -127,6 +133,17 @@ command directly, without general Core workflows:
 ```bash
 wiqd plugin package --path "<project>" --env "<build-env>" --output "<new-absolute.zip>" --json --skill wiqd --workflow validation
 ```
+
+When the original build needed `--include-file`, retain that option with the
+confirmed project-relative or contained absolute source path on this command.
+Preserve the validated supplemental file's bytes unless its repair is explicitly
+authorized. Inspect the new ZIP and require the expected root entry and bytes;
+an unreferenced supplemental file needs its original inclusion, for example
+`--include-file ./appPackage/release-metadata.json`. If the native build already supplies
+the same entry, verify its bytes and omit the extra inclusion instead.
+Never overwrite an entry or bypass the inclusion collision checks. If original
+inclusion requirements cannot be reproduced with the supported single-file
+option, stop rather than inventing a lossy rebuild.
 
 Require exit 0, `data.outputPath` matching the previously absent target and a nonempty
 ZIP. Preserve the original. Never reuse a stale ZIP after failure or manually assemble

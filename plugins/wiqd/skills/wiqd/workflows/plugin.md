@@ -290,7 +290,9 @@ Use this only when the user asks to **create** or **register** a connector — f
 a connector from my MCP server at https://contoso.com/mcp"** or **"Create a custom connector from
 this Swagger file"**. Adding an existing catalog connector uses the flow above instead. `connector
 add` runs outside a plugin project and creates a server-side connector on the MCP Platform
-production service; it does not modify any plugin.
+production service; it does not modify any plugin. Only when the user explicitly asks to test against
+the MCP Platform Test or PreProd deployment, set `WIQD_MCP_PLATFORM_ENV` to `test` or `preprod`
+for that command's shell; never choose a non-production target yourself.
 
 1. Build a private input JSON file with exactly one source:
    - **MCP server:** `serverUrl` (HTTPS), `displayName`, optional `description`.
@@ -300,7 +302,8 @@ production service; it does not modify any plugin.
 2. Add an `authentication` object. Ask which type applies; never guess it:
    - `NoAuth` — `type` only.
    - `APIKey` — `apiKeyName` and `apiKeyLocation` (`header` or `query`); never the key value.
-   - `EntraOAuth` — `clientAppId`, `clientAppSecret`, `scope`.
+   - `EntraOAuth` — `clientAppId`, `clientAppSecret`, `scope`, and `resourceUri` when
+     scopes are relative rather than fully qualified with one resource URI.
    - `ExternalOAuth` — the OAuth fields plus HTTPS `externalIdpAuthorizationUrl` and
      `externalIdpTokenUrl`, and optional HTTPS `externalIdpRefreshUrl` when the provider
      refreshes tokens at a different endpoint.
@@ -316,12 +319,63 @@ production service; it does not modify any plugin.
    permission. On exit 2, branch on `error.code`: `CONNECTOR_ADD_INPUT_UNREADABLE` means the input
    path or file must be fixed; `CONNECTOR_ADD_AUTH_REQUIRED` means report the sign-in or permission
    remediation. Do not retry either automatically.
-4. Report `connectorId`, `displayName`, and `correlationId`. Never retry automatically: after a
+4. Report `connectorId`, `displayName`, and `correlationId`. When `redirectUris` is present, list
+   every value and tell the user to add each one to their OAuth app registration before sign-in;
+   never invent or derive a redirect URI when the field is absent. Never retry automatically: after a
    timeout or `CONNECTOR_ADD_OUTCOME_UNKNOWN`, the connector may already exist, so give the user
    the correlation ID.
 5. Explain that creation does not prove catalog publication, a connection, or tool readiness. To
    reference the result in a plugin, use the explicit OpenAPI preview path above with
    `--auth-reference-id "<connectorId>"` after the user confirms the preview choice.
+
+#### Connector certification preparation
+
+When the user explicitly requests **connector certification preparation**, use
+`--prepare-for-certification` (alias `--prepareForCertification`) on **both**
+`connector add` and `plugin package`. Do not add it to ordinary creation,
+discovery, composition, or every Partner Center package by default.
+
+```bash
+wiqd connector add --input-file <file> --prepare-for-certification --dry-run --json --skill wiqd --workflow plugin
+wiqd connector add --input-file <file> --prepare-for-certification --json --skill wiqd --workflow plugin
+```
+
+Reuse the private input/authentication guidance above. WIQD maps it to Swagger
+security and `oauthRegistration`; conflicting authored Swagger security is an input
+error, not permission to strip or overwrite it. MCP Platform owns tenant service
+connector creation and Marketplace staging of static OAuth credentials. The new
+certification API and tenant CMS route must be deployed: report 404, a credentials-only
+204, partial outcomes, or transport failure; never retry automatically or fall back
+to ordinary creation. The new CMS response must provide `connectionVaultId` with
+a trailing `_<tenantId>`; the old `connectorName`/hyphen contract is incompatible.
+Do not supply a vault ID: the backend derives the credential-storage key from the
+response by removing only that tenant suffix.
+NoAuth/APIKey have no static OAuth client credentials to stage.
+
+Report the exact returned `connectorId` and `validationConnectorId`. The service
+includes a trailing `_<tenantId>` GUID suffix; both output IDs are the same full
+reference. Never reconstruct it from the name. Relay any returned `redirectUris`
+for app registration exactly as in ordinary creation.
+Compose the full returned ID via the explicit OpenAPI preview path above, separately
+from creation. Preparation is not certification approval or publication.
+
+```bash
+wiqd plugin package --path <dir> --env <env> --prepare-for-certification --output <fresh-primary.zip> --json --skill wiqd --workflow plugin
+```
+
+Normal packaging retains provisioning requirements. For an explicitly requested
+local-only connector/skill preview, add `--offline` instead; it does not provision,
+authenticate, or validate on the server. Both final paths must be new. Read the
+returned `outputPath` and `validationOutputPath`; the latter inserts `.validation`
+before `.zip` and retains the complete service-returned references. The primary
+ZIP removes only the trailing `_<tenantId>` GUID from `ConnectionVault` connector
+`authorization.referenceId` values. Neither reference gains `_validation`.
+All other member bytes/manifest values and
+the source stay unchanged, including `--include-file` content. Do not hand-edit a
+second source manifest, remove the source ID's tenant suffix, or claim a pair after a
+failure. Mock mode refuses this flavor; `--offline` without `--mock` builds real ZIPs.
+Keep primary versus validation artifacts distinct when reporting or validating;
+do not upload, publish, share, or submit either without the applicable authorization.
 
 ### 3. Validate
 
@@ -371,7 +425,7 @@ wiqd plugin share --env <shared-env> --scope users --email <e> [--path <dir>] # 
 wiqd plugin delete --env <env> [--path <dir>]   # 4. after confirmation, tear down that deployment
 ```
 
-> **`provision` comes before `package`, `publish`, and `share`.** `provision` is the only command that writes the selected `.env.<env>` under the configured `environmentFolderPath`. `package` needs it to resolve manifest variables; `publish` and `share` require it as provisioning evidence.
+> **`provision` comes before normal `package`, `publish`, and `share`.** `provision` is the only command that writes the selected `.env.<env>` under the configured `environmentFolderPath`. Normal `package` needs it to resolve manifest variables; `publish` and `share` require it as provisioning evidence. Explicit `plugin package --offline` is the local-only connector/skill preview exception; it neither provisions nor establishes deployment readiness.
 
 #### Before sharing — prepare a shared deployment
 
@@ -594,5 +648,5 @@ plugin-owned lifecycle and these returned links.
 - ❌ Don't silently enable the alpha flag — tell the user first (Preflight step 2).
 - ❌ Don't `create` and then hand-copy an existing Open Plugin's files into it — use `plugin import`, which is the supported entry point and preserves round-trip data.
 - ❌ Don't promise that importing a plugin merges its capabilities into an existing agent. The supported import flow creates a new plugin project from a foreign-format source.
-- ❌ Don't `package` before `provision` — `package` needs the `env/.env.<env>` that `provision` writes.
+- ❌ Don't use normal `package` before `provision` — it needs the selected environment file. Only explicit local-only `plugin package --offline` bypasses provisioning.
 - ❌ Don't tell the user an export round-trips if they only keep the manifest — the `agent/` payload must travel with it.

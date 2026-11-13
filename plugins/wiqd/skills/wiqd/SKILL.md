@@ -1,6 +1,6 @@
 ---
 name: wiqd
-description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot declarative agents via the wiqd CLI. Only for WIQD/M365 requests; not generic CI/CD or Kubernetes monitoring. Triggers: M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, evaluate, test, run evals, check agent, generate evals, analyze results, compare runs, submit feedback, report a bug, request a feature, suggest an improvement, list my feedback, publish to partner center, submit to appsource, list in the store, certify my agent, create a plugin, create a connector, cowork plugin, standalone plugin, reusable plugin, validate my agent, check source, validate package, Marketplace validation, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor M365 agent, observe M365 agent, M365 agent usage and analytics, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials"
+description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot declarative agents via the wiqd CLI. Only for WIQD/M365 requests; not generic CI/CD or Kubernetes monitoring. Triggers: M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, evaluate, test, run evals, check agent, generate evals, analyze results, submit feedback, report a bug, request a feature, suggest an improvement, publish to partner center, submit to appsource, list in the store, certify my agent, evaluate plugin, test skills, generate plugin evals, create a plugin, create a connector, cowork plugin, standalone plugin, validate my agent, check source, validate package, Marketplace validation, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor M365 agent, observe M365 agent, M365 agent usage and analytics, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials"
 argument-hint: "create | validate | provision | test | eval | package | share | publish | monitor | feedback | partner-center"
 ---
 
@@ -50,6 +50,7 @@ Complex, stateful tasks with validation, safeguards, and multi-step logic. **Alw
 | Launch the local DevUI web app, and ask an agent while watching the turn run live with full developer detail | `workflows/devui.md` | `devui start`, `devui ask` | "open devui", "launch devui", "start devui", "open the agent debugger", "debug my agent", "test my agent visually", "watch my agent run live", "see it run in the browser" |
 | Explicitly validate source, a final ZIP or Marketplace readiness, run live functional checks, or repair validation findings; not general authoring, account setup or publication | `workflows/validation.md` | `plugin validate` | "validate my agent", "validate source", "check my manifest", "fix my agent manifest", "validate package", "validate this package", "validate this ZIP", "check this ZIP" |
 | Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands | `workflows/agent-ci-cd.md` | `plugin validate`, `plugin provision`, `plugin package`, `plugin publish` | "set up agent CI/CD", "create an agent pipeline", "GitHub Actions for my agent", "Azure Pipelines for my agent", "automate agent deployment", "unattended agent deployment" |
+| Running, generating, analyzing Plugin evaluations | `workflows/plugin-eval.md` | `plugin eval` | "evaluate my plugin", "test my plugin", "evaluate plugin skills", "evaluate connectors", "generate plugin evals", "run plugin evals", "analyze plugin eval results" |
 ## References
 
 Supporting utilities and detailed documentation. Read the matching reference and execute directly.
@@ -118,13 +119,13 @@ Supporting utilities and detailed documentation. Read the matching reference and
 | Azure OpenAI Credential Setup | `references/eval/azure-setup.md` |
 | Eval Generation Templates and Strategy | `references/eval/eval-templates.md` |
 | Known Gaps | `references/eval/gaps.md` |
-| M365 Agent Evaluator — Guardrails Reference | `references/eval/guardrails.md` |
+| M365 Agent and Plugin Evaluator — Guardrails Reference | `references/eval/guardrails.md` |
 | Judge Backends and Evaluator Compatibility | `references/eval/judge-backends.md` |
 | M365 Agent Evaluator — Output Schema Reference | `references/eval/output-schema.md` |
-| PRA Framework: Perceive-Reason-Act for Agent Evaluation | `references/eval/pra-framework.md` |
+| PRA Framework: Perceive-Reason-Act for Agent and Plugin Evaluation | `references/eval/pra-framework.md` |
 | Remediation Patterns Reference | `references/eval/remediation-patterns.md` |
 | Result Analysis Reference | `references/eval/result-analysis.md` |
-| M365 Agent Evaluator — Workflow Reference | `references/eval/workflow.md` |
+| Agent and Plugin evaluation workflow reference | `references/eval/workflow.md` |
 
 **validate**
 
@@ -182,7 +183,7 @@ failures exactly as the CLI reports them.
 ## Journey map
 
 ```
-        Build               Improve              Preview              Publish      
+        Build               Improve              Preview              Publish
   ┌────────────────┐   ┌────────────────┐   ┌────────────────┐   ┌────────────────┐
   │ create         │   │ eval           │   │ package        │   │ partner-center │
   │ edit           │ → │ validate       │ → │ provision      │ → │ publish        │

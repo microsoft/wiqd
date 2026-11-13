@@ -28,22 +28,40 @@ Only the four built-in LLM evaluators (Relevance, Coherence, Groundedness, Simil
 | `RetrievalResult`                                    | Non-LLM      | No                          |              ✅              |
 | `ExactMatch`                                         | String match | No                          |              ✅              |
 | `PartialMatch`                                       | String match | No                          |              ✅              |
+| `ToolCallSelection` (V2/schema V2)                   | Non-LLM      | No                          |              ✅              |
+| `ToolCallExecution` (V2/schema V2)                   | Non-LLM      | No                          |              ✅              |
 | Custom `.prompty` evaluators (e.g. `AssertionJudge`) | LLM          | Yes — **Azure OpenAI only** |              ❌              |
 
 **Only custom `.prompty` evaluators are incompatible with `--judge-backend github-copilot`** — their Python wrapper always receives an `AzureOpenAIModelConfiguration` (see [custom-evaluators/README.md](https://github.com/microsoft/M365-Copilot-Agent-Evals/blob/main/docs/custom-evaluators/README.md)), regardless of `--judge-backend`. Every other built-in evaluator is deterministic/count-based (no judge model at all) or works under either LLM backend.
 
-> ⚠️ **`ToolCallAccuracy` is not currently a supported evaluator.** It does not appear in the upstream evaluator table and is not usable today — do not generate eval documents that declare it, and do not tell users it is an Azure-only evaluator. See [gaps.md](gaps.md).
+> V2 preview supports `ToolCallSelection` and `ToolCallExecution`, not
+> `ToolCallAccuracy`. Both are deterministic under either judge backend and
+> require schema V2 and runtime evidence; stable V1 cannot run them.
+
+**Target restriction:** Backend compatibility does not imply Plugin support.
+Plugins cannot use Citations or any Retrieval evaluator under either backend.
+Generate Groundedness checks with actual source context or Similarity checks
+with a specific reference response instead. These measure response quality,
+not citations or retrieval behavior; disclose the narrower coverage. Existing
+datasets require preview/write approval before substitutions.
 
 ## Pre-flight check the skill must perform
 
-Before invoking `runevals` (directly or via `wiqd agent eval`), read the target prompts file's `default_evaluators` and every item's `evaluators` override, and compare the union of evaluator names against the table above:
+Before invoking `runevals` through WIQD, complete automatic latest-V2 setup,
+read `default_evaluators` and every item/thread/turn evaluator override, and compare
+their union against the table above:
 
-1. If `--judge-backend azure` is selected, no check is needed — every evaluator (including custom `.prompty` ones) is supported.
+1. Check the selected CLI version, target and schema regardless of judge backend.
+   `ToolCallSelection`/`ToolCallExecution` require V2 preview and schema `2.0.0`.
+   Load [eval-templates.md](eval-templates.md) for verified tool identity/configuration.
+   Azure does not make V1 or Plugin-incompatible evaluators supported.
 2. If `--judge-backend github-copilot` is selected (wiqd's default, including when the flag is omitted) and the union contains a custom `.prompty` evaluator, **stop before running** and tell the user:
 
    > "This dataset uses the custom evaluator `<name>`, which always requires Azure OpenAI. Rerun with `--judge-backend azure` (see references/azure-setup.md for setup), or remove `<name>` from this dataset."
 
-3. If the union contains `ToolCallAccuracy`, tell the user it is currently unsupported by the CLI and should be removed from the dataset — do not attempt to run it under either backend.
+3. If the union contains `ToolCallAccuracy` or another unsupported name, explain
+   the incompatibility and propose an approved correction using supported names
+   and verified configuration. Never automatically delete the evaluator.
 4. Never silently drop or skip an unsupported evaluator and continue — surface it explicitly so the user isn't left with confusing, incomplete results.
 
 ## GPT-4.x vs GPT-5.x/o-series model configuration
@@ -94,4 +112,5 @@ See [GPT-5.x and o-series judge models (Microsoft Foundry cloud evaluation)](htt
 See [references/gaps.md](gaps.md) for the full list. Highlights relevant to judge-backend selection:
 
 - `runevals` does not validate evaluator/judge-backend compatibility up front — an incompatible custom evaluator under `--judge-backend github-copilot` is only discovered from run output, not rejected at startup. This skill's pre-flight check above is the only guard against a wasted run until that lands upstream.
-- `ToolCallAccuracy` is currently non-functional and should not be generated or recommended.
+- Tool-call evaluators require V2/schema V2 and actual telemetry; they do not
+  validate tool arguments or ordering. Do not generate `ToolCallAccuracy`.
