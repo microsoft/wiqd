@@ -2,16 +2,20 @@
 
 Honest, current-state limitations in the Evals CLI (`@microsoft/m365-copilot-eval`) and in this skill's integration with it. Surface these to the user proactively when relevant — do not silently work around them or imply they're solved. Re-check this file's claims against the upstream README (`M365-Copilot-Agent-Evals/README.md`, main branch) periodically, since the CLI is actively evolving.
 
-## 1. `ToolCallAccuracy` is not a supported evaluator
+## 1. Tool-call evaluation requires V2 preview and runtime evidence
 
-There is no `ToolCallAccuracy` (or equivalent tool-call-correctness) evaluator in the current built-in evaluator registry — it does not appear in the upstream README's evaluator table under either judge backend. Any prior guidance (in this skill or elsewhere) suggesting it exists or requires Azure OpenAI is stale.
+V2 preview supports deterministic `ToolCallSelection` and `ToolCallExecution`
+for Agents and Plugins with schema V2. Stable V1 does not support them.
+`ToolCallAccuracy` remains an unsupported name, not an Azure-only alternative.
 
-**Workaround:** for Act-category prompts (agent expected to invoke a specific tool/action), verify tool-call correctness indirectly:
+Use verified `calls[].tool` identities and actual Developer Info telemetry; see
+[eval-templates.md](eval-templates.md). Missing telemetry is unknown/error,
+not a passing score. Selection checks identities, not execution; execution checks
+HTTP 2xx multiplicity, not argument correctness, ordering or business outcomes.
 
-- Write a precise `expected_response` describing the expected action and its outcome, and score it with `Relevance`/`Coherence`/`Similarity`.
-- Manually review the agent's transcript/tool-call trace for the correct tool name, parameters, and sequencing — this is currently the only reliable way to catch a wrong-tool or wrong-parameter failure.
-
-This is a functionality gap in the upstream CLI, not something this skill can fully compensate for.
+On V1, response-quality scores remain indirect evidence only. The skill
+automatically upgrades to latest published V2 without offering a V1 choice.
+Never remove tool-call coverage or claim that response text proves invocation.
 
 ## 2. No upfront evaluator/judge-backend compatibility validation
 

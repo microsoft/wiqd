@@ -30,6 +30,7 @@ wiqd plugin package --json --skill wiqd --env <environment> [--output <path>] [-
 | `--output`      | Output path for the zip package       | (auto-generated) |
 | `--path`        | Agent project directory               | `./`             |
 | `--include-file` | One project file included unchanged at the ZIP root | unset |
+| `--prepare-for-certification` | Primary and validation connector-reference ZIPs; alias `--prepareForCertification` | `false` |
 | `-v, --verbose` | Show raw output for debugging         | `false`          |
 
 ## Workflow
@@ -121,3 +122,30 @@ An existing ZIP is replaced atomically only after validation and byte checks.
 Validation uses the unmodified DevPreview schema packaged with the SDK,
 not the live schema URL. The ZIP is **not server-validated**; producing
 it does not certify Cowork, AVL or Store acceptance. No upload is performed.
+
+## Connector certification preparation
+
+Only when requested, follow `workflows/plugin.md` to create the connector with
+`connector add --prepare-for-certification` and separately compose its exact
+returned full `connectorId`. Do not infer the ID from the display name or
+strip a service-selected tenant suffix. Packaging uses the same opt-in flag:
+
+```bash
+wiqd plugin package --path ./my-plugin --env prod --prepare-for-certification --output ./dist/connector.zip --json --skill wiqd --workflow plugin
+```
+
+For explicitly local-only preview packaging, add `--offline`. Read both
+`outputPath` and `validationOutputPath`: the second ZIP is
+`connector.validation.zip`, retaining the exact full `shared_<apiId>_<tenantId>`
+`ConnectionVault` connector references. The primary ZIP removes only the trailing
+`_<tenantId>` GUID suffix from those `authorization.referenceId` values.
+No `_validation` suffix is added to either reference. All other
+manifest values and member bytes remain the same, including any supplemental
+file. Neither the source manifest nor cloud connector configuration is changed.
+Both destinations must be absent; existing artifacts are not overwritten.
+No eligible connector references, missing tenant suffixes, invalid IDs,
+verification failures and cancellation fail without claiming a completed pair.
+Mock mode refuses paired packaging; non-mock offline mode builds real local ZIPs.
+Keep primary and validation ZIPs distinct, validate the selected exact artifact
+when requested, and obtain the applicable authorization before upload/submission.
+Preparation is not certification, policy approval or publication.
