@@ -1,8 +1,9 @@
 ---
 name: eval
 description: >
-  Generate, run, analyze, and safeguard evaluation suites for M365 Copilot Declarative Agents
-  using the Perceive-Reason-Act (PRA) framework. Owns ALL changes to evals/evals.json and
+  Resolve Agent versus Plugin evaluation intent, route Plugins to plugin-eval,
+  and generate, run, analyze and safeguard Agent suites using the PRA framework.
+  Owns Agent changes to evals/evals.json and
   enforces suite integrity against deletions, evaluator removals, and threshold weakening.
 trigger-summary: 'evaluate, test, run evals, check agent, generate evals, analyze results, compare runs'
 triggers: >
@@ -37,11 +38,23 @@ Generate, run, and analyze evaluation suites for M365 Copilot Declarative Agents
 
 ## First Response
 
-Start with Phase 0, even for an explicit request such as "generate 20 fresh items".
+First resolve **Agent versus Plugin** from explicit user intent or minimal root
+package discovery:
+
+- Read `appPackage/manifest.json` registrations, not folder names or leftover files.
+- Nonempty `copilotAgents.declarativeAgents[]` only identifies an Agent.
+- Nonempty root `agentSkills[]` and/or `agentConnectors[]` only identifies a Plugin.
+- If both are present, neither is present, registrations are malformed, or explicit
+  intent conflicts with the package, use `ask_user` to resolve the target. An Agent ID
+  in the request means Agent. A target is never both Agent and Plugin; ask when unclear.
+- For a Plugin, load `workflows/plugin-eval.md` and follow it instead of the Agent
+  phases below. Never require an Agent ID or call Agent eval init for that target.
+
+Then start Phase 0, even for an explicit request such as "generate 20 fresh items".
 Discover existing datasets, use `ask_user` to offer **Use an existing dataset** or
 **Generate a new dataset**, and stop until the user answers. The request's count
-and preference do not replace that choice. Do not read the agent manifest or
-instructions, analyze PRA, or propose scenarios before the answer.
+and preference do not replace that choice. Do not perform detailed definition or
+instruction analysis, analyze PRA, or propose scenarios before the answer.
 
 After the choice, retain the requested count and present the proposal with both
 user-facing references: [PRA framework](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#perceive-reason-act-pra-framework)
@@ -62,7 +75,7 @@ in the explanation. Dataset selection and approval to write are separate steps.
 ## Pre-requisites
 
 1. Confirm Node.js 24.12.0 or newer.
-2. Before a consented run, use `wiqd exec runevals --version` and report the extension-managed version. This can install or refresh packages even with `--version`; for a no-install walkthrough use the read-only metadata procedure in Phase 0A instead. wiqd silently refreshes its exact extension pin when a newer one is available; if the refresh fails, continue with the installed version and do not block the run or install a separate global package. Change to the agent project directory, verify the version, then run `wiqd exec runevals --init-only` only when initialization is authorized.
+2. For no-install walkthroughs, use Phase 0A's read-only metadata check; do not execute `runevals`. For generation/execution, after dataset selection, follow [Automatic latest-V2 setup](#automatic-latest-v2-setup) without an upgrade prompt. Verify/report the resolved V2 version and retain its `M365_COPILOT_EVAL_PATH` override for every call. Run `--init-only` from the target project only when authorized. Disclose setup failures; never fall back to V1 or bypass EULA, authentication, or dataset-write approvals.
 3. For run or analysis requests, locate a prompts document in `evals/prompts.json`, `evals/evals.json`, or the path supplied with `--config`. For manifest-aware generation requests, a missing prompts document is expected: do **not** run `wiqd agent eval init`, because that command emits a fixed seven-item bootstrap for the default ATK template rather than the requested generated count.
 4. Resolve the deployed agent ID from `--agent-id`, `M365_TITLE_ID`, `AGENT-ID`, `AGENT_ID`, or `M365_AGENT_ID`. The environment file may be in the project root or `env/`.
 5. Discover `.env.local` and `.env.dev` in both the project root and `env/`. Pair the selected base with its corresponding `.env.local.user` or `.env.dev.user` credentials file in the same supported locations. If both local and dev bases exist and the user did not pass `--env`, ask which environment to use before reading values or running. Resolve the tenant ID from `TEAMS_APP_TENANT_ID` or `TENANT_ID` without printing any other environment values.
@@ -81,7 +94,9 @@ Agent access is authenticated by `runevals`, independently of ATK and wiqd authe
 
 EULA acceptance is also separate from authentication. The Eval CLI blocks before loading environment or acquiring tokens when its EULA marker is missing or stale. wiqd detects that gate and requires human consent; never treat EULA acceptance as an authentication retry or accept it on the user's behalf.
 
-An ATK project is required for **generation** because the skill needs the agent definition and instructions. It is not required for **running** an existing dataset against an explicitly identified deployed agent.
+A readable registered Agent package and its instructions are required for
+**generation**, not ATK lifecycle files. Neither is required for **running** an
+existing dataset against an explicitly identified deployed agent.
 
 ### Credential Check
 
@@ -157,8 +172,8 @@ EULA boundary, and the tracked schema/PRA/judge links in this walkthrough.
 
 When the Eval CLI is missing, outdated by explicit user request, uninitialized, or the selected judge is not ready:
 
-1. Run `wiqd exec runevals --version` to silently install or refresh the exact extension-managed pin; if that refresh fails, keep using the installed version.
-2. Change to the agent project directory, note the managed version (an older installed version is acceptable), then run `wiqd exec runevals --init-only`.
+1. Complete [Automatic latest-V2 setup](#automatic-latest-v2-setup) before initialization. Do not offer staying on V1 or ask for upgrade confirmation.
+2. Change to the agent project directory, verify the selected version, then run `wiqd exec runevals --init-only` with the selected override, if any.
 3. Explain the judge choices:
    - `github-copilot` is the default, uses `gh auth login` or `GITHUB_TOKEN`, and optionally pins an account-accessible GPT-4.x or GPT-5.x model with `GITHUB_COPILOT_JUDGE_MODEL`. Give a concrete example for the requested family (for example, `gpt-4.1` or `gpt-5-mini`) and explain that unavailable pins fail fast with the account's available-model list.
    - `azure` with GPT-4.x uses the local Azure OpenAI endpoint, API version, and model deployment.
@@ -177,7 +192,8 @@ Do not block a GitHub Copilot judge run on absent Azure credentials.
 
 ### Phase 1: Manifest Analysis
 
-Parse `appPackage/declarativeAgent.json` to extract:
+Follow the selected `copilotAgents.declarativeAgents[].file` registration in
+`appPackage/manifest.json` (ask if multiple Agents are registered), then extract:
 
 - Agent name, description, version
 - System instructions (inline or via `$[file('instructions.txt')]` reference)
@@ -185,7 +201,9 @@ Parse `appPackage/declarativeAgent.json` to extract:
 - Actions (API plugins, MCP plugins), including the callable functions/tools in every referenced plugin file
 - Grounding sources (SharePoint sites, Graph connectors)
 
-If **system instructions are empty or missing** → **Stop.** Cannot generate evals without instructions.
+Resolve referenced instructions relative to the declaring file with lexical and
+canonical containment checks. If Agent system instructions are empty or missing,
+stop Agent generation. Connector-only Plugins instead use `workflows/plugin-eval.md`.
 
 Determine applicable PRA categories by loading `references/eval/pra-framework.md`. When explaining the framework to the user, link to the tracked [PRA framework](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#perceive-reason-act-pra-framework):
 
@@ -223,13 +241,27 @@ Distribute evals across PRA categories proportionally:
 | R + A      | —        | 60%    | 40% |
 | R only     | —        | 100%   | —   |
 
+Resolve the **tool-call gate** before drafting any JSON. Set `needsToolCalls` to true when
+any of these holds, and do not reopen the decision later:
+
+- a registered `actions[]` entry resolves to an API plugin (`ai-plugin.json`) with at least one
+  function, or to an MCP plugin (`RemoteMCPServer` runtime) with verified tools;
+- the user or an existing selected suite already uses schema `2.0.0` or
+  ToolCall evaluators.
+
+When `needsToolCalls` is true, the dataset MUST use `schemaVersion: "2.0.0"` and every
+item/turn that expects successful tool use MUST carry both `ToolCallSelection` and
+`ToolCallExecution`. Never copy a `1.6.0` example for such an Agent: those examples are
+V1 response-quality only. Print `needsToolCalls: yes/no` and the evidence (the plugin file
+and tool count) in the preview.
+
 Generate the **eval-document format** (`schemaVersion` + `items`) with `default_evaluators`. This is the only format the shipping `runevals` CLI parses correctly.
 
 When explaining or validating this shape, link to the tracked [Eval CLI schema guide](https://aka.ms/wiqd/docs?id=extensions/provided/eval/cli#eval-document-schema).
 
 ```json
 {
-  "schemaVersion": "1.6.0",
+  "schemaVersion": "2.0.0",
   "default_evaluators": {
     "Relevance": {},
     "Coherence": {},
@@ -239,7 +271,22 @@ When explaining or validating this shape, link to the tracked [Eval CLI schema g
 }
 ```
 
+Use `"1.6.0"` only for an Agent with `needsToolCalls: no` on a CLI that has no schema V2.
+Before showing the preview, confirm every tool-use item has both tool-call evaluators and
+nonempty verified `calls`; if not, fix or block it rather than previewing.
+
 Apply PRA→evaluator mapping per prompt after loading `references/eval/eval-templates.md`.
+For callable MCP, connector or API plugin tools, every generated item/turn expecting
+successful tool use MUST include both `ToolCallSelection` and `ToolCallExecution`
+(schema V2, threshold `1.0`, nonempty verified `calls`). Follow the template's
+mandatory coverage rule; check before preview/write, block unresolved identities,
+and never substitute response-only scores or impose positive calls on no-tool cases.
+Derive expectations from the specific prompt and actual instructions, sources and
+tools. Include skill-declared starter prompts within the exact approved count.
+If source/tool/constraint coverage or starters cannot fit, ask about a count/coverage
+tradeoff; never silently exceed the total. Show missing actual source context in the
+preview and do not execute placeholder context. PartialMatch and ExactMatch require
+literal expected text, not a behavioral description.
 
 ### ⛔ MANDATORY: Present Diff + Get Approval Before Writing
 
@@ -267,11 +314,16 @@ Apply PRA→evaluator mapping per prompt after loading `references/eval/eval-tem
 
 **Do NOT silently write eval files.** The user must see what will be written and approve it.
 
-Write to `evals/evals.json` (or `evals/generated-evals.json` if evals exist). Use atomic write (`.tmp` → rename), then parse the saved file and verify its `items` count equals the approved number.
+Write to `evals/evals.json` (or a new noncolliding generated filename if evals exist).
+Use atomic write (`.tmp` → rename), validate the saved document against
+`references/eval/prompts-schema.json` for V1, or the selected CLI's
+`schema/v2/eval-document.schema.json` when schema V2 is active, then parse and verify its exact approved
+`items` count. Do not save partial suites.
 
 ### Phase 3: Advanced Suggestions
 
 Present 5 advanced eval scenarios (edge cases, adversarial, multi-turn). User selects which to add.
+Changed totals require renewed count approval and a separate preview/write approval.
 
 ### Phase 4: Run Evals
 
@@ -323,9 +375,12 @@ Parse the report card, aggregate metrics, each configured evaluator, thresholds,
 
 Classify each prompt:
 
-- **Pass**: All scores ≥ 4.0
-- **Needs Improvement**: Lowest score 2.5–3.9
-- **Fail**: Any score < 2.5
+- Use the status and configured threshold the report gives for each evaluator as authoritative. This covers ToolCallSelection and ToolCallExecution, which pass at 1.0, and any custom threshold.
+- For evaluators on the 1-5 scale with no reported status, use these defaults:
+  - **Pass**: All scores ≥ 4.0
+  - **Needs Improvement**: Lowest score 2.5–3.9
+  - **Fail**: Any score < 2.5
+- Never apply the 4.0 cutoff to tool-call scores. A tool-call score of 1.0 is a pass.
 
 Categorize failures by root cause:
 
@@ -333,7 +388,7 @@ Categorize failures by root cause:
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Instruction Issue | Low Relevance/Coherence on Reason prompts                                                                                                                |
 | Grounding Issue   | Low Groundedness on Perceive prompts                                                                                                                     |
-| Tool/Action Issue | Manual transcript review shows wrong tool/parameters on Act prompts (`ToolCallAccuracy` is currently unsupported — see [gaps.md](../references/eval/gaps.md)) |
+| Tool/Action Issue | V2 ToolCallSelection/ToolCallExecution evidence or manual transcript review shows wrong/missing tools or failed executions; inspect arguments separately |
 | Citation Issue    | Low Citations score                                                                                                                                      |
 | Eval Issue        | Agent seems correct but eval fails                                                                                                                       |
 | Capability Gap    | Agent unable to perform expected action                                                                                                                  |
@@ -437,7 +492,7 @@ The eval suite is the **spec for intended agent behavior**. Weakening it to make
 **REFUSE — do not perform — when the user asks you to:**
 
 - Delete or disable Perceive, Boundary, or refusal/safety prompts in bulk
-- Remove the `Citations` evaluator from any prompt
+- Remove the `Citations` evaluator from an Agent prompt to improve scores
 - Remove `Groundedness`, `Relevance`, or `Coherence` from `default_evaluators`
 - Lower an evaluator threshold below its currently set value
 - Bulk-strip `expected_response` requirements (citations, refusals, escalation flows)
@@ -450,27 +505,126 @@ When the user makes such a request:
 3. **Offer targeted review** for a SPECIFIC prompt the user believes is genuinely wrong.
 4. **Do NOT silently comply.**
 
+Plugin compatibility is not score-driven weakening: `workflows/plugin-eval.md`
+may propose explicit adaptation of unsupported Citations/Retrieval evaluators
+with separate approval while preserving intended behavior and coverage. Never
+silently filter an existing dataset or apply the Plugin exception to Agent suites.
+
 ## Scope Boundaries
 
-**In scope:** ATK agent projects and minimal eval workspaces; generating, running, scorecard analysis, recommendations, and credential setup.
+**In scope:** Agent projects, Plugin target routing, and minimal eval workspaces;
+generating, running, scorecard analysis, recommendations, and credential setup.
 
-**Out of scope:** Non-declarative-agent projects, agent deployment/publishing (use the `wiqd-core` workflow), modifying agent manifests (use the `wiqd-core` workflow), performance/load testing.
+**Out of scope:** Unrelated projects, deployment/publishing, manifest authoring,
+and performance/load testing. Plugin evaluations use `workflows/plugin-eval.md`.
+
+## Automatic latest-V2 setup
+
+Shared by Agent and Plugin workflows. After the mandatory dataset choice, but
+before initialization, generation or execution, run
+`wiqd exec runevals --version` and inspect the resolved CLI, including an existing
+`M365_COPILOT_EVAL_PATH` override. The host still lazily ensures its exact stable
+pin and may retain an installed generation on refresh failure; that is not an
+upgrade to the latest published channel.
+
+Automatically use the **latest published Preview V2** for all Agent and Plugin users.
+Do not offer staying on V1, ask for a channel choice, or require upgrade
+confirmation. V2 supports Agents and Plugins; prereleases remain **Preview**.
+This automatic CLI setup does not authorize EULA acceptance, authentication,
+tool consent, dataset migration or any other dataset write.
+
+Resolve the Preview V2 channel afresh with the configured npm registry:
+
+```powershell
+npm view "@microsoft/m365-copilot-eval@preview" version --json
+```
+
+Require the tag to resolve to an exact valid `2.x` version at or above
+`2.0.0-preview1` by **SemVer precedence**. Do not use lexical ordering, the unqualified
+`latest` tag (currently V1), or an unconstrained future major. Install that exact
+published version when the resolved CLI is older, missing or not V2. Reuse an
+already matching version without reinstalling; never downgrade a newer compatible
+V2 override. Diagnose an invalid version probe instead of guessing its version.
+If the probe fails only because no managed CLI is installed, proceed with V2
+setup; an EULA/authentication gate or another hard failure still stops the operation.
+When reusing a newer compatible V2, use its verified version and executable as
+`$selectedVersion` and `$selectedEvalPath`, rather than the older tag's values.
+
+If registry lookup or upgrade fails, report that the latest V2 could not be
+ensured. A verified compatible installed V2 may continue with that limitation
+disclosed; never continue with the installed version of V1 or silently fall back
+to it. Without a verified compatible V2, stop before generation or execution.
+
+Use a separate user-local directory, **not** the host's managed
+`extensions/microsoft.eval` generation or the project:
+
+```powershell
+# $selectedVersion is the exact published version validated above.
+$evalPrefix = Join-Path $HOME ".wiqd\eval-versions\$selectedVersion"
+npm install --prefix "$evalPrefix" --no-audit --no-fund `
+  "@microsoft/m365-copilot-eval@$selectedVersion"
+# Stop if installation fails. Resolve the real absolute shim before continuing.
+$selectedEvalPath = (Resolve-Path (Join-Path $evalPrefix "node_modules\.bin\runevals.cmd")).Path
+```
+
+On macOS/Linux the shim is `node_modules/.bin/runevals` without `.cmd`. Never
+globally install the package, alter PATH/profiles, edit the managed pin or accept
+the EULA. An older/non-V2 override may be replaced for this operation without a
+prompt; preserve and restore its previous process value afterward.
+For **every** subsequent version/help, init, tool-discovery and eval invocation,
+set `M365_COPILOT_EVAL_PATH` to the selected absolute shim **in that command's
+process**, then invoke WIQD. Do not assume shell state persists between tool calls.
+Restore the prior override after each scoped invocation, including on failure:
+
+```powershell
+$previousEvalPath = $env:M365_COPILOT_EVAL_PATH
+try {
+  $env:M365_COPILOT_EVAL_PATH = $selectedEvalPath
+  wiqd --skill wiqd --workflow eval exec runevals --version
+  # Require the reported version to equal $selectedVersion before proceeding.
+} finally {
+  $env:M365_COPILOT_EVAL_PATH = $previousEvalPath
+}
+```
+
+Apply that same scope around the selected Agent/Plugin command and its full
+log capture. Use workflow attribution `plugin-eval` for Plugin calls.
+CLI and schema versions have separate lifecycles: the initial V2 execution
+preview alone did not require schema V2. Inspect the selected release's schema
+contract before generating or migrating. When schema V2 is active, **all** Agent
+and Plugin datasets need `schemaVersion: "2.0.0"`, even without tool-call checks.
+Validate against that package's `schema/v2/eval-document.schema.json`; the bundled
+prompts schema is a V1 bootstrap validator only. For a release that still accepts
+V1 schemas, use its compatible V1 schema for response-quality suites. Tool-call
+generation requires verified support for the V2 schema and both evaluator names;
+if absent, explain the gap and pause rather than inventing support.
+Existing-suite migration requires preview/write approval, including real identities
+when replacing legacy `plugin_name`; changing the schema string alone is not migration.
+
+V2 with no Agent ID runs mainline Copilot. Preserve the explicitly resolved Agent
+ID for `wiqd agent eval`; never rely on implicit title-only Agent discovery after
+upgrading. See the upstream
+[V2 upgrade guide](https://github.com/microsoft/M365-Copilot-Agent-Evals/blob/main/docs/upgrade-to-v2.md).
 
 ## Evaluator Reference
 
 Names are **case-sensitive PascalCase**:
 
-| Name           | Type        | Use With                                    |
-| -------------- | ----------- | ------------------------------------------- |
-| `Relevance`    | LLM         | All (default)                               |
-| `Coherence`    | LLM         | All (default)                               |
-| `Groundedness` | LLM         | All (default); raise threshold for Perceive |
-| `Similarity`   | LLM         | Act prompts (or wording-sensitive prompts)  |
-| `Citations`    | Count-based | Perceive prompts                            |
-| `ExactMatch`   | String      | Deterministic prompts                       |
-| `PartialMatch` | String      | Boundary/refusal prompts                    |
+| Name                | Type        | Use With                                        |
+| ------------------- | ----------- | ----------------------------------------------- |
+| `Relevance`         | LLM         | All (default)                                   |
+| `Coherence`         | LLM         | All (default)                                   |
+| `Groundedness`      | LLM         | All (default); raise threshold for Perceive     |
+| `Similarity`        | LLM         | Act prompts (or wording-sensitive prompts)      |
+| `Citations`         | Count-based | Perceive prompts                                |
+| `ExactMatch`        | String      | Deterministic prompts                           |
+| `PartialMatch`      | String      | Boundary/refusal prompts                        |
+| `ToolCallSelection` | Non-LLM     | V2/schema V2; expected tool identities selected |
+| `ToolCallExecution` | Non-LLM     | V2/schema V2; expected HTTP 2xx executions      |
 
-> `ToolCallAccuracy` is not currently a supported evaluator — see [gaps.md](../references/eval/gaps.md).
+> Use the actual V2 names above, not `ToolCallAccuracy`. Load the tool-call
+> configuration in `references/eval/eval-templates.md`; response scores alone
+> cannot prove invocation, argument correctness or Plugin attribution.
 
 ## Key References
 

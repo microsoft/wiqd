@@ -405,6 +405,26 @@
         "plugin publish"
       ],
       "journeyPhases": []
+    },
+    {
+      "id": "plugin-eval",
+      "file": "workflows/plugin-eval.md",
+      "routingLabel": "Plugin eval tasks",
+      "routingIntent": "Running, generating, analyzing Plugin evaluations",
+      "order": 14,
+      "triggers": [
+        "evaluate my plugin",
+        "test my plugin",
+        "evaluate plugin skills",
+        "evaluate connectors",
+        "generate plugin evals",
+        "run plugin evals",
+        "analyze plugin eval results"
+      ],
+      "requires": [
+        "plugin eval"
+      ],
+      "journeyPhases": []
     }
   ],
   "intents": [
@@ -1592,6 +1612,41 @@
       "phrase": "unattended agent deployment",
       "workflowId": "agent-ci-cd",
       "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "evaluate my plugin",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "test my plugin",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "evaluate plugin skills",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "evaluate connectors",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "generate plugin evals",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "run plugin evals",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
+    },
+    {
+      "phrase": "analyze plugin eval results",
+      "workflowId": "plugin-eval",
+      "workflowFile": "workflows/plugin-eval.md"
     }
   ]
 }
