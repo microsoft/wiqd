@@ -139,7 +139,11 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "0.26.0"
+$script:WiqdVersion = "1.0.0"
+
+# These terms describe only the installer's stamped release, not arbitrary candidates.
+$script:WiqdEulaId = 'wiqd'
+$script:WiqdEulaVersion = '2'
 
 
 # nvm4w ships npm.ps1 which uses $MyInvocation.InvocationName to parse args.
@@ -1999,8 +2003,7 @@ Show-WiqdBanner
 
 function Read-EulaAcceptance {
     param([string]$TargetVersion)
-    # Check whether an existing wiqd install already has the EULA accepted for
-    # the version being installed. If so, skip the prompt.
+    # A different installed CLI may already have accepted this release's terms.
     if (Get-Command wiqd -ErrorAction SilentlyContinue) {
         try {
             $r = Invoke-WiqdProbe { & wiqd eula status --json }
@@ -2016,8 +2019,22 @@ function Read-EulaAcceptance {
             if ($report) {
                 $wiqdRow = $report.wiqd
                 if ($wiqdRow -and $wiqdRow.tool -eq 'wiqd' -and $wiqdRow.state -eq 'accepted' -and
-                    $wiqdRow.cliVersion -ceq $TargetVersion) {
+                    $TargetVersion -ceq $script:WiqdVersion -and
+                    $wiqdRow.id -is [string] -and $wiqdRow.version -is [string] -and
+                    $wiqdRow.id -ceq $script:WiqdEulaId -and
+                    $wiqdRow.version -ceq $script:WiqdEulaVersion) {
                     return 'already-accepted'
+                }
+                if ($wiqdRow -and $wiqdRow.tool -ceq 'wiqd' -and $wiqdRow.state -ceq 'accepted' -and
+                    $TargetVersion -ceq $script:WiqdVersion -and
+                    $script:WiqdEulaId -ceq 'wiqd' -and $script:WiqdEulaVersion -ceq '2' -and
+                    -not (@($wiqdRow.PSObject.Properties.Name) | Where-Object { $_ -in @('id', 'version', 'cliVersion') })) {
+                    # Only these historical stable tags are verified to share the current terms.
+                    $versionProbe = Invoke-WiqdProbe { & wiqd --version --no-banner }
+                    if ($versionProbe.ExitCode -eq 0 -and $versionProbe.StdOut.Count -eq 1 -and
+                        $versionProbe.StdOut[0].Trim() -cmatch '^0\.(?:7\.[01]|9\.0|1[01]\.0|12\.[0-2]|13\.[01]|1[4-9]\.0|2[0-5]\.0)$') {
+                        return 'already-accepted'
+                    }
                 }
             }
         } catch {

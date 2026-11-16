@@ -182,6 +182,35 @@ There is one upload attempt and a 300-second deadline. Cancellation propagates
 to requests and polling. Auth errors, tenant denial and uncertain responses
 never trigger automatic re-upload, consent grants, publication or rollback.
 
+During status polling, **HTTP 202 with no body or a zero-byte body means pending**.
+WIQD waits seven seconds and queries the same saved status ID, within the original
+deadline. It does not report installation success or upload again. Cancellation
+and deadline still stop polling and retain the existing attempt.
+This exception does not admit nonempty malformed JSON, whitespace-only bodies,
+read failures, an empty HTTP 200 status response, or empty environment/upload
+responses. Invalid JSON diagnostics include the observed byte count, not the body.
+
+For HTTP rejection, the error includes available service error codes, messages
+and nested details from a bounded JSON response. Asynchronous validation failures
+also include the service's `failureReasons`. These fields are redacted and
+truncated; raw response bodies, credentials and unrelated properties are never
+printed. Request/correlation IDs are included when valid and may be further
+redacted by the host. An empty, non-JSON, oversized or unreadable error response
+is identified explicitly, with the original HTTP status preserved. A generic
+HTTP 400 alone does not establish a version conflict or a package-format problem.
+
+Response limits are separate from the ZIP's size limit. Environment discovery
+and HTTP error bodies are bounded to **64 KiB**; successful upload and status
+JSON responses allow up to **8 MiB**, including additional service metadata.
+These are CLI safety budgets, not service-size guarantees. A response must still
+contain valid JSON and the required status/target identities, and service
+validation must succeed before WIQD reports installation success.
+Oversized successful responses report the HTTP status, safe Content-Type,
+observed byte count, limit and valid request/correlation IDs. Invalid JSON
+responses also include safe protocol context, never the body or arbitrary headers.
+An HTTP 2xx response that exceeds the bound or cannot be interpreted does not
+prove that installation failed; do not repeat the upload automatically.
+
 Keep `attempt.json`, any returned status ID and all preparation artifacts when
 an operation fails. A later invocation refuses to upload again if that attempt
 has no durable success record. If **`status.json` was retained**, explicitly check
@@ -233,7 +262,7 @@ Missing/invalid retained status records, mismatched artifacts/identity and faile
 validation remain blockers. Each CLI invocation still stops on a service error;
 only the skill orchestrates eligible recovery. Sanitized errors identify environment, upload
 or status phase and distinguish HTTP denial, transport/read failure, invalid
-JSON and the 64-KiB response limit without printing service bodies or credentials.
+JSON and the applicable response-size limit without printing service bodies or credentials.
 An interrupted response does not prove installation failed. If no status ID was
 retained, automated reconciliation is unavailable; report the uncertain outcome
 for manual investigation. A new directory is not a safe retry workaround, and

@@ -90,7 +90,10 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="0.26.0"
+WIQD_INSTALLER_VERSION="1.0.0"
+# These terms describe only the installer's stamped release, not arbitrary candidates.
+WIQD_EULA_ID="wiqd"
+WIQD_EULA_VERSION="2"
 
 # ─────────────────────────────────────────────
 # Parse arguments
@@ -2231,14 +2234,30 @@ read_eula_acceptance() {
                       j.error.code==='EULA_STATUS_BINARY_UNRESOLVED'&&
                       j.error.data.tools.some(t=>t.state==='binary-unresolved')?j.error.data:null;
                     const w=report&&report.wiqd;
+                    const stamped=process.argv[2]===process.argv[3]&&
+                      w&&w.id===process.argv[4]&&w.version===process.argv[5];
+                    const legacy=process.argv[2]===process.argv[3]&&
+                      process.argv[4]==='wiqd'&&process.argv[5]==='2'&&w&&
+                      !['id','version','cliVersion'].some(k=>Object.hasOwn(w,k));
                     console.log(w&&w.tool==='wiqd'&&w.state==='accepted'&&
-                      w.cliVersion===process.argv[2]?'yes':'no');
+                      stamped?'yes':
+                      w&&w.tool==='wiqd'&&w.state==='accepted'&&legacy?'legacy':'no');
                   }catch{console.log('no')}
                 })
-            " "$status_exit" "$target_version" 2>/dev/null) || true
+            " "$status_exit" "$target_version" "${WIQD_INSTALLER_VERSION:-}" \
+              "${WIQD_EULA_ID:-}" "${WIQD_EULA_VERSION:-}" 2>/dev/null) || true
             if [ "$wiqd_accepted" = "yes" ]; then
                 echo "already-accepted"
                 return
+            fi
+            if [ "$wiqd_accepted" = "legacy" ]; then
+                # Only these historical stable tags are verified to share the current terms.
+                local legacy_version
+                if legacy_version=$(WIQD_INSTALLER_PROBE=1 WIQD_TELEMETRY=0 wiqd --version --no-banner 2>/dev/null) &&
+                    [[ "$legacy_version" =~ ^0\.(7\.[01]|9\.0|1[01]\.0|12\.[0-2]|13\.[01]|1[4-9]\.0|2[0-5]\.0)$ ]]; then
+                    echo "already-accepted"
+                    return
+                fi
             fi
         fi
     fi

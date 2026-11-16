@@ -110,7 +110,7 @@ per-command tables below.
 | [`wiqd agent eval init`](#wiqd-agent-eval-init) | Copilot Eval | Initialize an evaluation prompts.json for a project (drops a fixed seven-item bootstrap for the default declarative-agent template, plus env/.env.<env>.user from your Azure OpenAI / tenant env vars). This is not manifest-aware count-based generation. |
 | [`wiqd agent info`](#wiqd-agent-info) | wiqd Core | Show MOS3 launch / acquisition info for a deployed agent. Accepts --agent-id (e.g. P_xxx.declarativeAgent), --title-id, or --manifest-id; emits the raw launch-info JSON. Used by the DevUI portal. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd agent list`](#wiqd-agent-list) | Work IQ | List declarative agents deployed in the tenant. |
-| [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the Insights Agent about a provisioned agent's performance and usage. |
+| [`wiqd agent monitor`](#wiqd-agent-monitor) | Work IQ | Query the GA Insights Agent about a provisioned agent's performance and usage. |
 | [`wiqd agent show`](#wiqd-agent-show) | Work IQ | Retrieve the real Work IQ A2A agent card by deployed agent ID or name. |
 
 **wiqd auth**
@@ -245,6 +245,7 @@ per-command tables below.
 | [`wiqd plugin ask`](#wiqd-plugin-ask) | Work IQ | Send a message directly to a declarative agent component. |
 | [`wiqd plugin create`](#wiqd-plugin-create) | wiqd Core | Scaffold a new, empty standalone plugin project from the built-in blank app template. |
 | [`wiqd plugin delete`](#wiqd-plugin-delete) | wiqd Core | Delete a plugin's provisioned cloud resources. Either by env (project-based) or by --title-id (works for any plugin you can administer, no local project required). Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd plugin eval`](#wiqd-plugin-eval) | Copilot Eval | Evaluate installed Plugin skills and connectors through Copilot mainline. Requires a target-capable Eval CLI build (v2 preview). |
 | [`wiqd plugin export`](#wiqd-plugin-export) | wiqd Core | Export a plugin project to Open Plugin (or Claude/Cursor) format. |
 | [`wiqd plugin get`](#wiqd-plugin-get) | Validation & LSP | Get plugin resources. |
 | [`wiqd plugin get market-listing`](#wiqd-plugin-get-market-listing) | Validation & LSP | Read .validate/listing.json and check any supported schema, including 1.0. Missing files return 404; invalid listings fail explicitly. No policy or media checks. |
@@ -551,7 +552,7 @@ wiqd agent list --json
 
 ### wiqd agent monitor
 
-Query the Insights Agent about a provisioned agent's performance and usage.
+Query the GA Insights Agent about a provisioned agent's performance and usage.
 
 **Extension:** Work IQ
 
@@ -1088,6 +1089,8 @@ wiqd connector add [options]
 
 | Option | Description |
 | --- | --- |
+| `--prepare-for-certification` | Prepare a tenant service connector and OAuth credentials through the certification API; does not certify or approve it |
+| `--prepareForCertification` | Alias for --prepare-for-certification |
 | `--input-file <value>` | Private JSON with displayName, authentication and either serverUrl (MCP) or apiDefinition (Swagger 2.0) |
 | `--dry-run` | Validate input offline without authentication or creation |
 
@@ -1095,7 +1098,7 @@ wiqd connector add [options]
 
 ```bash
 wiqd connector add --input-file <value>
-wiqd connector add --input-file <value> --dry-run
+wiqd connector add --input-file <value> --prepare-for-certification --prepareForCertification
 wiqd connector add --input-file <value> --json
 ```
 
@@ -1954,6 +1957,38 @@ wiqd plugin delete --env <value> --path <value>
 wiqd plugin delete --json
 ```
 
+### wiqd plugin eval
+
+Evaluate installed Plugin skills and connectors through Copilot mainline. Requires a target-capable Eval CLI build (v2 preview).
+
+**Extension:** Copilot Eval
+
+```bash
+wiqd plugin eval [options]
+```
+
+**Options**
+
+| Option | Description |
+| --- | --- |
+| `--env <value>` | Evaluation environment (default: "local") |
+| `--path <value>` | Evaluation workspace path (defaults to CWD) |
+| `-c, --config <value>` | Plugin eval document path (default: "evals/plugin-evals.json") |
+| `-o, --output <value>` | Result path relative to --path (default: ".evals/results.json") |
+| `--concurrency <value>` | Optional concurrent scenario override (1-5) |
+| `--threshold <value>` | Minimum pass-rate (0-1) to succeed |
+| `--account <value>` | Optional email/UPN selecting the Eval CLI's cached MSAL account |
+| `--judge-backend <value>` | LLM-as-judge backend (choices: "github-copilot", "azure", default: "github-copilot") |
+| `--eval-log-level <value>` | runevals log verbosity (choices: "debug", "info", "warning", "error", default: "debug") |
+
+**Examples**
+
+```bash
+wiqd plugin eval
+wiqd plugin eval --env <value> --path <value>
+wiqd plugin eval --json
+```
+
 ### wiqd plugin export
 
 Export a plugin project to Open Plugin (or Claude/Cursor) format.
@@ -2160,6 +2195,8 @@ wiqd plugin package [options]
 
 | Option | Description |
 | --- | --- |
+| `--prepare-for-certification` | Emit primary references without the tenant suffix and .validation.zip references with the full returned ID; both output paths must be new |
+| `--prepareForCertification` | Alias for --prepare-for-certification |
 | `--offline` | Build a local-only devPreview connector/skill ZIP; automatically persist a local package ID without provisioning (default: false) |
 | `--env <value>` | Environment to resolve variables from; output label only with --offline (default: "local") |
 | `--output <value>` | Output path for the zip package |
@@ -2912,12 +2949,23 @@ FxCore extension, off by default): the declarative-agent skills manifest schema 
 so the command stays opt-in until it is. Enable it with
 `wiqd config flags set agent-skills true` or the `WIQD_FLAG_AGENT_SKILLS` env var.
 
+[`wiqd connector add`](#wiqd-connector-add) is an alpha preview behind the
+`connector-add` flag, off by default. Enable it with
+`wiqd config flags set connector-add true`, inspect it with
+`wiqd config flags show connector-add`, and restore its default with
+`wiqd config flags reset connector-add`. `WIQD_FLAG_CONNECTOR_ADD=true|false`
+overrides the saved setting; clear it to use the saved/default value again.
+The gate covers creation, certification preparation, dry-run, and mock mode,
+but not `connector list|show` or `plugin add connector`. Enabling it does not
+grant service access. See the [connector guide](/cli/connector/#create-a-connector-from-an-mcp-server).
+
 Flag changes do not trigger a plugin reinstall.
 
 <!-- BEGIN: generated-flag-table -->
 | Flag | Type | Default | Stage | Owner | Since | Description |
 |---|---|---|---|---|---|---|
 | `frontier` | `boolean` | `false` | `alpha` | wiqd-core | 0.14.0 | Enables preview capabilities across wiqd and participating extensions. |
+| `connector-add` | `boolean` | `false` | `alpha` | microsoft.wiqd.core | — | Enables preview connector creation and certification preparation through MCP Platform. |
 | `agent-skills` | `boolean` | `false` | `beta` | microsoft.wiqd.core | 0.12.2 | Enables `wiqd agent add skill` and fx-core inclusion of DA-only `agent_skills` folders during agent/plugin package, provision, and publish. The DA manifest schema for skills is not yet worldwide (WW); off by default until the schema is generally available. |
 | `devui` | `boolean` | `false` | `beta` | microsoft.devui | 0.5.0 | Enables the `wiqd devui` commands (the local Work IQ DevUI web experience). Opt-in while the experience is in preview. |
 | `partner-center-publishing` | `boolean` | `true` | `alpha` | microsoft.marketplace | 0.17.0 | Expose Marketplace authentication and Partner Center publishing (real REST/MCP actions for init, preflight, prepare, submit, status, and composed publish; static access guidance; simulated resume). |
@@ -2930,6 +2978,7 @@ Every registered flag has a corresponding env var of the form `WIQD_FLAG_<UPPER_
 | Flag | Env var |
 |---|---|
 | `frontier` | `WIQD_FLAG_FRONTIER` |
+| `connector-add` | `WIQD_FLAG_CONNECTOR_ADD` |
 | `agent-skills` | `WIQD_FLAG_AGENT_SKILLS` |
 | `devui` | `WIQD_FLAG_DEVUI` |
 | `partner-center-publishing` | `WIQD_FLAG_PARTNER_CENTER_PUBLISHING` |

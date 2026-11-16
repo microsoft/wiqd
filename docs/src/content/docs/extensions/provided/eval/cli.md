@@ -5,12 +5,13 @@ description: Every command contributed by Work IQ Dev Tools' Eval extension
 
 # Eval · CLI commands
 
-The Eval extension contributes two commands under `wiqd agent eval`:
+The Eval extension evaluates deployed Agents and installed M365 Copilot Plugins:
 
 | Command                                                                          | What it does                                                  |
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [`wiqd agent eval`](/cli/reference/#wiqd-agent-eval)                  | Run quality evaluations against a deployed declarative agent  |
 | [`wiqd agent eval init`](/cli/reference/#wiqd-agent-eval-init)        | Scaffold a starter `evals/prompts.json` for the agent         |
+| `wiqd plugin eval` | Evaluate Plugin skills/connectors through Copilot mainline |
 
 `wiqd agent eval init` requires an ATK project and emits a fixed seven-item bootstrap for the default ATK declarative-agent template. It is not the manifest-aware generator and has no prompt-count option. When the wiqd eval skill recommends or the user selects a count, the skill writes and verifies exactly that many generated items without substituting `eval init`.
 
@@ -47,7 +48,7 @@ When `--agent-id` is set, the title ID is sourced from the option rather than fr
 | `--agent-id`     | `string` | _(none)_             | Title ID of a deployed agent to evaluate directly (e.g. `T_xxx`). When set, sources the title ID from this option instead of `env/.env.<env>`. |
 | `--account`      | `string` | _(none)_             | Optional email/UPN used by the Eval CLI to select a cached MSAL account or prefill interactive sign-in.           |
 | `--judge-backend` | `string` | `github-copilot`    | LLM judge backend for `Relevance`/`Coherence`/`Groundedness`/`Similarity`: `github-copilot` (`gh auth login --hostname github.com` for GitHub.com, or `GITHUB_TOKEN`) or `azure` (Azure OpenAI). Custom `.prompty` evaluators always need `azure`. |
-| `--log-level`    | `string` | `debug`              | Verbosity forwarded to `runevals`: `debug`, `info`, `warning`, `error`.                                             |
+| `--eval-log-level` | `string` | `debug` | Verbosity forwarded as runevals `--log-level`, distinct from wiqd global logging |
 | `--concurrency`  | `int`    | Eval CLI default     | Optional concurrent scenario override (1-5)                                                                        |
 | `--threshold`    | `float`  | _(none)_             | Minimum pass-rate (0-1) to succeed. Exit 1 if score falls below this.                                              |
 
@@ -57,7 +58,7 @@ The wiqd eval skill runs with the GitHub Copilot judge and requests a new timest
 
 ```powershell
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss")
-wiqd agent eval --env dev --judge-backend github-copilot --log-level debug `
+wiqd agent eval --env dev --judge-backend github-copilot --eval-log-level debug `
   --output ".evals\scorecard-$timestamp.html"
 ```
 
@@ -75,8 +76,8 @@ After the run, the skill opens the scorecard data, correlates failures with the 
 
 The wiqd eval skill owns the complete improvement loop:
 
-1. Validate the project or minimal eval workspace.
-2. Onboard the Eval CLI and selected judge.
+1. Resolve Agent versus Plugin from explicit intent or root manifest registrations; ask if unclear.
+2. Discover eval documents and ask existing versus new dataset, then analyze the selected definition.
 3. Generate a PRA-balanced eval document when needed.
 4. Run the current suite to a timestamped HTML scorecard.
 5. Interpret every configured evaluator and classify root causes.
@@ -84,6 +85,84 @@ The wiqd eval skill owns the complete improvement loop:
 7. Re-run the unchanged suite after agent improvements for an apples-to-apples comparison.
 
 The suite is the behavioral specification. The skill will not remove evaluators, lower thresholds, or delete difficult scenarios merely to improve the pass rate.
+
+## Find an Agent or Plugin title ID
+
+Open [copilot.microsoft.com](https://copilot.microsoft.com), select **Plugins** or
+**Agents** in the left rail, find your Plugin or Agent, and select **Share**.
+Copy the `T_...` title ID at the end of the share URL (for example, `T_1234`),
+not the entire URL.
+
+For Agent execution, use it as `--agent-id` or `M365_TITLE_ID`. For Plugin
+tool-call expectations, use the Plugin's title ID as `calls[].tool.plugin_id`;
+it does not select the execution target. Never set `M365_AGENT_ID` or `AGENT_ID`
+for a Plugin run.
+
+## Plugin evaluations (v2 preview)
+
+`wiqd plugin eval` uses the separate `plugin-eval` workflow and defaults to
+`evals/plugin-evals.json`. It forwards
+`runevals --target m365-copilot --prompts-file <absolute-path>` without an Agent ID
+or component. Copilot mainline selects installed Plugin skills/connectors; this
+command does not install or isolate a Plugin, and scores alone do not prove attribution.
+
+This requires published **Evals CLI V2 preview (`>=2.0.0-preview1`)**.
+The skill automatically resolves npm's `preview` tag to an exact
+`2.x >=2.0.0-preview1` by SemVer precedence and upgrades older CLIs without a V1/V2 choice
+or upgrade prompt. It does not use the unqualified npm `latest` tag (currently
+V1), install a future major, reinstall the same version or downgrade a newer
+compatible V2. Prereleases remain Preview.
+
+The stable managed pin stays unchanged. The skill
+installs the exact release in a separate user-local version directory and uses
+its validated absolute `M365_COPILOT_EVAL_PATH` override for every command,
+without changing global PATH or shell profiles. The command still checks
+`--help` for target support before execution. If registry lookup or upgrade fails,
+it reports that the latest V2 could not be ensured; a verified compatible installed
+V2 may continue with that limitation disclosed, but V1 is not a fallback.
+Automatic CLI setup does not bypass EULA consent, authentication, tool consent,
+or dataset migration/write approvals.
+
+```powershell
+wiqd plugin eval --path <plugin-workspace> --config evals/plugin-evals.json `
+  --judge-backend github-copilot --eval-log-level debug
+```
+
+Plugin options match the Agent options above except `--agent-id` is absent and
+`--config` defaults to `evals/plugin-evals.json`. No `M365_TITLE_ID` or
+`m365agents.yml` is required. Because upstream infers Agent execution from
+`M365_AGENT_ID`/`AGENT_ID`, the command rejects these values when inherited in its
+environment, and rejects `--path` that differs from the current directory because
+`runevals` loads environment files from the working directory.
+
+Generation reads root `agentSkills[]`, registered `SKILL.md` frontmatter/body and
+references, instructions and grounding, and `agentConnectors[]` API/MCP tool
+definitions. A connector-only Plugin can generate scenarios from verified tool
+descriptions/input constraints without instructions. MCP URLs alone are not tool
+inventory. Mixed packages require an explicit evaluation target.
+
+Plugin evaluators are limited to **Relevance, Coherence, Similarity, Groundedness,
+PartialMatch, ExactMatch, ToolCallSelection and ToolCallExecution** at every scope,
+including multi-turn overrides. Tool-call checks require **V2 and schema V2**.
+**Citations and Retrieval evaluators remain unsupported for Plugins.** Perceive uses
+actual source `context` and Groundedness threshold 4. For new Plugin datasets,
+use Groundedness or Similarity with a specific reference `expected_response`
+instead of Citations/Retrieval. Do not invent missing source/reference content.
+These alternatives assess response quality, not citation correctness, retrieval
+queries/results or ranking; the generation preview discloses that limitation.
+Format constraints
+become Reason scenarios; Groundedness does not validate syntax. Refusal and
+deterministic scenarios replace defaults with literal PartialMatch/ExactMatch
+expectations. Compatibility changes to an existing suite require approval, not
+silent evaluator removal.
+
+For either target, recommend the first matching band: 9+ callable tools/actions
+means 20-25 items; 4-8 or any grounding means 12-18; at most 3 without grounding
+means 8-10. Approve an exact total before generation, include skill starter prompts
+inside it, and allocate P/R/A 40/40/20, P/R 50/50, R/A 60/40, or all Reason.
+Cover sources/tools/constraints before edge cases. Preview prompts, expectations,
+evaluators and gaps, obtain separate write approval, then save atomically and
+validate the schema and exact count. Never run placeholder grounding context.
 
 To reduce judge throttling, manifest-aware generation recommends 8–10 items for simple agents, 12–18 for medium agents, and 20–25 for complex agents. Users can choose a different count; the selected count is verified after the file is written.
 
@@ -110,25 +189,73 @@ The Eval CLI consumes an eval document with `schemaVersion`, optional metadata, 
 
 Evaluator names are case-sensitive. Per-item evaluator overrides supplement or replace defaults according to the Eval CLI schema.
 
+### Tool-call datasets (V2 preview)
+
+For Agents and Plugins with callable MCP, connector or API plugin tools, WIQD
+generation must include **both ToolCallSelection and ToolCallExecution** on each
+item/turn expecting successful tool use, with threshold `1.0` and verified expected
+calls. This is checked before dataset preview/write; missing identities block
+affected cases rather than silently producing response-only coverage. Cover each
+verified tool within the approved count, or explicitly agree a count/coverage
+tradeoff. Positive calls are not required for clarification, refusal, no-tool or
+expected-failure cases; retrieval-only connectors do not imply callable tools.
+
+Use `schemaVersion: "2.0.0"` and validate against the selected CLI's
+`schema/v2/eval-document.schema.json`; the bundled V1 bootstrap schema is not
+a V2 validator. Both deterministic evaluators work with either judge backend
+for Agents and Plugins:
+
+| Evaluator | Checks | Does not prove |
+| --------- | ------ | -------------- |
+| `ToolCallSelection` | Expected tool identities were selected; optional `allow_additional_calls: false` rejects extras | Execution success, arguments, order or call count |
+| `ToolCallExecution` | A distinct matching HTTP 200-299 execution per expected call; repeat identities for multiplicity | Correct arguments, sequencing or business outcome |
+
+Configure nonempty `calls` arrays with `calls[].tool.plugin_id` (deployed package
+Title ID), `toolset_id` (Agent action ID or Plugin connector ID), and
+`function_name`. All three fields are case-sensitive; use verified identities,
+not illustrative IDs or consent strings. Use `--list-tools <agent-id>` for Agents; standalone Plugin discovery requires
+returned Developer Info, registered connector IDs and the deployed Title ID,
+not an ID-less `--list-tools` call. Inspect `diagnostics.tool_calls` from
+authorized runs where available. Missing identity or runtime
+evidence is an explicit coverage gap/error, never a passing score.
+
+`allowed_tools` and `default_allowed_tools` grant confirmation consent separately
+from evaluator expectations. Obtain explicit approval before adding them;
+expectations do not authorize or force invocation. A tool without confirmation
+is not controlled by this list. Consent can persist across runs and grouped
+actions; do not generate side-effecting scenarios without approval.
+
+For selection/execution examples, identity discovery, telemetry semantics and
+consent identifiers, follow the
+[tool-call evaluator guide](https://github.com/microsoft/M365-Copilot-Agent-Evals/blob/main/docs/tool-call-evaluators.md).
+CLI V2 and schema V2 are separate lifecycles: when schema V2 is active,
+all datasets need migration, even without tool-call evaluators. Earlier
+execution-only previews can still use their supported V1 response-quality schema.
+Migrations require approval; changing the version alone cannot recover missing
+tool identities. See the
+[V2 upgrade guide](https://github.com/microsoft/M365-Copilot-Agent-Evals/blob/main/docs/upgrade-to-v2.md).
+Retain response-quality evaluators as separate answer-quality checks.
+
 ## Perceive-Reason-Act (PRA) framework
 
 Generated suites use PRA to cover the agent's declared behavior:
 
 | Category | What it validates | Included when |
 | -------- | ----------------- | ------------- |
-| Perceive | Retrieval, grounding, and citations | The manifest declares knowledge sources |
-| Reason | Instruction following, synthesis, boundaries, and response quality | System instructions exist |
+| Perceive | Grounding; Agent-only citations | Actual grounding sources are declared |
+| Reason | Instructions, skill constraints, synthesis, boundaries, output quality | Instructions or verified connector task/input constraints exist |
 | Act | Correct action selection and parameter behavior | The manifest declares actions or plugins |
 
 Generation analyzes the manifest first, then allocates scenarios only to applicable categories. It never invents an action or knowledge source that the agent does not declare.
 
 ## Judge onboarding
 
-wiqd manages the exact Eval CLI version required by this extension. The first
+wiqd manages the exact stable Eval CLI pin required by this extension. The first
 `wiqd agent eval` or `wiqd exec runevals` command provisions it under
 `~/.wiqd/extensions/microsoft.eval/`; do not install a separate global copy. To
-inspect the managed CLI directly, use `wiqd exec runevals`, then change to the agent
-project directory and initialize the environment:
+inspect the resolved CLI directly, use `wiqd exec runevals`. Complete the
+automatic latest-V2 setup above before initialization, preserve the resolved override
+for every command, then change to the agent project directory and initialize:
 
 ```bash
 cd /path/to/your-agent-project

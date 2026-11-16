@@ -54,10 +54,12 @@ command; `wiqd plugin package` produces their distributable ZIP.
 
 The manually queued repository pipeline
 `.azuredevops/pipelines/wiqd-plugin-m365.yml` builds the checked-out CLI and
-composes WIQD's complete `3p/public-stable` plugin, then imports, validates and
-provisions it for an experimental M365 deployment. The provision lifecycle
-packages and deploys; afterward the pipeline retains that generated ZIP without
-running `wiqd plugin package` again. It consumes
+uses `scripts/build-plugins.ps1 -Platform m365` to produce the canonical
+advisory DA plus the complete `3p/public-stable` WIQD skill. It prepares that
+final ZIP locally, publishes the inspected build artifact, then personally deploys
+it through `wiqd plugin provision package`.
+There is no plugin import, source-project provision or second packaging step.
+It consumes
 the public `wiqd eula accept wiqd --yes --json` command above; it does not
 provide a separate EULA implementation or require delegated credentials for
 host acceptance. The job owner must review the terms and authorize both
@@ -69,51 +71,59 @@ protected secret pipeline variable and `M365_TENANT_ID` as the target tenant GUI
 Follow the refresh-token setup guidance below, including using a token issued
 for the supported public client. Do not configure `M365_ACCOUNT_NAME` or
 `M365_ACCOUNT_PASSWORD` for this pipeline. Missing, blank or unresolved required
-inputs, a non-GUID tenant or any password input stop cloud lookup/provisioning.
-Set `appName`, `appVersion` and approved
-HTTPS `privacyUrl`, `termsUrl` and `websiteUrl` values. Increment `appVersion`
+inputs, a non-GUID tenant or any password input stop deployment.
+Set the pipeline's only application parameter, `appVersion`. Increment it
 when updating an existing app; the pipeline does not increment it automatically.
-The composed plugin version comes from the checked-out repository's `VERSION`.
+The source manifest in `packages/plugins/wiqd-m365/appPackage/` owns the
+**Work IQ Dev Tools** name, app ID `ffb2ba94-4d6c-46ab-9dc1-117688fad733`,
+branding, developer links and advisory DA. These are not pipeline overrides.
+The same app ID updates that app, not an isolated app found by name.
+No name lookup or separate Teams identity-creation step runs.
 
-Leave `existingAppId` as `none` for unique, exact case-sensitive name discovery,
-or supply an independently verified Teams app GUID to bypass discovery.
-Name-based reuse requires app details to confirm the deployment tenant.
-Missing, invalid or conflicting tenant evidence stops discovery; it does not
-mean the app is absent. Zero accessible matches permits creation, not proof
-that no such app exists anywhere in the tenant. For a new target, the pipeline
-first creates only its Teams app identity using the pinned SDK and binds the
-returned GUID before import and provision. This does not yet upload WIQD's
-payload or install its M365 title. Existing targets are not recreated.
-An uncertain identity-creation result stops the run and is not retried.
+The builder uses one clean committed HEAD, not local preview. The pipeline
+checks the build revision and app metadata, then runs
+`wiqd plugin provision package --dry-run` without delegated credentials.
+This inspects and prepares the ZIP; it is not full app-schema/store validation
+or evidence that M365 can load the skill. Co-packaging the skill does not give
+the advisory DA local-project access or backend actions.
+Only actual ZIP provision and a read-only version-conflict diagnostic receive
+delegated credentials. Deployment uses personal scope in the authenticated
+tenant and binds the inspected preparation hash and expected tenant.
 
-Local validation explicitly uses `wiqd plugin validate --mode source --env dev`
-with the project path. The default `package` mode requires an existing ZIP and
-uploads it; source checks do not certify the ZIP or prove runtime readiness.
-Only cloud identity lookup/creation, provision and a read-only version-conflict diagnostic receive
-delegated credentials.
-
-If provisioning reports that the new title needs a higher version, the error
+If provisioning reports that the new title needs a higher version, or the ZIP
+upload is rejected with HTTP 400/409, the error
 includes the submitted `appVersion` and attempts one read-only M365 lookup for the
 current deployed version. It reports `unavailable` if the version cannot be
 verified; it does not substitute the Developer Portal draft version or expose
 the raw response. Inspect the target, then queue a new run with a version higher
 than the deployed version. The pipeline neither increments the version nor
 retries provision automatically.
+An HTTP rejection alone does not establish a version conflict; the original
+upload error remains authoritative.
 
-After successful provision, the pipeline copies the lifecycle's app-package ZIP
-and publishes it with an integrity receipt, not the project, environment files,
-credentials or acceptance records. It verifies the package output matches the
-deployment input and does not build a second ZIP for retention. The receipt
-records package provenance and `deploymentStatus: not-verified`, not independent
-runtime or exact HTTP-upload verification. This flow does not submit the app
-to the organization catalog.
+After successful local preparation, the pipeline publishes
+**`wiqd-m365-apppackage`** before attempting provision. It contains the original
+`wiqd-m365.zip` and `build-info.json` with the source commit, CLI version, app
+identity/version and ZIP SHA-256. If provision fails, you can still download this
+artifact to inspect the package. Build provenance is not evidence of deployment
+or runtime readiness; check the target before manually uploading it after an
+uncertain attempt.
 
-Changed source inputs or identity stop the applicable phase; missing, empty or
-changed ZIP bytes prevent retention. Failed provision stops artifact publication,
-so a downloadable package is not guaranteed for failed deployments. If retention
-or artifact publication fails afterward, deployment may already have succeeded;
-that failure does not roll it back. Inspect the target before starting another
-run after any uncertain mutation; the pipeline does not replay it automatically.
+Only after successful provision, the pipeline publishes a separate
+**`wiqd-m365-deployment-receipt`** artifact containing `receipt.json`, bound to the
+same ZIP name and SHA-256. It does not copy or build another ZIP. The receipt
+records package provenance with `deploymentStatus: not-verified`, not independent
+runtime or exact HTTP-upload verification. Neither artifact includes project or
+preparation state, environment files, credentials or acceptance records. This flow
+does not submit the app to the organization catalog.
+
+Changed build evidence, preparation state or identity stop the applicable phase;
+missing, empty or changed ZIP bytes prevent retention. Build artifact publication
+must succeed before provision. Failed provision prevents a deployment receipt,
+but does not remove the previously published build artifact. If receipt retention
+or publication fails afterward, deployment may already have succeeded; that failure
+does not roll it back. Inspect the target before starting another run after any
+uncertain mutation; the pipeline does not replay it automatically.
 
 ## Configure lifecycle authentication
 

@@ -324,6 +324,23 @@ npm install -g @microsoft/wiqd
 
 If the installer reports `E404`, either the requested `wiqd` version or one of its dependencies is unavailable from the registry identified by the installer. Follow the attributed message: for public npm, use the printed recovery command after the package is published; for a configured registry, fix or update that registry and re-run the installer.
 
+## EULA acceptance during updates
+
+CLI releases do not by themselves require you to accept the EULA again.
+When updating to the installer's stamped release, it reuses acceptance of the
+same agreement identity and terms version, including acceptance from an older
+CLI. Changed terms require fresh consent.
+
+Older CLIs that omit EULA version fields can reuse accepted terms after a
+read-only CLI-version check against known stable releases: `0.7.0`, `0.7.1`,
+`0.9.0`–`0.11.0`, `0.12.0`–`0.12.2`, `0.13.0`, `0.13.1`, and minor releases
+`0.14.0`–`0.25.0`. These releases share terms version `2`. Unlisted patches,
+prereleases and unknown versions are not inferred. No new consent is recorded.
+
+For a different target version, use its matching installer or accept the terms
+interactively. Unattended execution stops before installation rather than
+assuming consent.
+
 ## Install from an assistant conversation
 
 The WIQD marketplace plugin and CLI are separate installations. If the CLI is

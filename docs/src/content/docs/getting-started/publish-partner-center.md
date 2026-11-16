@@ -141,6 +141,16 @@ Use status or recover the Draft in Partner Center. `resume` remains simulated,
 not live recovery. Certification and publication timing are external, not a
 WIQD guarantee. A higher-version update requires a newly validated package.
 
+There is one explicit pre-upload recovery path. If `prepare` reports
+`PC_PUBLISH_REST_FAILED` and says that no package, logo or screenshots were
+uploaded, the Product ID has already been saved and the existing Draft is
+reusable. Correct the reported fields in `partner-center.json`, then rerun your
+original `wiqd publish pc prepare` invocation with the same project,
+package/build, environment and targeting options, including `--yes`. It safely
+reuses that Product instead of creating another one. Do not apply this guidance
+to an unknown outcome, a failure to save the Product ID, or a failed submission
+job.
+
 For an existing or rejected offer, preview/apply explicit `update` selectors,
 then inspect and resubmit the Draft in Partner Center. `update --submit` is
 unsupported and previous CLI preparation authorization is invalidated. Follow
