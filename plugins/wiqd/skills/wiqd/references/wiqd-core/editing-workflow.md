@@ -27,8 +27,9 @@ and plugin edits do not independently authorize a cloud mutation.
 Default-response-mode edits are the exception: provision after validation unless
 the user explicitly opts out, as defined by the parent core workflow.
 
-Never provision after a validation failure, including for testing,
-demonstration, or troubleshooting.
+These deployment rules apply only after the edit's preconditions and validation
+succeed. Never provision after a rejected edit, a failed schema check, or a
+validation failure, including for testing, demonstration, or troubleshooting.
 
 ---
 
@@ -102,13 +103,9 @@ When you add, remove, or modify ANY capability or plugin, you MUST complete ALL 
 - Write clear instructions and conversation starters
 - Ensure proper JSON syntax and schema compliance
 
-**After ALL edits, immediately run:**
-
-```bash
-wiqd plugin provision --env local
-```
-
-This command is part of the edit — not a separate optional step. Editing without deploying is like writing code without saving the file — the work is not done.
+After a permitted edit, re-read the changed files and run source validation as
+described in Step 4. Provision only when the Deployment Authorization rules above
+permit it and validation succeeds. An edit does not independently authorize deployment.
 
 **⛔ API Plugin Rule — HARD RULE, NO EXCEPTIONS:** To add an API plugin, you MUST use `wiqd agent add action` — one command per OpenAPI spec with **ALL operations included in a single call**. Never run separate `wiqd agent add action` calls for different operations from the same spec — this creates multiple plugins instead of one. You are FORBIDDEN from manually creating `ai-plugin.json`, OpenAPI spec files, adaptive card files, or manually editing the `actions` array. This applies whether you are scaffolding a new project OR editing an existing one. If the workspace already has an agent and the user says "add an API plugin", you STILL must use `wiqd agent add action`. If `wiqd agent add action` fails, report the error — do NOT fall back to manual file creation. **Manual plugin file creation = automatic eval failure.**
 
@@ -143,18 +140,16 @@ wiqd agent add action --openapi-spec <path-or-url> --operations "GET /path,POST 
 **Reference:** [schema.md](schema.md) for version compatibility and the dynamic property-lookup procedure
 **Reference:** [api-plugins.md](api-plugins.md) for adaptive card enhancement guidelines after adding a plugin
 
-**⚠️ IMPORTANT:** After making any edits to JSON files, you MUST deploy the agent (Step 4) before returning to the user.
+**Post-edit checkpoint:** Confirm the edit's scope and source-validation result
+before responding. Follow Deployment Authorization rather than treating an
+`appPackage/` change as permission to provision. If the edit was rejected or a
+precondition failed, report the blocker without entering deployment.
 
-**⛔ MANDATORY POST-EDIT CHECKPOINT — YOU ARE NOT DONE YET:**
-After editing ANY file in `appPackage/`, you MUST deploy before responding to the user. Skipping this is an eval failure:
+### Step 4: Validate and Provision When Authorized
 
-- **Deploy** — Run `wiqd plugin provision --env local`. If you edited files but did not run this command, your work is incomplete. The only exception is if the user explicitly asked you not to deploy.
-
-If you are about to respond to the user and you have NOT deployed, **STOP and deploy now**.
-
-### Step 4: Provision and Deploy
-
-**⛔ PRE-DEPLOY CHECK:** Before running the command below, verify the JSON files are syntactically correct and have the required fields. If there are known errors → fix them first before deploying.
+**Pre-deploy check:** Continue only after the edit's preconditions succeeded.
+Verify that the changed JSON files are syntactically correct and have the required
+fields. Report known errors; do not make unrequested repairs or deploy invalid content.
 
 Run `wiqd plugin validate --mode source --path "<project-directory>" --env local --json --skill wiqd --workflow wiqd-core`
 and require a completed passing result before the local provision below. Use the same selected
@@ -163,7 +158,8 @@ repair belongs to `workflows/validation.md`. Never use default validation for th
 requires a built ZIP and would create a build/validate cycle. This is a workflow gate, not proof
 of final-package acceptance or a new backend-enforced source check.
 
-**Action:** Provision required Azure resources and register the agent:
+**Action:** Only when Deployment Authorization permits it and source validation
+succeeded, provision required Azure resources and register the agent:
 
 ```bash
 wiqd plugin provision --path "<project-directory>" --env local
@@ -224,9 +220,14 @@ wiqd plugin share --scope tenant --env dev
 
 ## Critical Workflow Rules
 
-### Always Deploy After Edits
+### Follow Deployment Authorization After Edits
 
-**RULE:** When making any changes to an agent (JSON manifest files, instructions, capabilities, API plugins), you MUST complete the following workflow before returning to the user:
+**Rule:** A successful edit requires source validation, not unconditional deployment.
+Apply Deployment Authorization: ordinary edits need an explicit deployment request;
+default-response-mode edits provision after successful validation unless the user
+opts out. A rejected edit or failed precondition/validation never permits provisioning.
+
+When provisioning is authorized and validation succeeded:
 
 1. Provision/deploy the agent: `wiqd plugin provision --env local`
 2. Read `M365_TITLE_ID` from `env/.env.local`
@@ -382,7 +383,7 @@ After adding or removing capabilities, verify the change was applied:
 1. Re-read `declarativeAgent.json` and confirm `capabilities` array is correct
 2. Check that no other properties were lost or corrupted
 3. Follow the mandatory content update checklist (instructions, starters, description)
-4. Deploy: `wiqd plugin provision --env local`
+4. Run source validation; provision only if it succeeds and Deployment Authorization permits it
 
 ---
 

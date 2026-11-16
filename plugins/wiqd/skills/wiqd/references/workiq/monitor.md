@@ -13,10 +13,9 @@ without a title prefix or title attribution.
 
 ## How It Works
 
-`wiqd agent monitor` queries the **Insights Agent**, a declarative
+`wiqd agent monitor` queries the **GA Insights Agent**, a declarative
 responder whose available data depends on its capabilities and the caller's
-access. It tries Insights Agent **v2** first and falls back to v1 on its own
-(see below). The CLI handles this routing internally and has no `--agent-id`
+access. The CLI handles this routing internally and has no `--agent-id`
 option. Just call:
 
 ```bash
@@ -27,8 +26,7 @@ The responder target is:
 
 ```json
 {
-  "workiqAgentId": "P_1b8d02cb-774a-2469-9a82-06e6bad00aa7.declarativeAgent",
-  "fallbackWorkiqAgentId": "P_23193c8d-0406-0253-ad63-c34c455b552d.declarativeAgent"
+  "workiqAgentId": "P_23193c8d-0406-0253-ad63-c34c455b552d.declarativeAgent"
 }
 ```
 
@@ -44,24 +42,6 @@ The title is normalized to lowercase; the question body is unchanged.
 Missing, malformed, or multiple-ID candidates leave the question unprefixed.
 No Teams app ID, response property, citation, or title mentioned in prose is a
 fallback. A manifest DA suffix is not required for a valid env title.
-
-### v2 first, v1 fallback
-
-v2 is only available to tenants whose admin has provisioned it and that are in the
-Frontier program. When v2 cannot answer, the CLI asks the same question of v1
-automatically. The skill does not retry, does not pick an agent, and does not
-ask the user anything.
-Both requests use the exact same title-prefixed question when a valid title
-resolved; the fallback never reads a different title or builds a different prompt.
-
-In `--json` output, `insightsAgent` is `v2` or `v1` and `fallbackUsed` says whether
-the fallback ran. When `fallbackUsed` is `true`, add one short line after the
-answer: this tenant is using the earlier Insights Agent because v2 is not
-available for it (the admin may not have provisioned it, or the tenant may not be
-in the Frontier program). v1 may not report user feedback or ratings, so if the
-user asked for those and the answer lacks them, say that and suggest asking the
-tenant admin about Insights Agent v2. Authentication and throttling errors are
-not retried against v1; handle them as usual.
 
 ### Smart default query — `-q` is optional
 
@@ -118,7 +98,7 @@ determined (see the table below), and ask one short question at a time.
 | The user wants configuration, not usage ("what can it do?")     | Use `wiqd agent show --id <id>` or `--name <name>` instead.                                                                                         |
 | The user wants to try the agent ("test it", "does it know X?")  | Use `wiqd plugin ask --component agent` instead. Monitor talks to the Insights Agent, never to the user's agent.                                    |
 
-Insights Agent v2 reports usage analytics and user feedback for agents the user
+Insights Agent reports usage analytics and user feedback for agents the user
 owns. Feedback results can be a sample; if the user wants everything, ask the
 Insights Agent for all verbatim feedback. Report only what it returns, and say
 so when it has no data for the agent (for example, a brand-new agent).
@@ -128,8 +108,8 @@ The CLI supports **two modes**:
 ### Project Mode (inside an agent project)
 
 The CLI reads the selected project and env file, prefixes the valid requested
-title, and displays the actual outgoing Query. The v2/v1 responder selection
-does not change that title. JSON `data.query` includes the prefix when present; upstream agent IDs
+title, and displays the actual outgoing Query. JSON `data.query` includes the
+prefix when present; upstream agent IDs
 can identify the responder and must not be presented as verified analyzed titles.
 
 ### Standalone Mode (outside an agent project)
@@ -179,7 +159,7 @@ usage data lives in non-local environments).
 
 ### Monitor (Send Queries)
 
-The CLI handles Insights Agent routing internally. Just pass the query:
+The CLI handles GA Insights Agent routing internally. Just pass the query:
 
 ```bash
 wiqd agent monitor --json --skill wiqd -q "<question about the user's agent>"
@@ -345,7 +325,7 @@ Requests like "test it", "does it know about X?", or "ask it about [topic]" are
 | Missing m365agents.yml                          | Warn but continue — the CLI handles this gracefully.                                                                                                     |
 | Auth error from workiq                          | Tell user: _"log me in"_                                                                                                                                 |
 | `unknown command 'monitor'`                     | The `workiq-monitor` flag is off. Run `wiqd config flags set workiq-monitor true --skill wiqd`, then retry.                                              |
-| `MONITOR_INSIGHTS_UNAVAILABLE`                  | Both v2 and its v1 fallback failed. Report both errors, do not retry, and do not call `wiqd plugin ask --component agent` as a substitute.               |
+| `WORKIQ_ERROR`                                  | The GA Insights Agent request failed. Report the error, do not retry another responder, and do not call `wiqd plugin ask --component agent` instead.     |
 | Insights Agent has no data for the agent        | Say so plainly. A new, unpublished, or unshared agent may not have usage yet. Do not invent numbers or call `wiqd plugin ask --component agent` instead. |
 | Feedback asked for but not returned             | Report what Insights said. Feedback needs verified ownership and tenant-enabled sharing; do not guess which is missing.                                  |
 | Timeout                                         | Suggest `--verbose` to debug; the query may be too complex                                                                                               |

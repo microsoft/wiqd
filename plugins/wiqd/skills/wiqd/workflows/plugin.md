@@ -291,8 +291,14 @@ a connector from my MCP server at https://contoso.com/mcp"** or **"Create a cust
 this Swagger file"**. Adding an existing catalog connector uses the flow above instead. `connector
 add` runs outside a plugin project and creates a server-side connector on the MCP Platform
 production service; it does not modify any plugin. Only when the user explicitly asks to test against
-the MCP Platform Test or PreProd deployment, set `WIQD_MCP_PLATFORM_ENV` to `test` or `preprod`
-for that command's shell; never choose a non-production target yourself.
+the MCP Platform Test, PreProd, or local developer deployment, set
+`WIQD_MCP_PLATFORM_ENV` to `test`, `preprod`, or `local` for that command's shell;
+never choose a non-production target yourself. `local` means only
+`http://localhost:52857`, with the same Test/PreProd delegated audience and WIQD
+identity. The user must start that trusted service separately; it can still create
+tenant resources. No arbitrary URL/port override or authentication bypass is
+available, redirects remain forbidden, and backend/OAuth HTTPS validation is unchanged.
+Use `--dry-run` to inspect the selected endpoint without authentication/submission.
 
 1. Build a private input JSON file with exactly one source:
    - **MCP server:** `serverUrl` (HTTPS), `displayName`, optional `description`.
@@ -341,20 +347,24 @@ wiqd connector add --input-file <file> --prepare-for-certification --json --skil
 ```
 
 Reuse the private input/authentication guidance above. WIQD maps it to Swagger
-security and `oauthRegistration`; conflicting authored Swagger security is an input
-error, not permission to strip or overwrite it. MCP Platform owns tenant service
+security and `oauthRegistration`; explicit input authentication replaces conflicting
+Swagger security, including operation overrides. MCP Platform owns tenant service
 connector creation and Marketplace staging of static OAuth credentials. The new
 certification API and tenant CMS route must be deployed: report 404, a credentials-only
 204, partial outcomes, or transport failure; never retry automatically or fall back
-to ordinary creation. The new CMS response must provide `connectionVaultId` with
-a trailing `_<tenantId>`; the old `connectorName`/hyphen contract is incompatible.
+to ordinary creation. The service must return a complete
+`shared_<apiId>-<tenantId>` connector reference with a terminal nonzero tenant GUID.
 Do not supply a vault ID: the backend derives the credential-storage key from the
 response by removing only that tenant suffix.
 NoAuth/APIKey have no static OAuth client credentials to stage.
 
 Report the exact returned `connectorId` and `validationConnectorId`. The service
-includes a trailing `_<tenantId>` GUID suffix; both output IDs are the same full
-reference. Never reconstruct it from the name. Relay any returned `redirectUris`
+includes a terminal `-<tenantId>` GUID suffix; both output IDs are the same full
+reference. Only the final hyphen plus the 36-character GUID is the suffix;
+hyphens and underscores inside the API ID remain intact. Live creation matches
+the suffix against the validated token's tenant case-insensitively; a mismatch
+is an invalid response, not permission to retry or rewrite the ID.
+Never reconstruct it from the name. Relay any returned `redirectUris`
 for app registration exactly as in ordinary creation.
 Compose the full returned ID via the explicit OpenAPI preview path above, separately
 from creation. Preparation is not certification approval or publication.
@@ -368,8 +378,10 @@ local-only connector/skill preview, add `--offline` instead; it does not provisi
 authenticate, or validate on the server. Both final paths must be new. Read the
 returned `outputPath` and `validationOutputPath`; the latter inserts `.validation`
 before `.zip` and retains the complete service-returned references. The primary
-ZIP removes only the trailing `_<tenantId>` GUID from `ConnectionVault` connector
+ZIP removes only the terminal `-<tenantId>` GUID suffix from `ConnectionVault` connector
 `authorization.referenceId` values. Neither reference gains `_validation`.
+Offline packaging checks the shape without tokens or network and cannot establish
+the current signed-in tenant. The validation ZIP preserves the full ID's casing.
 All other member bytes/manifest values and
 the source stay unchanged, including `--include-file` content. Do not hand-edit a
 second source manifest, remove the source ID's tenant suffix, or claim a pair after a

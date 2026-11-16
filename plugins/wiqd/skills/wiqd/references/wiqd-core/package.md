@@ -136,9 +136,13 @@ wiqd plugin package --path ./my-plugin --env prod --prepare-for-certification --
 
 For explicitly local-only preview packaging, add `--offline`. Read both
 `outputPath` and `validationOutputPath`: the second ZIP is
-`connector.validation.zip`, retaining the exact full `shared_<apiId>_<tenantId>`
+`connector.validation.zip`, retaining the exact full `shared_<apiId>-<tenantId>`
 `ConnectionVault` connector references. The primary ZIP removes only the trailing
-`_<tenantId>` GUID suffix from those `authorization.referenceId` values.
+`-<tenantId>` GUID suffix from those `authorization.referenceId` values.
+The suffix is the final hyphen plus a 36-character nonzero GUID; preserve
+hyphens and underscores within the API ID and retain GUID casing in the validation ZIP.
+Offline packaging checks the shape without tokens, authentication, or network;
+only live connector creation matches the suffix to the validated token tenant.
 No `_validation` suffix is added to either reference. All other
 manifest values and member bytes remain the same, including any supplemental
 file. Neither the source manifest nor cloud connector configuration is changed.
