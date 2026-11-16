@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.0.0] — 2026-11-16
+
+> **General availability.** wiqd 1.0.0 is the first stable release.
+
+### Features
+
+- add Plugin evaluation workflows and mainline command
+- upgrade workflows to Preview V2
+- support multiple connector redirect URIs
+- prepare connector certification packages
+- surface connector OAuth redirect URIs
+- allow Test and PreProd MCP Platform targets for connector add
+
+### Fixes
+
+- Keep connector creation behind an explicit opt-in feature flag.
+- route monitor to GA Insights Agent
+- Validate plugin evaluation paths, environment selection, and target resolution.
+- require tool-call coverage in generated datasets
+- Honor plugin evaluation tool-call thresholds and apply schema rules to the correct evaluation mode.
+- enforce schema 2.0.0 tool-call datasets for Plugins and Agents with tools
+- fall back to runevals when wiqd plugin eval is unavailable
+- clear inherited Copilot CLI env vars before running Plugin evals
+- Offer dataset-source choices and non-blocking plugin evaluation guidance.
+- preserve CMS certification vault references
+- Preserve supplemental package files during validation-autofix rebuilds.
+- correct certification references and enable localhost
+
 ## [0.26.0] — 2026-11-12
 
 > **Public preview.** wiqd is in preview; commands, output, and packaging may change before general availability.

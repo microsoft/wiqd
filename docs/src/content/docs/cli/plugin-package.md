@@ -11,6 +11,7 @@ reports the generated path and size.
 
 ```bash
 wiqd plugin package [--env <name>] [--output <zip>] [--path <project>]
+                    [--offline] [--include-file <file>] [--prepare-for-certification]
 ```
 
 ## Options
@@ -20,6 +21,9 @@ wiqd plugin package [--env <name>] [--output <zip>] [--path <project>]
 | `--env`      | `local` | Environment used to resolve manifest variables   |
 | `--output`   | —       | Absolute or relative destination for the ZIP     |
 | `--path`     | `.`     | Plugin project directory                         |
+| `--offline` | off | Build a local-only devPreview connector/skill ZIP without provisioning or network |
+| `--include-file` | — | Include one regular, contained project file unchanged at the ZIP root |
+| `--prepare-for-certification` | off | Emit normal and validation connector-reference variants; alias `--prepareForCertification` |
 | `--json`     | off     | Emit the shared machine-readable result envelope |
 | `--verbose`  | off     | Show additional sanitized diagnostics on stderr  |
 
@@ -46,9 +50,54 @@ For a hand-authored DA-only skill, enable packaging support before package or pr
 wiqd config flags set agent-skills true
 ```
 
-The same fail-fast check applies to `wiqd plugin provision`, `wiqd plugin package`, and
-`wiqd plugin provision`. It reads only declared references and never rewrites the project. The
+The same fail-fast check applies to `wiqd plugin provision`, normal `wiqd plugin package`, and
+normal `wiqd plugin publish`. It reads only declared references and never rewrites the project. The
 generated/TypeSpec identity check applies to package and normal publish, where the SDK builds a ZIP.
+
+## Certification packages
+
+First create the connector with
+[`wiqd connector add --prepare-for-certification`](/cli/connector/#prepare-a-connector-for-certification)
+and separately compose its exact returned `shared_...` reference into your plugin.
+Keep the complete `shared_<apiId>-<tenantId>` reference in the authored manifest;
+do not remove the tenant suffix or append `_validation` yourself.
+
+```powershell
+wiqd plugin package --env dev --prepare-for-certification --output .\dist\inventory.zip --json
+# Or an explicit local-only preview package without provisioning:
+wiqd plugin package --offline --prepareForCertification --output .\dist\inventory-local.zip --json
+```
+
+The command builds once and emits the selected primary ZIP plus a second ZIP with
+`.validation` inserted before `.zip`. With no `--output`, these are
+`appPackage/build/appPackage.<env>.zip` and
+`appPackage/build/appPackage.<env>.validation.zip`.
+Both destinations must be absent; choose a fresh output name instead of overwriting.
+
+Only the primary ZIP changes
+`agentConnectors[].toolSource.openApiConnector.authorization.referenceId` or the
+equivalent `remoteMcpServer` field when its type is `ConnectionVault`:
+`shared_<apiId>-<tenantId>` becomes `shared_<apiId>` by removing only the terminal
+hyphen and 36-character tenant GUID. Hyphens and underscores inside the API ID
+are preserved: `shared_ronak-test-<tenantId>` becomes `shared_ronak-test`.
+The validation ZIP keeps the full original references, including GUID casing,
+and packaged manifest bytes. No `_validation` suffix is appended. All other
+manifest values and member bytes remain the same; the source manifest is unchanged.
+Other authorization types are untouched. No eligible references, malformed IDs,
+references without a trailing nonzero tenant GUID, or IDs exceeding 128 characters
+fail without publishing a pair. A failed second publication rolls back the first;
+existing files are never overwritten.
+
+Human output identifies both ZIPs. JSON additionally returns
+`validationOutputPath` and `validationSizeBytes`; ordinary packaging omits them.
+`--include-file` includes the same bytes in both artifacts. No CMS/Marketplace
+request or certification approval occurs during packaging. `--mock` refuses paired
+packaging rather than claim verified artifacts; use `--offline` without mock for
+real local ZIPs. Offline mode supports only the documented preview connector/skill
+surfaces, persists a local package GUID when needed, and does not establish server acceptance.
+Offline packaging validates the reference shape without tokens, authentication,
+or network; it cannot verify the current signed-in tenant. That tenant comparison
+belongs to live certification connector creation.
 
 ## Examples
 
@@ -78,7 +127,8 @@ envelope with:
     "outputPath": "C:\\src\\agent\\appPackage\\build\\appPackage.dev.zip",
     "sizeBytes": 12697,
     "sizeDisplay": "12.4 KB",
-    "environment": "dev"
+    "environment": "dev",
+    "offline": false
   }
 }
 ```

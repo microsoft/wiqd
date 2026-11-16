@@ -33,10 +33,8 @@ authentication, publication outcomes and mock behavior.
 directly. It has no `--agent-id` option. Select a project with `--path` (or run
 from its directory) and select an environment with `--env` (default `local`).
 
-The CLI tries Insights Agent v2 first. If v2 is unavailable, it can ask v1 once
-with the identical question and title scope. Authentication and throttling do
-not trigger fallback. JSON `insightsAgent`, `fallbackUsed`, and `fallbackReason`
-explain which responder answered; they do not identify an analyzed title.
+The CLI sends the natural-language question directly to the GA Insights Agent.
+It does not try a preview agent or retry against another responder.
 
 When `env/.env.<env>` supplies a valid `M365_TITLE_ID`, WIQD sends:
 
@@ -52,9 +50,8 @@ It does not guess an ID from the question or response, use a Teams app ID, or
 pick another environment.
 
 The displayed **Query** and JSON `data.query` show the outgoing question,
-including the prefix when present. IDs returned by Work IQ can identify the
-responding Insights Agent; they are not confirmation of the analyzed title.
+including the prefix when present. IDs returned by Work IQ can identify the responding Insights Agent; they are
+not confirmation of the analyzed title.
 The prefix records what WIQD asked about, not a guarantee of what Insights
 analyzed. An `InputRequired` or no-data reply is not a completed analytics result
-even if the CLI exits successfully. A failed v2 task triggers the bounded v1
-fallback; if that also fails, the command reports failure rather than metrics.
+even if the CLI exits successfully.

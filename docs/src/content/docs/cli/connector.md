@@ -18,7 +18,7 @@ plugin step:
 ```bash
 wiqd connector list [--search <text>] [--auth-type <type>] [--top <n>]
 wiqd connector show <selector>
-wiqd connector add --input-file <private-json> [--dry-run] [--json]
+wiqd connector add --input-file <private-json> [--prepare-for-certification] [--dry-run] [--json]
 
 # Add a connector you found to a plugin
 wiqd plugin add connector --selector <selector> [--folder <plugin>]
@@ -29,10 +29,29 @@ of the plugin lifecycle. Discovery reads the catalog directly and does not chang
 
 ## Create a connector from an MCP server
 
+**Preview, off by default.** Enable connector creation before running any
+`connector add` command, including dry-run, mock, and certification preparation:
+
+```powershell
+wiqd config flags set connector-add true
+wiqd config flags show connector-add
+```
+
+To return to the default-off state, run `wiqd config flags reset connector-add`.
+The `WIQD_FLAG_CONNECTOR_ADD` environment variable overrides the saved setting:
+`true` enables creation and `false` disables it. Clear that variable when returning
+to persisted/default behavior. See [Feature flags](/cli/reference/#feature-flags)
+for the full precedence and flag inventory.
+
+When disabled, `connector add` is unavailable and omitted from CLI help and
+completion. `connector list`, `connector show`, and `plugin add connector`
+(manual or catalog-based composition) remain available. Enabling the preview
+does not grant service permissions or bypass tenant consent.
+
 `connector add` wraps an HTTPS MCP URL in a Swagger definition and calls
 `POST https://agent365.svc.cloud.microsoft/agents/connectors/add`. It works outside
-a plugin project and always targets production; alternate environments are not
-supported. It does not change
+a plugin project and targets production by default; the closed pre-release
+environment selection below supports test and preprod. It does not change
 `connector list` or `connector show`, which still query the titles catalog.
 
 Save this as `learn-mcp-server.json`:
@@ -175,21 +194,56 @@ and optional basePath/schemes/tags structure. It preserves methods, schemas,
 references, and vendor extensions without adding MCP metadata or fetching any
 references. Full Swagger/operation acceptance remains with MCP Platform/CMS:
 a successful dry-run does not prove that the service will accept the definition.
-The API's host never changes the fixed production management endpoint or token audience.
+The API's host never changes the management endpoint or token audience.
 
 ### Production authentication
 
-The management endpoint and token audience are fixed. There are no
+The production management endpoint and token audience are the default. There are no
 `--environment`, `--resource-app-id`, `--local-url`, or `--yes` options.
 This does not determine whether your connector's backend uses live or sandbox
 credentials; backend authentication is configured separately.
+
+For developer validation, set `WIQD_MCP_PLATFORM_ENV` to target a
+non-production or local MCP Platform deployment. Values are case-insensitive; unset or
+empty means `prod`, and any other value fails before reading input or signing in.
+
+| Value     | Endpoint origin                                    | Token resource application             |
+| --------- | -------------------------------------------------- | -------------------------------------- |
+| `prod`    | `https://agent365.svc.cloud.microsoft`             | `ea9ffc3e-8a23-4a7d-836d-234d7c7565c1` |
+| `test`    | `https://test.agent365.svc.cloud.dev.microsoft`    | `05879165-0320-489e-b644-f72b33f3edf0` |
+| `preprod` | `https://preprod.agent365.svc.cloud.dev.microsoft` | `05879165-0320-489e-b644-f72b33f3edf0` |
+| `local`   | `http://localhost:52857`                          | `05879165-0320-489e-b644-f72b33f3edf0` |
+
+PreProd uses the Test application because its own registration is not live.
+Your tenant must consent to `AgentTools.PublishMCPServer.All` on the selected
+application for the WIQD client. The `endpoint` output shows which deployment
+was called; `--mock` output is unaffected.
+
+`local` uses the same Test/PreProd resource and delegated WIQD identity for both
+ordinary creation and certification preparation. Start your trusted local MCP
+Platform service separately on port **52857** before using it. This is a fixed
+loopback HTTP exception, not an arbitrary URL/port override or an authentication
+bypass. Redirects are refused, and HTTPS requirements for other management
+targets, MCP/REST backends and OAuth URLs remain unchanged. Local creation is
+**not a simulation**: your service can still create tenant resources.
+
+```powershell
+$env:WIQD_MCP_PLATFORM_ENV = 'test'
+wiqd connector add --input-file .\connector.json --prepare-for-certification
+Remove-Item Env:WIQD_MCP_PLATFORM_ENV
+```
+
+For the local developer service, use `$env:WIQD_MCP_PLATFORM_ENV = 'local'`
+instead. Run `--dry-run` first to confirm the localhost endpoint without
+authentication or submission, then omit it only when creation is intended.
+Remove the variable afterward to restore the default production target.
 
 **Platform login is separate from connector authentication.** Even a `NoAuth`
 MCP server or REST API requires an authenticated caller to create its connector. This command
 reuses the core WIQD Microsoft 365 client
 `7ea7c24c-b1f6-4a20-9d11-9ae12e9e7ac0`, not a new app or the catalog token.
-It silently requests delegated `AgentTools.PublishMCPServer.All` on the
-production resource application `ea9ffc3e-8a23-4a7d-836d-234d7c7565c1`.
+It silently requests delegated `AgentTools.PublishMCPServer.All` on the selected
+resource application (production defaults to `ea9ffc3e-8a23-4a7d-836d-234d7c7565c1`).
 Run `wiqd auth login --interactive`
 first. Your tenant must consent to that permission for this client; the command
 does not grant permissions, fall back to another app, or accept app-only tokens.
@@ -198,9 +252,23 @@ prototype's separately registered login application.
 
 Success reports the connector's logical ID, display name,
 and API correlation ID. The service's internal environment ID is not displayed.
-When the service returns an OAuth `redirectUri`, JSON and human-readable output
-include it unchanged for registration in your OAuth application. Missing or null
-redirect URIs are omitted; wiqd does not open the URL.
+When the service returns OAuth redirect URLs, JSON and human-readable output
+include its URLs unchanged for registration in your OAuth application. JSON uses
+one field, `redirectUris`, always as an array. The service's legacy `redirectUri`
+string becomes a one-item array. Both ordinary and certification creation accept
+arrays in `redirectUri` or `redirectUris`; legacy values appear first, followed
+by plural values. Ordinary creation preserves the order and duplicates.
+Certification additionally collects `creationResults[].redirectUri`, then
+deduplicates callbacks in first-seen order. There is no scalar `redirectUri`
+output field.
+Human-readable output lists every URL under **Redirect URIs** for multiple URLs,
+or **Redirect URI** for one. Missing/null values and empty arrays are omitted.
+Add every listed URI to your OAuth app registration before users sign in.
+Only absolute HTTPS values without credentials, whitespace, control characters,
+or fragments are accepted. Ordinary values are limited to 8192 characters;
+certification values to 2048 characters. One invalid URL rejects the response
+rather than returning a partial list. WIQD never constructs, opens, or fetches
+callbacks. Certification packaging variants do not create additional callbacks.
 Creation confirmation requires only the connector ID and display name, not an
 environment ID or an exact response schema. Unknown response fields are ignored;
 malformed responses, unsafe redirect URIs, and credential echoes still fail.
@@ -210,8 +278,9 @@ authentication type, result identifiers, and publication caveat.
 It does not echo environment fields, option aliases, execution flags, or the working directory.
 **Creation does not establish catalog publication,
 a connection, MCP tool readiness, or plugin composition.** Publication depends on
-service policy. The service selects an MCC or Cowork environment according to its
-deployment policy. The logical ID is distinct from a catalog title/element ID; use
+service policy. The service selects creation targets according to its
+deployment policy; a single environment ID is not required in the response.
+The logical ID is distinct from a catalog title/element ID; use
 the separate explicit OpenAPI preview authoring flow when referencing it in a plugin.
 
 Creation is not automatically retried. Sign-in has a 15-second deadline (exit 2)
@@ -225,6 +294,60 @@ hexadecimal correlation ID. Pressing Ctrl+C exits 130 without this warning.
 Use the correlation ID to inspect service logs/existing resources before retrying;
 absence from `connector list` does not prove creation failed because that command
 queries published titles rather than all created connectors.
+
+### Prepare a connector for certification
+
+Use `--prepare-for-certification` (alias `--prepareForCertification`) on both
+creation and packaging when preparing certification artifacts:
+
+```powershell
+wiqd connector add --input-file .\inventory-api.json --prepare-for-certification --dry-run --json
+wiqd connector add --input-file .\inventory-api.json --prepare-for-certification --json
+```
+
+The same input file is validated and translated into a nested
+`{ "connector": { ... } }` creation request, submitted once to
+`POST https://agent365.svc.cloud.microsoft/agents/connectors/certification`.
+Do not wrap your input file in `connector`; WIQD supplies the API envelope.
+Do not supply `connectionVaultId`: the service derives the credential-storage
+key from the creation response, removing only its trailing `-<tenantId>` suffix.
+MCP Platform owns tenant service-connector creation and Marketplace staging of
+static OAuth client credentials. NoAuth/APIKey have no static OAuth credentials
+to stage. WIQD never calls CMS or Marketplace directly.
+This requires deployment of the connector-creation certification API and its
+tenant-scoped CMS service API. A credentials-only HTTP 204 or partial HTTP 207
+is not successful creation. Deployment failures do not fall back to ordinary add.
+
+Copy the returned **`connectorId` exactly**: `shared_<apiId>-<tenantId>`, with
+a terminal nonzero, 36-character tenant GUID and at most 128 characters total.
+Only the final `-<GUID>` is the tenant suffix, so `shared_ronak-test-<tenantId>`
+has primary reference `shared_ronak-test`; hyphens and underscores in API IDs are
+preserved. Live creation checks that suffix against the validated token's `tid`,
+case-insensitively, without exposing token claims. A mismatch rejects the response
+as unconfirmed creation; inspect the existing connector before retrying.
+Do not construct the ID from the display name. Success additionally reports
+`prepareForCertification: true` and `validationConnectorId` (the same complete ID,
+not an ID ending in `_validation`). This does not create a connection, compose a plugin, or certify,
+approve, or publish anything.
+
+Compose the complete returned ID into a plugin separately, after opting into the
+preview shape:
+
+```powershell
+wiqd plugin add connector --kind openapi --name "Inventory" --description "Inventory API" --auth-reference-id "<returned-connectorId>" --dev-preview --folder .\inventory-plugin
+wiqd plugin package --path .\inventory-plugin --offline --prepare-for-certification --output .\dist\inventory.zip --json
+```
+
+Use normal provisioned packaging without `--offline` when needed. Packaging
+produces `inventory.zip` with `shared_<apiId>` references and
+`inventory.validation.zip` with the exact returned `shared_<apiId>-<tenantId>`
+references. Only the primary ZIP removes the tenant suffix; neither appends
+`_validation`. Both paths must be new. See
+[certification packaging](/cli/plugin-package/#certification-packages).
+Offline packaging checks the canonical shape without authentication or network;
+it cannot establish which tenant is currently signed in.
+Offline dry-run reports the selected endpoint without staging credentials;
+mock creation stays explicitly simulated and reads no input file.
 
 ## Find a connector
 
