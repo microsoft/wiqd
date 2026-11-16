@@ -2,13 +2,27 @@
 
 Step-by-step instructions for scaffolding a new M365 Copilot agent project.
 
+## Template Browsing Is Not Project Creation
+
+If the user only wants to list or compare available embedded-agent templates, run:
+
+```bash
+wiqd plugin list templates --json --skill wiqd
+```
+
+Use the returned catalog to report template IDs, names, and descriptions, then
+stop. This read-only command works outside a project and needs no project name,
+authentication, installation, or scaffolding. Do not enter the creation workflow
+below for a template-only request. The catalog is informational; it does not
+change the basic starter composed by `plugin add agent`.
+
 ## ⛔ STOP — READ THIS FIRST
 
 ### wiqd CLI Setup
 
 Check if wiqd CLI is available by running `wiqd --version`. If the command is not found, **STOP and tell the user** that the wiqd CLI is required but not installed. Do NOT attempt to install it yourself — the user must install wiqd separately before you can proceed.
 
-### The Only Valid Command Sequence
+### Project Creation Sequence
 
 Copy this command EXACTLY. Replace `<project-name>` with the user's project name:
 

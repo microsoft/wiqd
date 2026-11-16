@@ -116,11 +116,12 @@ Before touching Partner Center, confirm the partner has:
 For **connector certification preparation**, first follow the
 `workflows/plugin.md` connector certification section: create via
 `connector add --prepare-for-certification`, then separately compose the exact
-returned full `shared_<apiId>_<tenantId>` connector ID. Package with
+returned full `shared_<apiId>-<tenantId>` connector ID. Package with
 `wiqd plugin package --path "<project>" --env prod --prepare-for-certification --output "<fresh-final.zip>" --json --skill wiqd --workflow partner-center`.
 Keep `outputPath` and `validationOutputPath` distinct. The validation ZIP retains
-the exact returned ID; the primary ZIP removes only the terminal `_<tenantId>`
-GUID suffix from ConnectionVault references. Neither reference gains `_validation`.
+the exact returned ID; the primary ZIP removes only the terminal `-<tenantId>`
+GUID suffix from ConnectionVault references, preserving hyphens and underscores
+inside the API ID. Neither reference gains `_validation`.
 This is opt-in, not the default for all
 marketplace submissions, and does not approve or submit either artifact. Both
 paths must be new; follow the existing exact-ZIP validation and submission

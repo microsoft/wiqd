@@ -12,7 +12,22 @@ How to discover available wiqd commands, extensions, and capabilities.
 wiqd --help
 ```
 
-Shows the root command tree: `agent`, `config`, `auth`, `update`, `changelog`, `install`, `doctor`, `docs`, `feedback`, `ext`.
+Shows the available top-level namespaces, including `plugin` for project lifecycle
+and `agent` for agent-specific operations. Active extensions and feature flags
+determine the complete command tree; use the installed help rather than guessing
+commands from older versions.
+
+### Plugin Subcommands
+
+```bash
+wiqd plugin --help
+wiqd plugin list --help
+wiqd plugin add --help
+```
+
+Project creation, validation, provisioning, packaging, sharing, and publishing
+belong under `plugin`, not `agent`. Follow nested help to find commands such as
+`plugin list templates` and `plugin add agent`.
 
 ### Agent Subcommands
 
@@ -20,7 +35,24 @@ Shows the root command tree: `agent`, `config`, `auth`, `update`, `changelog`, `
 wiqd agent --help
 ```
 
-Shows all agent lifecycle commands: `create`, `add`, `validate`, `show`, `provision`, `package`, `share`, `delete`, `open`, `eval`, `env`, `publish`, `monitor`, `ask`, `list`.
+Shows the agent-specific commands contributed by active extensions, such as
+`add`, `info`, `eval`, `show`, and `list`. Do not infer retired lifecycle commands
+such as `agent create` or `agent provision`; use the corresponding `plugin`
+commands.
+
+
+### Browsing Agent Templates
+
+For a request to list or compare available embedded-agent templates, run:
+
+```bash
+wiqd plugin list templates --json --skill wiqd
+```
+
+Report the template IDs, names, and descriptions from the returned catalog.
+This is a global, read-only operation: no project, project name, authentication,
+or scaffolding is needed. Stop after presenting the catalog unless the user also
+requests creation. There is no `wiqd agent templates` command.
 
 ### Command-Specific Help
 
@@ -67,11 +99,12 @@ wiqd documentation is published at https://aka.ms/wiqd/docs and also lives in-re
 
 ## Quick Orientation
 
-| User Intent                      | Route To                                            |
-| -------------------------------- | --------------------------------------------------- |
-| "What can wiqd do?"              | This reference + `references/orientation.md`        |
-| "How do I get started?"          | `references/orientation.md`                         |
-| "What extensions are installed?" | `wiqd ext list`, then `wiqd ext show` per extension |
-| "What commands exist?"           | `wiqd --help`, `wiqd agent --help`                  |
-| "Search the docs for X"          | Docs site: https://aka.ms/wiqd/docs                 |
-| "Check my environment"           | `wiqd doctor`                                       |
+| User Intent                      | Route To                                                        |
+| -------------------------------- | --------------------------------------------------------------- |
+| "What can wiqd do?"              | This reference + `references/orientation.md`                    |
+| "How do I get started?"          | `references/orientation.md`                                     |
+| "What extensions are installed?" | `wiqd ext list`, then `wiqd ext show` per extension             |
+| "What commands exist?"           | `wiqd --help`, then `wiqd plugin --help` or `wiqd agent --help` |
+| "What agent templates exist?"    | `wiqd plugin list templates --json --skill wiqd`                |
+| "Search the docs for X"          | Docs site: https://aka.ms/wiqd/docs                             |
+| "Check my environment"           | `wiqd doctor`                                                   |
