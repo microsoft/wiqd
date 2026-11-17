@@ -1,6 +1,8 @@
 ---
 title: Build a Plugin
 description: Build a Microsoft 365 Copilot plugin — an app package composing an agent, skills, and connectors — by describing it to the wiqd Copilot CLI plugin, or with the wiqd plugin CLI directly. Replaces the "Build plugins for Copilot Cowork" Learn walkthrough end to end.
+banner:
+  content: 'New: watch WIQD build a Copilot plugin from a prompt to the Agent Store in <a href="https://aka.ms/copilot.dev?page=%2Fwork-iq%2Fdev-tools">Interactive Demo</a>'
 ---
 
 # Build a Plugin

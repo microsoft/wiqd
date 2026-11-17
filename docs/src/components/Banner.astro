@@ -3,12 +3,16 @@
 // frontmatter `banner`. wiqd is pre-1.0, so the preview notice must render
 // unconditionally on every page — including the splash home page, since
 // Starlight's Page.astro mounts <Banner /> inside <main> above the hero.
+// A page's own frontmatter `banner` still renders, below the preview notice,
+// so overriding the component doesn't silently drop page announcements.
 import { version, base } from '../site-config.mjs';
 
 const installationHref = `${base}getting-started/installation/`;
+const { banner } = Astro.locals.starlightRoute.entry.data;
 ---
 
 <div class="sl-banner" data-pagefind-ignore>
   Work IQ Dev Tools are in preview (v{version}). Commands and APIs may change before 1.0. See the
   <a href={installationHref}>installation guide</a>.
 </div>
+{banner && <div class="sl-banner" data-pagefind-ignore data-page-banner set:html={banner.content} />}
