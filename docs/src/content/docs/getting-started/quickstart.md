@@ -1,6 +1,8 @@
 ---
 title: Quickstart
 description: Create your first Microsoft 365 Copilot plugin with WIQD, compose its capabilities, and validate, provision, package, and share it.
+banner:
+  content: 'New: watch WIQD build a Copilot plugin from a prompt to the Agent Store in <a href="https://aka.ms/copilot.dev?page=%2Fwork-iq%2Fdev-tools">Interactive Demo</a>'
 ---
 
 # Quickstart: Create Your First Plugin
