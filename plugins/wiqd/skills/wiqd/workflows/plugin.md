@@ -3,7 +3,7 @@ name: plugin
 description: >
   Author a standalone, reusable M365 Copilot plugin — a Teams app package that composes a
   declarative agent, skill(s), and/or agent connector(s) as a first-class, independently
-  packageable and validatable deliverable — via the alpha `wiqd plugin` construct. A
+  packageable and validatable deliverable — via the `wiqd plugin` construct. A
   "Copilot Cowork plugin" is this same artifact, not a different platform. This is
   distinct from adding a plugin capability into a single agent (that is `wiqd agent`), and
   distinct from the GitHub Copilot CLI plugin, which is installed through the host's
@@ -37,7 +37,7 @@ triggers: >
   make my plugin work in claude, make my plugin work in cursor, share my plugin with other tools,
   delete my plugin, uninstall my plugin, tear down my plugin, remove my plugin from the tenant,
   clean up my provisioned plugin, delete the plugin app registration, undo plugin provision
-routing-label: 'Plugin authoring (alpha)'
+routing-label: 'Plugin authoring'
 routing-intent: 'Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export)'
 routing-order: 2
 contract-version: 1
@@ -63,7 +63,7 @@ routing-requires:
   ]
 ---
 
-# Plugin — Standalone Plugin Authoring (alpha)
+# Plugin — Standalone Plugin Authoring
 
 Author a **standalone, reusable M365 Copilot plugin** as a first-class, independently shippable unit — not something bolted inside one agent project. A plugin is a **Teams app package** (the same `appPackage/` infrastructure `wiqd agent` uses) that composes one or more capabilities: a **declarative agent**, one or more **skills** (`SKILL.md` folders), and one or more **agent connectors** (a remote MCP server or a reference to an existing OpenAPI custom connector). WIQD recognizes the project structurally from contained `m365agents.yml` and `appPackage/manifest.json`; the root manifest owns its name and capabilities. It flows through the familiar lifecycle: `create → add → validate → provision → package → publish / share`, with `show` / `list` available for inspection at any point. `publish` submits to the tenant organization app catalog for administrator approval; `share` grants direct access and is not the same operation. Two interoperability commands bracket that lifecycle: `import` is an alternate **entry point** (in place of `create`) that converts an existing Open Plugin / Claude / Cursor plugin into a wiqd plugin project, and `export` is an **exit point** that converts a wiqd plugin project back out to those formats.
 
@@ -72,8 +72,6 @@ Author a **standalone, reusable M365 Copilot plugin** as a first-class, independ
 > **Terminology — one artifact, many names.** "**Cowork plugin**", "**Copilot Cowork plugin**", "**Microsoft 365 Copilot plugin**", and "**standalone plugin**" all name the **same artifact** this workflow builds: one Microsoft 365 app package. An unqualified "**Copilot plugin**" names that same artifact **whenever the request points at an M365 host surface, or names no host at all**. "Standalone" is a wiqd word that separates a reusable plugin project from a declarative-agent project — it is **not** a platform qualifier. Cowork, Microsoft 365 Copilot chat, Teams, and Office are **host surfaces** for that one package, not separate plugin platforms with their own SDKs. A request to "build a Cowork plugin" belongs **here** — never treat it as out of scope or redirect the user to another toolchain.
 
 > **Exception — a GitHub Copilot CLI plugin is a different artifact.** When the request names **GitHub Copilot CLI** as the host ("a plugin **for Copilot CLI**", "the **`wiqd@wiqd` plugin**", "install the wiqd Copilot plugin"), it is **not** a Microsoft 365 app package and `wiqd plugin create` would scaffold the wrong thing. The WIQD host plugin is the skills + guide-agent bundle Copilot CLI itself loads, acquired through its native marketplace commands, not authored here. For a fresh public installation, use `copilot plugin install wiqd@awesome-copilot`. If the user explicitly selects the `wiqd@wiqd` alternative, use `copilot plugin marketplace add microsoft/wiqd`, then `copilot plugin install wiqd@wiqd`. Do not install a second identity or switch an existing deployment automatically; inspect native host settings first. Start a new host session after installation. wiqd does not author third-party Copilot CLI plugins: explain that limitation rather than scaffolding an M365 project or offering WIQD host-plugin management commands.
-
-> **Alpha.** The `wiqd plugin` construct is enabled by default. The interface may change without notice.
 
 ## When to use this workflow
 
@@ -114,7 +112,7 @@ If in doubt, ask: _"Do you want a standalone, reusable plugin you can validate a
 Run these checks before scaffolding. If the shell tool is unavailable, fall back to `view`/`glob`/`grep` and tell the user which manual step to run.
 
 1. **wiqd CLI available** — see the shared `references/preflight.md` version check.
-2. **Plugin command available** — `wiqd plugin --help` must succeed without feature-flag configuration. If it does not, the installed wiqd is too old or incomplete; update/reinstall wiqd rather than mutating flag state.
+2. **Plugin command available** — `wiqd plugin --help` must succeed. If it does not, the installed wiqd is too old or incomplete; update or reinstall wiqd.
 3. **Not already inside a project** — for `create`, verify the target directory is empty. If it already contains `m365agents.yml` or `appPackage/manifest.json`, switch to the relevant project-scoped plugin step instead of recreating it. Projects produced by the retired `agent create` are compatible when they satisfy the same structural contract.
 4. **wiqd runtime available** — if `plugin create` reports missing runtime assets, reinstall wiqd.
 
@@ -331,8 +329,21 @@ Use `--dry-run` to inspect the selected endpoint without authentication/submissi
    timeout or `CONNECTOR_ADD_OUTCOME_UNKNOWN`, the connector may already exist, so give the user
    the correlation ID.
 5. Explain that creation does not prove catalog publication, a connection, or tool readiness. To
-   reference the result in a plugin, use the explicit OpenAPI preview path above with
-   `--auth-reference-id "<connectorId>"` after the user confirms the preview choice.
+   reference the result in a plugin when requested, preserve the source type from step 1:
+   - **MCP (`serverUrl`):** use `--kind remote-mcp`, the original `--url`, and
+     `--auth-reference-id "<connectorId>"`. Omit `--auth-type` to use `ConnectionVault`;
+     obtain the existing preview opt-in before supplying `--dev-preview`. For Cowork,
+     also capture the server's `tools/list` result under `appPackage/` and supply
+     `--tool-description <file>`.
+   - **REST (`apiDefinition`):** use the explicit `--kind openapi` preview path above
+     with `--auth-reference-id "<connectorId>"`.
+
+   Use the exact returned reference for either kind. The service wraps MCP in Swagger
+   internally; that does not change its plugin representation to OpenAPI. Do not infer the kind
+   from `shared_...` or its authentication, switch an MCP connector to OpenAPI, or ask
+   the user to select a kind already established by their request/input. If only a
+   reference is supplied and the source type is unknown, ask for the connector type
+   and, for MCP, its endpoint before composing it.
 
 #### Connector certification preparation
 
@@ -366,8 +377,9 @@ the suffix against the validated token's tenant case-insensitively; a mismatch
 is an invalid response, not permission to retry or rewrite the ID.
 Never reconstruct it from the name. Relay any returned `redirectUris`
 for app registration exactly as in ordinary creation.
-Compose the full returned ID via the explicit OpenAPI preview path above, separately
-from creation. Preparation is not certification approval or publication.
+Compose the full returned ID separately from creation, preserving the MCP or REST
+source type using step 5 above. Certification preparation does not change the
+connector kind and is not certification approval or publication.
 
 ```bash
 wiqd plugin package --path <dir> --env <env> --prepare-for-certification --output <fresh-primary.zip> --json --skill wiqd --workflow plugin
@@ -657,7 +669,7 @@ plugin-owned lifecycle and these returned links.
 - ❌ Don't tell the user a **Cowork plugin** needs a different platform, SDK, or toolchain — it is the same Microsoft 365 app package this workflow builds (see Terminology). Treating a host surface as a separate product is never a reason to decline.
 - ❌ Don't hand-author component registrations — use `wiqd plugin add …` so root manifest references and component artifacts stay consistent.
 - ❌ Don't declare a plugin "ready" from source validation alone; disclose unvalidated skill/connector content and require the appropriate final-ZIP checks.
-- ❌ Don't silently enable the alpha flag — tell the user first (Preflight step 2).
+- ❌ Don't fall back to `wiqd agent` when `wiqd plugin --help` is unavailable — update or reinstall WIQD as described in Preflight step 2.
 - ❌ Don't `create` and then hand-copy an existing Open Plugin's files into it — use `plugin import`, which is the supported entry point and preserves round-trip data.
 - ❌ Don't promise that importing a plugin merges its capabilities into an existing agent. The supported import flow creates a new plugin project from a foreign-format source.
 - ❌ Don't use normal `package` before `provision` — it needs the selected environment file. Only explicit local-only `plugin package --offline` bypasses provisioning.
