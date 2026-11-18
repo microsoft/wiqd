@@ -77,7 +77,7 @@ Shows full details for a single flag: description, owner, valid values, current 
 ### Set a Flag
 
 ```bash
-wiqd config flags set <name>=<value> --skill wiqd
+wiqd config flags set <name> <value> --skill wiqd
 ```
 
 Persists a flag override to `~/.wiqd/.wiqd.json`.
