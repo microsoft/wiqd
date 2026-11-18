@@ -10,6 +10,16 @@ Developer toolkit for building, validating, provisioning, and publishing Microso
 
 ## Usage
 
+The plugin's root `cli-compatibility.json` declares one supported WIQD CLI minor
+line as `~X.Y.0`,
+separately from the plugin version. The skill packages the checker and a matching
+declaration in its assets, including when distributed independently. It invokes
+the checker before ordinary CLI commands. It finds the newest published stable
+CLI in that release line and probes `wiqd --version --no-banner`.
+If the CLI is missing or older, the skill asks permission to install the exact
+selected version; a newer CLI is retained without downgrade. This is
+skill-directed, not a host-enforced gate, and adds no host hooks.
+
 ```
 # Scaffold a new agent
 "Create a new declarative agent for HR FAQ"
