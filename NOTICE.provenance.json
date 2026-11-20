@@ -2,7 +2,7 @@
   "schema": "wiqd-notice-provenance/1",
   "generator": "scripts/gen-notice.mjs",
   "subject": "@microsoft/wiqd",
-  "inputDigest": "975270284bd0e0c5d57459fc213655cbc364ee85f396026f7172b274a00a748c",
+  "inputDigest": "2a49204e1bd9d41e69fd53b96fd1dc885b5d4df7068eda9d98e365d7f07020a5",
   "componentCount": 546,
   "components": [
     {
@@ -1928,14 +1928,9 @@
     {
       "type": "npm",
       "name": "handlebars",
-      "version": "4.7.9",
+      "version": "4.7.10",
       "license": "MIT",
-      "origin": "bundled",
-      "patch": {
-        "path": "patches/handlebars@4.7.9.patch",
-        "sha256": "dc00a3337cee54528e098ecbcadc01019c9ad19cbf5096069d193b49e24947af",
-        "pnpmHash": "dcjqyrn6ixexfyozes5ji3y4cm"
-      }
+      "origin": "bundled"
     },
     {
       "type": "npm",

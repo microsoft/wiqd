@@ -6,10 +6,6 @@
   <img src="docs/public/banner-wide.png" alt="Work IQ Dev Tools banner — witch hat beside the WIQD wordmark with the tagline: Defy limits. Build wicked things." width="900" />
 </p>
 
-<p align="center">
-  <strong>⚠️ Pre-release preview.</strong> Work IQ Dev Tools are experimental software shared for experimentation purposes only. They are not production-ready and are not officially supported. Expect breaking changes.
-</p>
-
 **WIQD (Work IQ Dev Tools) is the agentic experience for the end-to-end Microsoft 365
 Copilot plugin lifecycle: build, improve, preview, and publish.** A plugin is the
 app package you ship. Skills, connectors, and declarative agents are components
@@ -17,7 +13,7 @@ you compose into it; a declarative agent adds a conversational experience when
 you need one, but is not required for every plugin. Work conversationally with
 WIQD or run the same lifecycle commands directly in your terminal and CI.
 
-> This repository hosts Work IQ Dev Tools' documentation, downloads, and project meta-files. The `wiqd` CLI itself is publicly available via npm — see the [Quick start](#quick-start) below to install it — while its source remains private to Microsoft during this preview.
+> This repository hosts Work IQ Dev Tools' documentation, downloads, and project meta-files. The `wiqd` CLI itself is publicly available via npm — see the [Quick start](#quick-start) below to install it — while its source remains private to Microsoft.
 
 ## What you can do with Work IQ Dev Tools
 
@@ -158,8 +154,7 @@ wiqd plugin validate --mode deep --env dev
 ```
 
 Static validation checks the declarative-agent surface, not the entire plugin.
-Provision before packaging; deep validation needs the built ZIP. The plugin
-command tree is alpha and enabled by default.
+Provision before packaging; deep validation needs the built ZIP.
 
 Existing agent projects use `wiqd plugin validate --mode source` for offline saved-source checks,
 `--mode package --package-file ./final.zip` for TDP validation of an existing ZIP, and
@@ -198,7 +193,7 @@ monitoring availability depends on your installed extensions and access.
 
 ## Contributing
 
-The wiqd CLI is publicly available; its source is private to Microsoft during this preview. See [Contributing](CONTRIBUTING.md) for how to report issues, request features, and reach the team — the short version: run `wiqd feedback submit` from the CLI.
+The wiqd CLI is publicly available; its source is private to Microsoft. See [Contributing](CONTRIBUTING.md) for how to report issues, request features, and reach the team — the short version: run `wiqd feedback submit` from the CLI.
 
 ## Telemetry
 

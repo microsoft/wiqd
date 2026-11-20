@@ -9,11 +9,6 @@ This page is a **reference**, not a how-to — for the step-by-step walkthrough,
 [Build a Plugin](/getting-started/build-a-plugin/). It documents the constraints of the M365 app-package format
 itself, and maps each one to where `wiqd plugin` surfaces it.
 
-:::caution
-**Alpha.** The `wiqd plugin` command tree is enabled by default, but the surface is still alpha and
-the interface may change without notice.
-:::
-
 ## Package anatomy
 
 The table below lists the files under the project's `appPackage/` directory — the same layout

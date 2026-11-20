@@ -50,6 +50,43 @@ with the web installer's fresh unattended consent prompt.
 Retain real project build/tests. Declarative projects have no universal compile
 command; `wiqd plugin package` produces their distributable ZIP.
 
+### Work IQ explicit acceptance
+
+Work IQ opts in to `wiqd eula accept workiq --yes --json` through its extension manifest.
+The requester confirmed scoped product/legal approval, including CI use, on
+2026-11-18. That accepted decision is separate from WIQD's host-only approval
+and does not establish release readiness or authorize an individual acceptance
+operation. The job owner must review the
+[Work IQ terms](https://github.com/microsoft/work-iq) and explicitly authorize
+the exact acceptance step before queuing. Installation permission, host EULA
+acceptance and CI detection do not grant that authorization.
+
+Use the same verified WIQD launcher and environment for these ordered steps:
+
+```text
+wiqd eula accept workiq --yes --json
+wiqd eula status --json
+```
+
+Do not run the second step or dependent product work unconditionally. Acceptance
+must return exit 0 and a success envelope whose `data` contains the exact
+`tool: "workiq"`, current `eulaUrl`, `method: "explicit-yes"` and
+`acceptanceCommandCompleted: true`. This confirms native command completion,
+not independently verified acceptance. Then require an accepted Work IQ status
+row. Other tools need not be accepted: inspect rows only from a success envelope
+or the documented `EULA_STATUS_BINARY_UNRESOLVED` error's `error.data` with matching
+process/envelope exit 2 and a genuinely unresolved downstream row.
+Unaccepted/unresolved Work IQ, a missing probe or any other invalid observation
+stops dependent work.
+
+The Work IQ manifest opts in; Eval does not. WIQD reuses the tool's managed binary
+and native `accept-eula`, mandatory invocation audit and one-shot guard. Stdin is
+closed and execution is bounded to 60 seconds. Failure, timeout, cancellation or
+uncertainty stops without automatic acceptance retries. This does not accept
+WIQD's own terms, authenticate, change shared preflight or enable mock acceptance.
+The existing TTY/verbatim-consent flow without `--yes` is unchanged and still
+refuses CI.
+
 ## Deploy WIQD's own plugin from this repository
 
 The manually queued repository pipeline
@@ -265,7 +302,8 @@ or the entire project.
 
 Continue only after native exit success, a valid JSON success envelope and
 expected package output. Configure WIQD host `--yes` only with explicit job-owner
-authorization; downstream EULA consent remains outside CI. Inspect existing
+authorization; downstream EULA consent remains outside CI except for the
+manifest-opted-in, separately authorized Work IQ acceptance above. Inspect existing
 resources after timeout or uncertainty before any manually approved rerun;
 do not automatically retry mutations. WIQD does not rotate your secret store.
 

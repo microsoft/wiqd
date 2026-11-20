@@ -229,6 +229,71 @@ repairs, removed checks and inconclusive results are not counted as fixed.
 The coding-agent workflow runs at most two authorized repair rounds. An applied
 but unverified repair is not a pass or official approval.
 
+### Reuse a saved connector validation agent
+
+For live validation of a connector ZIP, Copilot first checks the selected package
+project's `.validate/development/` for its saved test DA. It verifies the package,
+deployment records, account/tenant and current exact agent metadata before
+reusing it. It does not create another DA just because you started a new session.
+Missing Allow/setup can be completed on the same installation.
+
+If the saved host cannot be verified as usable, Copilot explains why and offers
+**Stop validation** (the default) or **Provision a new validation DA**.
+Replacement is never automatic and still needs separate provisioning approval.
+An access error or timeout does not mean the old DA is gone; a replacement may
+leave it installed. Original host records remain available. A failed functional
+test does not automatically trigger another provisioning attempt.
+
+The final message identifies the host, Title ID, runtime ID and cleanup status,
+links to the available verified Copilot installation pages, and gives the exact
+local agent-info paths. These include the orchestration `preparation-record.json`
+and its saved provision result under `.validate/development/`; use those records
+to find and reuse the host later. Credentials and env-file contents are not shown.
+
+### Clean up a temporary validation agent
+
+Live validation can create a separate DA test host. Once testing and any chosen
+repairs finish, the coding agent offers **Keep temporary test DA** first, then
+**Delete temporary test DA** in Copilot's native confirmation UI. **Keep is the
+default; nothing is deleted without explicit approval.** This also applies after
+final validation failure or conversational cancellation; cancelling validation
+does not itself approve deletion.
+
+For connector validation, this question also appears for its saved generated host
+while legacy cleanup metadata or ownership checks are pending, including update
+provisions. **No/Keep is explicitly selected by default.** Yes does not bypass
+ownership or current-identity verification; missing or changed target details
+require exact-target confirmation before deletion. Other DA flows are unchanged.
+
+The prompt identifies the test DA, provisioning Title ID and tenant/account.
+Deletion uses `wiqd plugin uninstall` to tear down that isolated test app's cloud
+resources, not just remove its personal Copilot installation. Your explicit
+approval allows that one command to run without a second terminal prompt.
+Source, env files, original/generated packages, preparation records, evidence
+and validation reports are kept.
+
+Only deployments proven to have been created as isolated validation test hosts
+qualify for deletion, including verified saved connector hosts from earlier sessions.
+Legacy records need enough saved creation/provision and current identity evidence
+to establish ownership; a new field being absent does not by itself disqualify them.
+Externally managed, caller-supplied, shared and production agents are not deleted.
+A DA ZIP can reuse an existing app identity, so a
+successful personal installation alone does not qualify. Uncertain provisioning,
+missing ownership evidence or changed account/tenant blocks cleanup.
+
+Choosing Keep, dismissing the prompt, unavailable confirmation or a report-only/
+no-questions request leaves the DA installed. Ongoing retries retain the host.
+A hard CLI exit cannot show a confirmation or guarantee cleanup; saved preparation
+records support later recovery.
+Each new validation run asks again for an eligible reused host; a prior Keep
+answer is not a permanent opt-out, and a previous deletion approval is never replayed.
+Cleanup is reported separately from validation:
+deleted, kept, blocked, failed or unknown. Failed/uncertain teardown is not
+retried automatically and never changes the validation verdict or saved reports.
+Separately registered OAuth/DCR resources outside uninstall's supported footprint
+are disclosed as remaining or unsupported; shared vault registrations are not deleted.
+Direct `plugin validate` commands never perform this workflow-owned teardown.
+
 ## Upgrade from older validation commands
 
 Use `wiqd plugin validate` instead of retired `wiqd agent validate` commands.

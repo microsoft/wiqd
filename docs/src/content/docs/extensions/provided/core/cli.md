@@ -9,8 +9,7 @@ Use these commands to author and deliver Microsoft 365 plugins.
 
 ## Plugin authoring and lifecycle
 
-Start with the plugin, then compose the components it needs. The command tree is
-alpha and enabled by default.
+Start with the plugin, then compose the components it needs.
 
 | Command | What it does |
 | --- | --- |

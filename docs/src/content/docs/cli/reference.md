@@ -259,7 +259,7 @@ per-command tables below.
 | [`wiqd plugin preview market-listing`](#wiqd-plugin-preview-market-listing) | Validation & LSP | Generate a read-only HTML review of an existing valid listing and its local media. Supports legacy listings without recollection; no package, AI or validation execution. |
 | [`wiqd plugin provision`](#wiqd-plugin-provision) | wiqd Core | Provision a plugin to an environment after validating bundled DA skill and Worker references. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin provision package`](#wiqd-plugin-provision-package) | wiqd Core | Prepare or personally sideload a final DA or supported MCP connector ZIP without a source project. |
-| [`wiqd plugin publish`](#wiqd-plugin-publish) | wiqd Core | Submit a provisioned plugin to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
+| [`wiqd plugin publish`](#wiqd-plugin-publish) | wiqd Core | Submit a provisioned plugin or final ZIP to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`. |
 | [`wiqd plugin remove`](#wiqd-plugin-remove) | wiqd Core | Remove plugin access. |
 | [`wiqd plugin remove access`](#wiqd-plugin-remove-access) | wiqd Core | Remove plugin usage or existing shared-access grants. This is not title co-owner removal. |
 | [`wiqd plugin repair`](#wiqd-plugin-repair) | Validation & LSP | Repair plugin artifacts. |
@@ -1091,7 +1091,7 @@ wiqd connector add [options]
 | --- | --- |
 | `--prepare-for-certification` | Prepare a tenant service connector and OAuth credentials through the certification API; does not certify or approve it |
 | `--prepareForCertification` | Alias for --prepare-for-certification |
-| `--input-file <value>` | Private JSON with displayName, authentication and either serverUrl (MCP) or apiDefinition (Swagger 2.0) |
+| `--input-file <value>` | Private JSON with displayName, authentication and either serverUrl (MCP, with optional per-connection parameters) or apiDefinition (Swagger 2.0) |
 | `--dry-run` | Validate input offline without authentication or creation |
 
 **Examples**
@@ -1376,15 +1376,24 @@ wiqd eula accept tool [options]
 
 | Option | Description |
 | --- | --- |
-| `--yes` | Accept the current WIQD EULA without prompting, including in CI. WIQD only; never downstream or mock. |
+| `--yes` | Explicitly accept current terms without prompting, including in CI. Supports WIQD and manifest-opted-in downstream tools; mock refused. |
 | `--consent <phrase>` | A non-TTY phrase matching the complete affirmative template for the named EULA, exact URL, and current version when surfaced. No default or additional language; TTY use, CI, and --mock are refused. |
 
 **Examples**
 
 ```bash
+wiqd eula accept wiqd --yes --json
+# Work IQ terms are separate from WIQD. Obtain agreement-specific authorization before invocation.
+# CI: the job owner must review the terms and explicitly authorize the exact acceptance step before queuing.
+# Accepted product/legal scope does not establish release readiness or authorize an individual acceptance.
+wiqd eula accept workiq --yes --json
+# Exit 0 and acceptanceCommandCompleted: true confirm only native-command completion, not verified acceptance.
+# Before dependent work, separately run status and require a matching Work IQ row reporting accepted:
+wiqd eula status --json
+# Missing, unresolved or unaccepted Work IQ status stops dependent work; do not automatically retry acceptance.
+# Full CI procedure: https://microsoft.github.io/wiqd/getting-started/ci-cd-pipelines/#work-iq-explicit-acceptance
 wiqd eula accept <tool>
-wiqd eula accept <tool> --consent <phrase> --yes
-wiqd eula accept <tool> --json
+wiqd eula accept <tool> --consent "<complete human affirmation>"
 ```
 
 ### wiqd eula status
@@ -2312,7 +2321,7 @@ wiqd plugin provision package --package-file <value> --output <value> --json
 
 ### wiqd plugin publish
 
-Submit a provisioned plugin to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
+Submit a provisioned plugin or final ZIP to the tenant organization app catalog for administrator approval. Requires Microsoft 365 sign-in; use `wiqd auth login --interactive`.
 
 **Extension:** wiqd Core
 
@@ -2327,6 +2336,7 @@ wiqd plugin publish [options]
 | `--env <value>` | Environment to publish (default: "local") |
 | `--path <value>` | Plugin project path (defaults to CWD) |
 | `--manifest <value>` | Contained app manifest file override |
+| `--package-file <value>` | Existing final ZIP, without a source project; conflicts with --path, --manifest and explicit --env |
 | `--dry-run` | Run the validation pipeline and report readiness without submitting (default: false) |
 | `--no-runtime` | Skip Phase 3 (agent response sampling) and Phase 4 (browser) in dry-run mode |
 | `--no-network` | Skip Phase 2 (URL reachability) in dry-run mode |

@@ -5,11 +5,6 @@ description: The mental model behind the wiqd plugin construct — a Microsoft 3
 
 # What is a plugin?
 
-:::caution
-**Alpha.** The `wiqd plugin` command tree is enabled by default, but the surface is still alpha
-and the interface may change without notice.
-:::
-
 `wiqd plugin` is the **primary, superordinate developer construct** in wiqd. A plugin is a
 Microsoft 365 / Teams **app package** — the same `appPackage/` infrastructure wiqd already
 scaffolds, not a new artifact type — and it is the **source-of-truth artifact**: everything wiqd

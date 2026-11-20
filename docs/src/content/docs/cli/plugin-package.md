@@ -9,6 +9,10 @@ Build the current marked plugin project into a deployable `.zip`. The
 `microsoft.wiqd.core` extension runs fx-core in process, resolves the selected environment, and
 reports the generated path and size.
 
+To submit the resulting ZIP unchanged, use
+[`wiqd plugin publish --package-file <zip>`](/cli/plugin-publish/).
+Project-mode publishing instead runs its YAML lifecycle and may rebuild.
+
 ```bash
 wiqd plugin package [--env <name>] [--output <zip>] [--path <project>]
                     [--offline] [--include-file <file>] [--prepare-for-certification]
@@ -128,10 +132,31 @@ envelope with:
     "sizeBytes": 12697,
     "sizeDisplay": "12.4 KB",
     "environment": "dev",
-    "offline": false
+    "offline": false,
+    "nextSteps": [
+      {
+        "command": "wiqd plugin publish --env dev",
+        "description": "Submit the packaged plugin to the org catalog for administrator approval"
+      },
+      {
+        "command": "wiqd plugin share --env dev",
+        "description": "Grant access to specific users or your whole tenant"
+      }
+    ]
   }
 }
 ```
+
+Human output and JSON present the same ordered next steps, preserving the resolved
+`--env` (`local` when omitted). Simple names such as `dev`, `test-west` and `qa_2`
+appear directly in commands. Other valid names remain supported: their next steps
+show only the intended operation's `--help` command, with the exact selected value
+as a JSON string in the description and instructions to pass it manually to
+`--env` using your shell's quoting/escaping. The JSON string is not shell syntax;
+the help command does not execute publication or sharing. No environment rename or
+migration is required.
+With `--offline`, both modes recommend only `wiqd plugin show` and
+`wiqd plugin package --help`, never cloud operations.
 
 Packaging succeeds only when fx-core succeeds and the resulting ZIP exists and is non-empty.
 

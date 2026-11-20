@@ -131,9 +131,9 @@ Everything wiqd sends to Partner Center, except the package, comes from `partner
 | `listing.title` | No | Defaults to `name.short` in `appPackage/manifest.json`. |
 | `listing.description` | Yes | What your plugin does. |
 | `listing.searchResultSummary` | Yes | Up to 100 characters. |
-| `listing.categories` | Yes | At least one category. |
+| `listing.categories` | Yes | One to three distinct, case-sensitive IDs from Partner Center's current Microsoft 365 Copilot App taxonomy, for example `Productivity`. Preflight fetches the live taxonomy. |
 | `listing.requiresAssociatedServicePurchase` | Yes | `true` or `false`: does your plugin need a separate service purchase, or have in-app purchases? |
-| `listing.languageId` | Yes | Listing language. No default. |
+| `listing.languageId` | Yes | Lowercase two- or three-letter Office base-language code, for example `en`. Region-qualified values such as `en-us` are rejected for new preflight and preparation. Existing prepared Drafts may preserve an exact legacy regional value for status, submit and update. |
 | `listing.legal.privacyPolicyUrl` | Yes | Your privacy policy URL. |
 | `listing.legal.supportDocumentUrl` | Yes | Your `https://` support page. |
 | `listing.legal.termsConditions` | Yes | `standardMicrosoft` or `custom`. Choosing one doesn't accept any agreement. |

@@ -139,7 +139,7 @@ $script:FailedPluginHosts = @()
 
 
 # Stamped by sync-version.ps1 — do not edit manually.
-$script:WiqdVersion = "1.0.0"
+$script:WiqdVersion = "1.1.0"
 
 # These terms describe only the installer's stamped release, not arbitrary candidates.
 $script:WiqdEulaId = 'wiqd'
@@ -1996,7 +1996,7 @@ Show-WiqdBanner
 # ─────────────────────────────────────────────
 # On a fresh install the user hasn't accepted wiqd's EULA yet, so the first
 # product command would be rejected by the gate. We fold the acceptance into
-# the installer's own interactive flow: show the pre-release notice, prompt
+# the installer's own interactive flow: show the current terms, prompt
 # accept/decline, and (after a successful install) persist the acceptance via
 # the hidden --installer-stamp flag. On upgrade, when the current EULA version
 # is already accepted, we skip the prompt entirely.
@@ -2049,11 +2049,8 @@ function Read-EulaAcceptance {
     }
 
     Write-Host ""
-    Write-Host " Pre-release notice" -ForegroundColor Yellow
-    Write-Host "   wiqd is experimental software shared for experimentation" -ForegroundColor White
-    Write-Host "   purposes only. It is not production-ready and is not" -ForegroundColor White
-    Write-Host "   officially supported. Expect breaking changes." -ForegroundColor White
-    Write-Host ""
+    Write-Host " WIQD terms" -ForegroundColor Yellow
+    Write-Host "   Review the agreement before continuing." -ForegroundColor White
     Write-Host "   EULA: https://aka.ms/wiqd/eula" -ForegroundColor Cyan
     Write-Host ""
     Write-Host " Choose how to proceed:" -ForegroundColor White

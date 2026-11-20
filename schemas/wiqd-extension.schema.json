@@ -515,11 +515,15 @@
           "items": {
             "type": "string"
           },
-          "description": "Args appended to the extension's resolved upstream binary to accept the EULA (e.g. `[\"accept-eula\"]`). This is the ONLY source of the args wiqd runs — never derived from parsed output. wiqd runs this tuple solely via the interactive `wiqd eula accept` handler."
+          "description": "Args appended to the extension's resolved upstream binary to accept the EULA (e.g. `[\"accept-eula\"]`). This is the ONLY source of the args wiqd runs — never derived from parsed output. wiqd runs this tuple solely via the consent-checked `wiqd eula accept` handler."
         },
         "displayCommand": {
           "type": "string",
           "description": "Raw upstream command shown as the fallback CTA (e.g. `workiq accept-eula`)."
+        },
+        "explicitYes": {
+          "type": "boolean",
+          "description": "Opt in to explicit --yes acceptance, including CI; absent/false retains human relay only."
         }
       },
       "required": ["args", "displayCommand"]
@@ -601,7 +605,7 @@
         }
       },
       "required": ["tool", "eulaUrl", "accept", "detect"],
-      "description": "Manifest-contributed EULA gate. Lets a downstream tool declare — with zero host change — how wiqd recognizes its \"you must accept the EULA\" handshake, what tool name / URL to surface, and how `wiqd eula accept` performs the (interactive, human-confirmed) acceptance."
+      "description": "Manifest-contributed EULA gate. Lets a downstream tool declare — with zero host change — how wiqd recognizes its \"you must accept the EULA\" handshake, what tool name / URL to surface, and how `wiqd eula accept` performs deliberate acceptance."
     },
     "EulaStdoutJsonPredicate": {
       "type": "object",

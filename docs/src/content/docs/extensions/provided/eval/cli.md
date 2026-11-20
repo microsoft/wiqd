@@ -145,15 +145,16 @@ Plugin evaluators are limited to **Relevance, Coherence, Similarity, Groundednes
 PartialMatch, ExactMatch, ToolCallSelection and ToolCallExecution** at every scope,
 including multi-turn overrides. Tool-call checks require **V2 and schema V2**.
 **Citations and Retrieval evaluators remain unsupported for Plugins.** Perceive uses
-actual source `context` and Groundedness threshold 4. For new Plugin datasets,
-use Groundedness or Similarity with a specific reference `expected_response`
+verified factual references and Groundedness threshold 4, retaining actual source
+`context` for provenance. For new Plugin datasets,
+use Groundedness or Similarity with a source-verified reference `expected_response`
 instead of Citations/Retrieval. Do not invent missing source/reference content.
 These alternatives assess response quality, not citation correctness, retrieval
 queries/results or ranking; the generation preview discloses that limitation.
 Format constraints
-become Reason scenarios; Groundedness does not validate syntax. Refusal and
-deterministic scenarios replace defaults with literal PartialMatch/ExactMatch
-expectations. Compatibility changes to an existing suite require approval, not
+become Reason scenarios; Groundedness does not validate syntax. Contract-required
+substring and deterministic-output scenarios replace defaults with literal
+PartialMatch/ExactMatch expectations. Compatibility changes to an existing suite require approval, not
 silent evaluator removal.
 
 For either target, recommend the first matching band: 9+ callable tools/actions
@@ -180,14 +181,65 @@ The Eval CLI consumes an eval document with `schemaVersion`, optional metadata, 
   },
   "items": [
     {
-      "prompt": "A realistic user request",
-      "expected_response": "The required behavior"
+      "prompt": "What is the annual remote-work equipment reimbursement limit?",
+      "expected_response": "Approved remote-work equipment is reimbursable up to $500 per employee per year.",
+      "context": "Example policy fixture: approved remote-work equipment is reimbursable up to $500 per employee per year."
     }
   ]
 }
 ```
 
 Evaluator names are case-sensitive. Per-item evaluator overrides supplement or replace defaults according to the Eval CLI schema.
+
+### Reference answers and literal checks
+
+For **both Agent and Plugin generation**, Groundedness/Similarity need an actual
+reference answer derived from supplied or authoritatively verified source content,
+registered instructions or controlled tool-result fixtures. The policy above is an
+illustrative fixture, not evidence about your organization.
+
+The currently inspected upstream Copilot, local Azure and Foundry runners pass
+`expected_response` as built-in **Groundedness evidence**, rather than the item's
+`context`. Retain source text in `context` for provenance, but put the requested
+verified facts in `expected_response`. Improving `context` alone will not fix this
+input-plumbing limitation. Groundedness checks support for response claims;
+**Similarity** compares semantic agreement and coverage, not exact wording.
+Neither uses "The agent should..." grading prose as a behavioral assertion.
+
+Bound questions to verified evidence and include sufficient facts for the answer.
+Do not invent policy values, ticket IDs or successful tool outcomes. Missing
+evidence blocks affected cases until resolved or a count/coverage tradeoff is
+approved. A broad grounding corpus and a focused Similarity answer may not fit
+the same field; disclose that limitation rather than lower thresholds.
+
+New literal-containment cases explicitly use:
+
+```json
+{
+  "expected_response": "SKU-123",
+  "evaluators": { "PartialMatch": { "threshold": 0.001 } },
+  "evaluators_mode": "replace"
+}
+```
+
+This item fragment assumes the task contract requires `SKU-123`; it is not a
+general answer-quality or behavioral check. PartialMatch requires the complete
+substring and, when found, scores expected-text length divided by response length
+after trimming, with configured case handling. `0.001` reduces the default
+`0.5` verbosity penalty, but a seven-character match in 10,000 characters still
+scores only `0.0007` and fails. Missing text scores zero. Do not use a short token
+as evidence for inherited Groundedness/Similarity.
+
+The planned behavioral **LLM Rubric evaluator is unavailable today**. For free-form
+refusal, escalation, clarification or instruction adherence, retain the requirement
+in preview/manual-review notes. Relevance/Coherence with `replace` assess response
+quality only, not compliance. Use literal checks only when wording is actually
+required, never an invented refusal phrase. ExactMatch remains for fully
+deterministic output, not arbitrary JSON/schema validation.
+
+These are new-generation policies. Existing datasets, upstream global defaults,
+other thresholds and historical results are not silently changed. Preview/write
+approval and suite-integrity safeguards still apply; no pass rate is guaranteed.
 
 ### Tool-call datasets (V2 preview)
 

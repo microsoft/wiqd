@@ -13912,14 +13912,10 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ------------------------------------------------------------------------------
 
-Package:    handlebars@4.7.9
+Package:    handlebars@4.7.10
 License:    MIT
 Repository: https://github.com/handlebars-lang/handlebars.js
 Publisher:  Yehuda Katz
-Modification: locally modified by pnpm patch
-Patch:      patches/handlebars@4.7.9.patch
-Patch SHA-256: dc00a3337cee54528e098ecbcadc01019c9ad19cbf5096069d193b49e24947af
-pnpm patch hash: dcjqyrn6ixexfyozes5ji3y4cm
 
 Copyright (C) 2011-2019 by Yehuda Katz
 
