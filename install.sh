@@ -90,7 +90,7 @@ plugin_install_cancelled=false
 failed_plugin_hosts=()
 
 # Stamped by sync-version.ps1 — do not edit manually.
-WIQD_INSTALLER_VERSION="1.0.0"
+WIQD_INSTALLER_VERSION="1.1.0"
 # These terms describe only the installer's stamped release, not arbitrary candidates.
 WIQD_EULA_ID="wiqd"
 WIQD_EULA_VERSION="2"
@@ -2210,7 +2210,7 @@ show_wiqd_banner
 # EULA acceptance prompt — before any real work
 # ─────────────────────────────────────────────
 # On a fresh install the user hasn't accepted wiqd's EULA yet. We fold the
-# acceptance into the installer's interactive flow: show the pre-release notice,
+# acceptance into the installer's interactive flow: show the current terms,
 # prompt accept/decline, and (after a successful install) persist via the
 # hidden --installer-stamp flag. On upgrade with current version already accepted
 # we skip the prompt.
@@ -2279,11 +2279,8 @@ read_eula_acceptance() {
     fi
 
     echo "" > /dev/tty
-    printf "${YELLOW} Pre-release notice${RESET}\n" > /dev/tty
-    printf "${WHITE}   wiqd is experimental software shared for experimentation${RESET}\n" > /dev/tty
-    printf "${WHITE}   purposes only. It is not production-ready and is not${RESET}\n" > /dev/tty
-    printf "${WHITE}   officially supported. Expect breaking changes.${RESET}\n" > /dev/tty
-    echo "" > /dev/tty
+    printf "${YELLOW} WIQD terms${RESET}\n" > /dev/tty
+    printf "${WHITE}   Review the agreement before continuing.${RESET}\n" > /dev/tty
     printf "${CYAN}   EULA: https://aka.ms/wiqd/eula${RESET}\n" > /dev/tty
     echo "" > /dev/tty
     printf "${WHITE} Choose how to proceed:${RESET}\n" > /dev/tty

@@ -61,6 +61,17 @@ same session. Authentication and EULA acceptance remain separate consent steps.
 If you decline or installation is blocked, local file-based work may continue,
 but online operations such as Work IQ feedback queries remain blocked.
 
+Before a skill runs ordinary WIQD CLI commands, it checks the installed CLI
+against the latest published stable version in the plugin's declared CLI
+single `major.minor` line (`~X.Y.0`), independently of the plugin version. If the local CLI is
+older, the skill shows the exact update and asks before installing it. If the
+local CLI is newer, it warns and continues without downgrading. Missing or
+invalid declarations and failed npm/version checks block CLI commands. This
+check does not establish authentication, EULA acceptance, or other prerequisites.
+The skill resolves an absolute CLI launcher, checks that launcher, and uses the
+same path for subsequent commands. An ambiguous alias or function blocks the
+check rather than being treated as a missing installation.
+
 ### Migrating from a CLI-composed plugin
 
 The WIQD CLI no longer exposes host-plugin management commands. The installer
@@ -344,20 +355,22 @@ assuming consent.
 ## Install from an assistant conversation
 
 The WIQD marketplace plugin and CLI are separate installations. If the CLI is
-missing, a human-attended assistant can complete setup in the conversation even
-when its shell has no interactive terminal:
+missing or older than the plugin's selected published stable version, a
+human-attended assistant can complete setup in the conversation even when its
+shell has no interactive terminal:
 
 1. The assistant checks that supported Node.js/npm (and PowerShell 7 on Windows)
-   already exist, selects an exact published compatible CLI version, shows the
+   already exist, selects the exact newest published version in the plugin's
+   single declared minor line (`~X.Y.0`), shows the
    commands, and asks permission to install or repair it. It does not install
    Node/npm or treat your original product request as installation permission.
 2. With your approval, it acquires `@microsoft/wiqd@<exact-version>` through npm
    from a temporary directory, resolves the absolute launcher in that npm global
    prefix, and verifies the selected CLI version. This is not EULA acceptance.
-3. If current WIQD terms are not already accepted, it displays the pre-release
-   notice, terms URL and current content version returned by that CLI, then asks
-   you to choose **Agree and continue** or **Decline**, in your language, with no
-   default agreement. You do not need to type a statement, version or URL.
+3. If current WIQD terms are not already accepted, it displays the terms URL and
+   current content version returned by that CLI, then asks you to choose
+   **Agree and continue** or **Decline**, in your language, with no default
+   agreement. You do not need to type a statement, version or URL.
    Only agreement to this specific question authorizes
    `wiqd eula accept wiqd --yes --json`; permission to install alone does not.
    The assistant rechecks the CLI and terms before executing; changed terms

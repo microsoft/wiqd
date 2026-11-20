@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.1.0] — 2026-11-20
+
+> **General availability.** This is a stable release of wiqd.
+
+### Features
+
+- support M365 platform conditions and clarify skill guidance
+- support per-connection parameters in connector add
+- publish existing ZIP packages to the org catalog
+- declare compatible WIQD CLI versions
+- support explicit Work IQ EULA acceptance in CLI and CI
+
+### Fixes
+
+- clarify missing source files and correct eval checks
+- preserve environments in lifecycle next steps
+- generate factual references and explicit substring thresholds
+- use the creator's name as publisher
+- avoid diagnostics ACL module startup
+
 ## [1.0.0] — 2026-11-16
 
 > **General availability.** wiqd 1.0.0 is the first stable release.

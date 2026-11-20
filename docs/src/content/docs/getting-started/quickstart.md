@@ -16,11 +16,6 @@ Lifecycle examples explicitly use `--env dev` throughout. This is the
 documentation's example environment, not a change to CLI defaults; keep the
 same environment across validation, provisioning, packaging, sharing, and publishing.
 
-:::caution[Alpha]
-The `wiqd plugin` commands are enabled by default, but their interface is still
-alpha and may change without notice.
-:::
-
 ## Step 1: Choose an installation path
 
 ### Path 1: Marketplace-first agentic setup
@@ -82,6 +77,7 @@ and troubleshooting.
 For a direct CLI walkthrough:
 
 ```bash
+wiqd auth login --interactive
 wiqd plugin create --name my-first-plugin
 cd my-first-plugin
 wiqd plugin add skill --name "Triage Issues"
@@ -91,6 +87,14 @@ wiqd plugin add agent
 The project contains `m365agents.yml`, a root `appPackage/manifest.json`, and an
 `appPackage/` directory. The app manifest registers the skill and declarative
 agent as components of the same plugin.
+
+Creation sets `appPackage/manifest.json`'s `developer.name` to your signed-in
+Microsoft 365 display name. Sign in before
+creation; the command reports an error if your account has no usable display name.
+
+Review the manifest's publisher name and website, privacy, and terms URLs before
+provisioning. You can edit `developer.name` to the intended organization;
+publisher metadata does not change ownership or control Copilot's owner hover card.
 
 Edit the skill's `SKILL.md` and the agent's instructions to describe the behavior
 you want. The agent component is optional: a plugin can contain only skills or

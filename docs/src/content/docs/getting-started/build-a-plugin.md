@@ -14,11 +14,6 @@ gets you from nothing to a validated, provisioned, and shared plugin — the sam
 Microsoft Learn "Build plugins for Copilot Cowork" walkthrough targets, reached the wiqd way. If
 you haven't yet, read [What is a plugin?](/concepts/plugins/) first for the mental model.
 
-:::caution
-**Alpha.** The `wiqd plugin` command tree is enabled by default, but the surface is still alpha and
-the interface may change without notice.
-:::
-
 ## Prerequisites
 
 1. **Install wiqd** (the CLI, optional VS Code extension, and public WIQD plugin
@@ -56,13 +51,18 @@ the interface may change without notice.
    For Claude Code, add `microsoft/wiqd` and install `wiqd@wiqd`. Start a new
    host session.
 
-3. **Sign in** — provisioning and sharing a plugin touch your Microsoft 365 tenant:
+3. **Sign in** — creation uses your Microsoft 365 display name as the default
+   publisher; provisioning and sharing touch your tenant:
 
    ```bash
    wiqd auth login --interactive
    ```
 
    See [Authentication](/getting-started/authentication/) for how sign-in works across providers.
+
+   Creation writes your name to `developer.name` in `appPackage/manifest.json`.
+   Review the publisher name and URLs before provisioning. This metadata does
+   not change remote ownership or Copilot's owner hover-card rendering.
 
 4. **Verify your environment**:
 
@@ -252,10 +252,25 @@ provisioning again.
 the `m365agents.yml` `environmentFolderPath` (default `./env`), which `package` needs to resolve
 manifest variables and which `share` requires as a preflight. Re-provision detection and
 project-mode delete use that same configured folder. The folder must remain inside the plugin
-project, and `--env` must be one portable filename segment (for example `dev` or `test-west`, not
-a path). `wiqd plugin validate --mode package` is package-first, so it needs Step 5's `.zip`
+project, and `--env` must be a portable filename segment.
+`wiqd plugin validate --mode package` is package-first, so it needs Step 5's `.zip`
 to already exist.
 :::
+
+Lifecycle and teardown next steps preserve the selected environment in both human
+output and JSON `data.nextSteps`, including explicit `--env local` when omitted.
+Commands keep the ordinary `wiqd` prefix on every platform. Names containing only
+ASCII letters, digits, underscores and hyphens, starting with a letter or digit,
+receive directly executable commands such as `wiqd plugin package --env test-west`.
+Other valid names, including spaces, dots, Unicode or shell metacharacters, remain
+supported with no rename or migration. For those names, environment-sensitive next
+steps show the intended operation's `--help` command and a help-only description
+identifying the selected environment as a JSON string. Run the intended operation
+manually, passing that exact value to `--env` with the quoting/escaping required by
+your shell; the JSON representation is not a shell-quoted argument. Do not omit
+`--env`, because that would select `local`. These help commands do not execute the
+operation. `plugin show` remains environment-neutral, and `plugin package --offline`
+recommends only `wiqd plugin show` and `wiqd plugin package --help`.
 
 For every flag on every one of these commands, see
 [`wiqd plugin` in the CLI reference](/cli/reference/#wiqd-plugin) rather than duplicating the

@@ -5,6 +5,7 @@
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { defineConfig } from 'astro/config';
+import { unified } from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import starlightThemeTerminal from 'starlight-theme-terminal';
 import { remarkStripMdExtensions } from './src/plugins/remark-strip-md-extensions.js';
@@ -73,11 +74,13 @@ export default defineConfig({
   base,
   redirects,
   markdown: {
-    remarkPlugins: [
-      remarkStripMdExtensions,
-      remarkScrubInternalChangelog,
-      [remarkBaseRelativeLinks, { base }],
-    ],
+    processor: unified({
+      remarkPlugins: [
+        remarkStripMdExtensions,
+        remarkScrubInternalChangelog,
+        [remarkBaseRelativeLinks, { base }],
+      ],
+    }),
   },
   vite: {
     plugins: [jsYamlDefaultInterop],

@@ -42,3 +42,19 @@
   --sl-color-gray-6: #eeeef0;
   --sl-color-black: #ffffff;
 }
+
+/* The terminal theme sizes nested hero images against the viewport, not their column. */
+.hero .hero-html img {
+  max-width: 100%;
+}
+
+@media (max-width: 50rem) {
+  /* Solid text fill lets the shrinking title clip before the version badge. */
+  .site-title {
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .site-title > span:first-of-type {
+    text-overflow: ellipsis;
+  }
+}
