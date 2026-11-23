@@ -84,7 +84,7 @@
     {
       "id": "plugin",
       "file": "workflows/plugin.md",
-      "routingLabel": "Plugin authoring (alpha)",
+      "routingLabel": "Plugin authoring",
       "routingIntent": "Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export)",
       "order": 2,
       "triggers": [

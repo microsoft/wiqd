@@ -213,6 +213,38 @@ wiqd plugin publish --json --env prod
 | `--env`         | Target environment                | —       |
 | `--path`        | Agent project directory           | `./`    |
 | `--manifest`    | Custom manifest path              | —       |
+| `--package-file` | Existing final ZIP, without source project | — |
+
+#### Publish an existing final ZIP
+
+For “publish this ZIP”, use:
+
+```bash
+wiqd plugin publish --package-file ./dist/plugin.zip --json
+```
+
+Do not scaffold, import, provision, rebuild or infer a project/environment.
+The command captures the selected ZIP unchanged and submits it to the tenant
+organization app catalog through the SDK. Do not pass `--path`, `--manifest`
+or `--env` (even `local`). The input must be a regular `.zip`, at most 10 MiB,
+with a root `manifest.json` containing a literal GUID. Unsafe/ambiguous archives
+are rejected. A private snapshot is temporarily held in the working directory,
+which must be writable, and removed after the SDK settles.
+
+Sign-in and publishing permissions are still required. This is **submission
+for administrator approval**, not immediate access, personal sideloading,
+sharing or Partner Center/store publication. If the SDK requires confirmation
+to replace an existing catalog app, WIQD returns `PUBLISH_CONFIRMATION_REQUIRED`;
+review/update it in the tenant admin portal. It never auto-accepts that prompt.
+After cancellation or timeout inspect catalog state before any manually approved
+retry; an already completed remote effect is not rolled back.
+
+ZIP publication does not support `--dry-run` or `--mock`. For separately
+authorized validation use `wiqd plugin validate --mode package --package-file <zip>`.
+Validation is not permission to publish. ZIP JSON reports `packageFile`,
+`packageSha256`, `appId`, `target` and environment-neutral `nextSteps`, never a
+fabricated project or environment. For personal ZIP testing use the separate
+`wiqd plugin provision package` command.
 
 #### Internal Publish (Org Admin Catalog)
 
@@ -229,7 +261,7 @@ manifests, skill folders, Worker references, and other package-relative files
 are resolved from the selected manifest's parent directory. The unused default
 manifest does not participate when an override is selected.
 
-Normal package and publish fail before the SDK when
+Normal package and project-mode publish fail before the SDK when
 `appPackage/.generated/manifest.json` exists or the active lifecycle file
 contains `typeSpec/compile`. The pinned SDK can generate or prefer that manifest
 after WIQD's preflight, so WIQD refuses to claim that the selected manifest is
