@@ -9,6 +9,25 @@ replay never enter development preparation or add target calls; live selection
 still requires the applicable eligibility and separate target approvals.
 Keep that confirmation and its input hashes; do not restart listing review for unchanged inputs.
 Marketplace always includes package checks on the same captured ZIP.
+Carry any development target's cleanup provenance through collection, replay
+and repair without treating its runtime agent ID as the provisioning Title ID.
+After final success, failure or conversational cancellation, return to the
+workflow's [temporary DA cleanup](../../workflows/validation.md#7-offer-confirmed-temporary-da-cleanup)
+once active work and chosen repairs finish. This collector never uninstalls;
+externally managed/caller-supplied targets do not acquire cleanup eligibility.
+Saved validation-created connector hosts can remain eligible across sessions
+after preparation verifies isolated creation and ownership. Before a new run
+reuses one, return to development preparation's saved-host check; an old
+provision success/card is not a fresh availability check. Unresolved checks use
+its native Stop/replacement decision, never automatic reprovisioning by this
+collector. Carry the active-host record paths and per-run cleanup state into
+the terminal handoff, which defaults to Keep and reports where agent information
+and verified installation links can be found.
+For connector validation only, that handoff asks with an explicit No/Keep default
+for its new or saved validation-generated host even if legacy cleanup fields or
+ownership checks are pending, or provisioning was an update. A Yes choice never
+bypasses teardown eligibility or exact-target confirmation. Preserve the
+report-only/no-questions and known external/shared/production target exclusions.
 
 ## 1. Prepare the request
 
@@ -106,7 +125,8 @@ setup question, unless that exact association was already explicitly supplied.
 Retain the answer and separate title/target identities locally. Missing card
 metadata alone is not a conflict; actual contradictory identity evidence or
 unconfirmed association still prevents collection. Reuse unchanged saved provision,
-card and completed setup when resuming; do not re-provision or probe for a title.
+card and completed setup when resuming the same validation run; a new run first
+performs saved-host verification. Do not re-provision or probe for a title.
 An exact runtime ID reported from the opened installation takes precedence over
 a name-selected candidate. If they differ, stop collection and return to the
 development guide's exact-ID verification and renewed association confirmation.
