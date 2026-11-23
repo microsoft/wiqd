@@ -17,7 +17,7 @@ wiqd plugin uninstall --title-id <T_xxx> [--yes] [--json] --skill wiqd
 **⚠️ ALWAYS warn the user BEFORE running this command.** Deletion is destructive and irreversible — it destroys cloud resources (Entra app registration, Teams app, bot framework registration). Explain what will be removed and ask for confirmation before executing.
 
 - Destroys cloud resources — does NOT delete local project source files
-- Requires confirmation unless `--yes` is passed; **never pass `--yes` unless the user explicitly asked to skip confirmation**
+- Requires confirmation unless `--yes` is passed; **never pass `--yes` without explicit authorization**. A native Copilot choice approving the exact named target and irreversible teardown explicitly authorizes that one invocation with `--yes`, avoiding a second shell prompt. General validation, deployment or testing permission does not.
 - `--keep-env-file` preserves `env/.env.<name>` for reference (keeps app IDs locally; env/project mode only)
 - Deleting one environment (e.g., `--env staging`) does not affect other environments (dev, local)
 - In env/project mode the command cleans up the environment's `env/.env.<name>` file unless `--keep-env-file` is used

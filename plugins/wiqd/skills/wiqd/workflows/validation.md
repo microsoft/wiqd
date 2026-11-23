@@ -25,6 +25,11 @@ general authoring, packaging and provisioning; the audience's account and publis
 retain onboarding, enrollment, release approval and publication ownership. Their source prechecks
 do not transfer those journeys here unless repair is requested.
 Only the explicitly requested live-functional branch below may prepare a development target.
+If that branch creates an isolated test DA, retain its cleanup provenance and
+finish through [temporary DA cleanup](#7-offer-confirmed-temporary-da-cleanup).
+Every terminal path after target creation, including failure or conversational
+cancellation, returns there after active work and any chosen repairs finish.
+This is a separate deletion decision, never implicit live-test permission.
 Use plain language with the customer; keep internal schema/evidence mechanics out of normal replies.
 
 ## 1. Check compatibility
@@ -251,7 +256,14 @@ to prepare evidence in this session and run validation as a host-managed backgro
 Use the same ZIP and listing for preparation and validation.
 For explicitly requested live functional checks without supplied replay evidence, first follow
 [development target preparation](../references/validate/development-target.md). Reuse a suitable exact
-target already supplied or verified; otherwise default to local preparation without an
+target already supplied or verified. For connector ZIPs, first inspect
+`.validate/development/` under the selected package project and follow
+[saved connector host verification](../references/validate/development-target.md#verify-a-saved-connector-host-before-reuse).
+Freshly verify a saved host's package/artifacts, M365 identity and exact runtime-ID
+metadata before reuse, including across sessions. A usable host skips creation;
+recoverable setup stays on that installation. An unresolved check requires the
+native Stop/replacement choice before preparing one replacement; unknown state is
+not proof the old DA is gone. With no saved candidate, otherwise default to local preparation without an
 agent-ID question or a provisioning-choice gate. Only with scoped authorization may Core sideload the selected DA ZIP,
 or convert a supported MCP connector ZIP into a separate DA host and sideload it. Store
 publication and a source project are not prerequisites for that ZIP lifecycle.
@@ -462,7 +474,8 @@ when planning repairs, including policies not displayed.
 Describe outcomes, not internal evidence-preparation or revalidation command transcripts.
 Do not ask the user to repeat a command already executed. Keep exact invocations internally;
 show them only when requested or necessary for a genuinely user-owned next action.
-This workflow validates only; it does not change publishing workflows.
+This workflow does not publish; optional confirmed test-host cleanup does not
+change publishing workflows or the validation verdict.
 
 Recommend the next step: fix validation findings or incomplete checks after FAILED/ERROR.
 After source PASSED, return to the previously authorized caller or continue authoring; do not
@@ -474,6 +487,8 @@ A recommendation alone does not authorize edits or publishing.
 
 When called by a publishing workflow for advisory Marketplace policy checks,
 return the actual result, report links and warnings to that caller after step 4.
+Before returning, complete step 7 for any eligible temporary DA or connector
+validation host awaiting its default-No cleanup choice.
 Do not make policy repair or this repair-choice prompt a publishing prerequisite.
 The caller still owns its independent source/package gates, authorization and
 submission requirements; combined Marketplace results never hide package errors.
@@ -485,6 +500,8 @@ result and report link when produced in a progress message, then invoke the nati
 turn. A final findings-only answer skips this step. Use the user's language.
 If the user explicitly requested a report-only response or no questions, respect that scope and
 finish with the findings instead of opening a choice prompt.
+Keep any temporary DA without a cleanup question when questions are excluded;
+report its retained identity and cleanup status under step 7.
 
 - **Actionable repair:** For a grounded source/package error or an AI-fixable failed Marketplace MF finding (or an
   explicitly selected warning/SF), call the host's native choice tool — **`ask_user` in Copilot** —
@@ -506,7 +523,8 @@ finish with the findings instead of opening a choice prompt.
 
   - An affirmative selection is repair authorization: continue to step 6 immediately, retaining
     this report/project/environment. Do not ask the user to type the choice or confirm again.
-  - “Not now”, dismissal or cancellation: finish with the report available and files unchanged.
+  - “Not now”, dismissal or cancellation: keep the report available and files unchanged,
+    then continue to step 7 before the final reply.
     Do not start repairs, choose on the user's behalf or repeatedly ask.
   - Include required source project/build environment in step 6's grouped input collection
     only when using the source-build path. For ZIP-only or listing-only repair, include
@@ -517,7 +535,8 @@ finish with the findings instead of opening a choice prompt.
     with Markdown checkboxes, invoke `Read-Host` or start another CLI to collect the choice.
 
 - **No selected repair work or only blockers:** Give the applicable next action or missing input
-  (such as service access, listing or screenshots), without promising automatic source repair.
+  (such as service access, listing or screenshots), without promising automatic source repair;
+  continue to step 7 before finishing, including when a saved connector host was reused.
 - **Repair already authorized:** Continue to step 6 rather than asking for the same permission again.
 
 Source/package/listing edits and revalidation require an explicit repair request or affirmative choice.
@@ -538,3 +557,146 @@ completed input collection → apply the planned fixes one by one → source rec
 explicit new ZIP → fresh Marketplace evidence → same-mode `plugin validate` → verified
 progress and remaining findings. Do not edit or revalidate between user answers,
 including for direct fixes that need no input. `validation` owns that loop.
+
+After the loop finishes or stops, continue to step 7; do not uninstall between
+repair rounds or while a live retry/setup continuation remains selected.
+
+## 7. Offer confirmed temporary DA cleanup
+
+Run this terminal handoff after success, final failure, non-live fallback
+completion, repair decline/completion or explicit conversational cancellation,
+and before returning to a publishing caller. First finish or stop active
+target calls and background work. Paused setup and selected retries are not
+terminal: retain the host for them. Do not restart validation to reach cleanup.
+Cancellation never authorizes deletion or resuming cancelled validation.
+
+**Connector validation only - ask before teardown eligibility:** For a new or
+saved validation-generated connector host, ask once per terminal run whether to
+delete it, with **No - keep temporary test DA** explicitly selected by default.
+This includes final failure, non-live fallback and declined repairs. Do not skip
+the question because legacy cleanup fields or exclusive teardown ownership are
+still being checked, or because provisioning returned `isUpdate: true`. Known
+external/caller-managed/shared/production targets remain excluded; report-only/
+no-questions requests keep without asking. Respect an unchanged same-run target's
+recorded choice instead of asking again.
+
+Use `ask_user` in Copilot with the actual retained identity, labeling unavailable
+details as unavailable, and localize the question and choices:
+
+```json
+{
+  "message": "Connector validation has finished. Delete temporary test DA '<name>' (Title ID: <saved-title>, tenant/account: <identity>) and its test-app cloud resources? No keeps it. Deletion requires verified ownership and identity; local files and reports will be kept.",
+  "requestedSchema": {
+    "properties": {
+      "cleanup": {
+        "type": "string",
+        "title": "Delete temporary connector-test DA?",
+        "enum": ["No - keep temporary test DA", "Yes - delete temporary test DA"],
+        "default": "No - keep temporary test DA"
+      }
+    }
+  }
+}
+```
+
+No, dismissal or unavailable interaction means keep. Yes records deletion intent,
+not proof of teardown eligibility. Verify the safeguards below before executing;
+if ownership or identity cannot be verified, retain the host and report blocked.
+If the displayed target identity or teardown scope was unavailable or changes
+during verification, obtain exact-target confirmation before execution. Otherwise
+do not repeat the unchanged target's confirmed choice. Never invent missing IDs,
+derive a Title ID from the runtime ID or provision to make cleanup possible.
+
+**Eligibility to execute deletion:** Read the cleanup provenance retained by
+[development target preparation](../references/validate/development-target.md#cleanup-provenance).
+Only an isolated deployment proven to have been created by this validation
+workflow qualifies, including a verified saved connector host from an earlier
+session. Externally managed/caller-supplied/shared/production targets never do.
+A personally sideloaded DA ZIP may retain an existing app identity; neither
+upload success nor personal scope proves that its cloud resources are disposable.
+Verify saved legacy generation/provision and current identity/artifact evidence
+before supplementing missing cleanup fields; a missing new field is not itself
+proof that the host is external. Missing or contradictory creation/ownership evidence, partial or uncertain
+provisioning, or a missing verified provisioning Title ID blocks teardown.
+Never derive a deletion Title ID from the opaque runtime agent ID, a name,
+an app GUID or a guessed suffix. Do not enumerate agents or reprovision to
+manufacture cleanup evidence. Source/package/no-live and evidence replay
+without a retained owned deployment have no cleanup prompt or uninstall call.
+The connector intent question above is the only exception for a retained
+validation-generated host whose teardown ownership is still pending.
+
+Retain local source, env files, original/generated ZIPs, preparation/deployment
+records, all attempts, evidence and reports in every branch. Reuse an unchanged
+same-run target's saved cleanup decision/result; do not repeatedly prompt
+or execute a saved approval again. Each new validation run offers cleanup for
+its eligible new or reused host: a prior run's Keep is not a permanent opt-out
+and prior Delete approval is never reused. Bind the decision to this run and
+exact target. A new explicit cleanup request requires
+fresh exact-target confirmation and the same identity/ownership checks.
+
+**Confirm once in Copilot:** For a non-connector eligible target with no prior decision,
+show its actual name, saved provisioning Title ID and tenant/account. **Keep is
+the default:** put Keep first and never preselect Delete. Explain
+that this irreversibly tears down the test app's cloud resources through WIQD,
+not merely its personal Copilot installation, while keeping local files/reports.
+Use **`ask_user` in Copilot** and wait, localizing the question and choices:
+
+```json
+{
+  "question": "Validation has finished. Delete temporary test DA '<name>' (Title ID: <saved-title>, tenant/account: <verified-identity>) and its test-app cloud resources? Local files and validation reports will be kept.",
+  "choices": ["Keep temporary test DA", "Delete temporary test DA"]
+}
+```
+
+Only **Delete temporary test DA** authorizes that exact operation. **Keep temporary
+test DA**, dismissal, unavailable interaction or no answer means no deletion.
+For the connector branch, **Yes - delete temporary test DA** is the affirmative
+choice, subject to the same eligibility and exact-target confirmation safeguards.
+Report-only/no-questions requests keep the host without asking. Do not simulate
+confirmation with prose, `Read-Host`, another CLI or an automatic default.
+A hard CLI exit/lost session cannot show a confirmation or guarantee cleanup;
+retained preparation evidence supports later explicit recovery.
+
+**Execute only the approved teardown:** Reverify unchanged saved deployment
+and exclusive resource ownership, then read
+`wiqd auth status --json --skill wiqd --workflow validation` and require the
+same signed-in M365 account/tenant as provisioning and confirmation. Missing,
+inconclusive or changed identity blocks teardown; do not switch accounts or
+invoke login automatically. This workflow does not use the standalone command's
+fail-open auth probe as proof of identity.
+Follow [Core teardown](../references/wiqd-core/lifecycle.md)
+using only the retained provisioning Title ID:
+
+```bash
+wiqd plugin uninstall --title-id "<saved-title>" --yes --json --skill wiqd --workflow validation
+```
+
+The affirmative native choice explicitly authorizes this exact noninteractive
+invocation and its `--yes`; do not ask a second shell confirmation. Prior
+validation, provision, sign-in/Allow, live-test or repair approval does not.
+Save the exact approval and mark cleanup outcome unknown before dispatch, so
+an interrupted or resumed session cannot execute the saved approval twice.
+Never substitute env/project teardown or a direct backend/portal call.
+Do not delete shared vault/auth registrations. If separate OAuth/DCR resources
+are outside uninstall's supported footprint, disclose them as remaining or
+unsupported cleanup rather than promising their removal.
+
+Require exit zero, a non-mock success envelope with `command: "plugin.delete"`,
+`data.mode: "title-id"` and `data.titleId` equal to the saved title before
+reporting **deleted**. A confirmed failure is **failed**; timeout, lost response,
+malformed output or uncertain deletion is **unknown**. A safety/identity blocker
+is **blocked**; a refusal or unanswered choice is **kept** (no deletion).
+Save the decision and result with the preparation evidence. Do not retry
+destructive work automatically, repeat a saved approval, or treat "not found"
+as verified deletion. Report cleanup separately from the actual validation
+verdict/cancellation and immutable HTML/JSON reports. On kept/blocked/failed/
+unknown cleanup, retain the exact target and actionable recovery information.
+Always finish with the new/reused host's name, saved Title ID and exact runtime
+ID, cleanup status, absolute preparation/provision record paths under the
+selected package project's `.validate/development/`, and available verified
+**Open agent in Microsoft 365 Copilot** / **Chat install/test** links.
+This applies even when ownership blocks deletion (or a non-connector prompt), the user stops, or
+interaction is unavailable. Label missing information unavailable, never
+invent IDs/links or print env-file contents or credentials. Tell the user the
+retained records support checking and reusing that host on the next run;
+deleted/unknown outcomes must be resolved rather than blindly reused.

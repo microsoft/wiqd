@@ -1,6 +1,6 @@
 ---
 name: wiqd
-description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot declarative agents via the wiqd CLI. Only for WIQD/M365 requests; not generic CI/CD or Kubernetes monitoring. Triggers: M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, evaluate, test, run evals, check agent, generate evals, analyze results, submit feedback, report a bug, request a feature, suggest an improvement, publish to partner center, submit to appsource, list in the store, certify my agent, evaluate plugin, test skills, generate plugin evals, create a plugin, create a connector, cowork plugin, standalone plugin, validate my agent, check source, validate package, Marketplace validation, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor M365 agent, observe M365 agent, M365 agent usage and analytics, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials"
+description: "Orchestrator for building, testing, deploying, and managing Microsoft 365 Copilot plugins via the wiqd CLI. Only for WIQD/M365 requests; not generic CI/CD or Kubernetes monitoring. Triggers: M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment, open devui, debug agent, test agent visually, watch agent run, ask in devui, evaluate, test, run evals, check agent, generate evals, analyze results, compare runs, submit feedback, report a bug, request a feature, suggest an improvement, publish to partner center, submit to appsource, list in the store, certify my agent, evaluate plugin, test skills, generate plugin evals, create a plugin, create a connector, cowork plugin, standalone plugin, validate my agent, check source, validate package, Marketplace validation, Azure API, create/edit agent, capabilities, default response mode, worker agents, monitor M365 agent, observe M365 agent, M365 agent usage and analytics, wiqd auth, wiqd login, wiqd logout, sign out of wiqd, clear wiqd credentials"
 argument-hint: "create | validate | provision | test | eval | package | share | publish | monitor | feedback | partner-center"
 ---
 
@@ -160,6 +160,11 @@ If any `wiqd` command reports a EULA gate (exit code `3`, or a JSON envelope wit
 **Downstream agreements:** Retain the existing human relay. Surface the tool's EULA URL and required format, capture a complete qualifying human utterance, and relay it verbatim through `--consent`. Never construct a phrase from a bare yes, add missing descriptor elements, use host `--yes` for another tool, or automate its TTY prompt. CI/mock and unattended downstream acceptance remain refused. Host acceptance does not accept Work IQ/Eval terms.
 
 ## Shared preflight
+
+Before an ordinary WIQD command, including a direct or resumed workflow entry, read
+`references/preflight.md` and check the installed plugin's CLI compatibility declaration.
+Use the installed shared checker for the version probe and compatibility decision.
+CLI-free requests do not need a version probe.
 
 Every workflow and reference depends on `references/preflight.md`: a missing or broken CLI
 requires the consented install/repair flow, then version verification and resuming the original
