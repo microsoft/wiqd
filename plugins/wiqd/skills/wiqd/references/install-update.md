@@ -23,7 +23,7 @@ updates, not to an explicit request to install the VS Code extension.
 
 Install only the CLI prerequisite. Keep the marketplace-installed plugin and VS Code extension unchanged.
 
-For a missing or broken CLI discovered during another task, follow
+For an outdated, missing or broken CLI discovered during another task, follow
 [Recovery approval](preflight.md#recovery-approval) before installation or repair.
 After approval in a human-attended non-TTY session, execute the conversational
 bootstrap below rather than starting a web installer whose EULA prompt needs a terminal.
@@ -39,13 +39,12 @@ Do not ask the user to open another terminal merely because stdin is redirected.
 
 1. **Resolve and approve acquisition.** Verify caller-provided Node.js 24.15.0+
    and npm are executable; do not install/upgrade them or change persistent PATH/configuration.
-   Resolve one exact published host version from the approved package source and
-   applicable plugin compatibility policy. For a stable channel, read
-   `npm view @microsoft/wiqd@latest version` and validate its exact release identity;
-   never install a floating tag, assume a main-branch change is published, or
-   infer the CLI version from the plugin version. Apply any published compatibility
-   constraints; do not require new synchronization metadata when none is specified.
-   Unreadable/invalid metadata or no compatible published candidate blocks recovery.
+   Use the exact target selected by the preflight compatibility checker from the
+   declared package's published stable versions and single supported minor line.
+   Do not independently query an unconstrained `latest`, change the configured
+   registry, assume a main-branch change is published, or infer the CLI version
+   from the plugin version. Unreadable/invalid metadata, failed discovery or no
+   eligible published candidate blocks recovery.
    Show the exact acquisition and final setup commands, selected version and
    any authorized uninstall to the human, then obtain installation/repair permission
    through preflight. This does not accept terms.
@@ -78,11 +77,10 @@ Do not ask the user to open another terminal merely because stdin is redirected.
    already `accepted`, do not request or repeat acceptance. Otherwise require
    state `unaccepted` and continue with the next step.
 
-4. **Ask for a simple host-terms choice.** Surface the CLI's pre-release
-   notice, exact EULA URL and current content version from that candidate.
-   The notice must explain that WIQD is experimental software for experimentation
-   only, is not production-ready or officially supported, and may introduce
-   breaking changes. On every platform, use a natural-language confirmation title
+4. **Ask for a simple host-terms choice.** Surface the exact EULA URL and current
+   content version from that candidate without adding a product-wide maturity,
+   production-readiness, support or breaking-change disclaimer. On every platform,
+   use a natural-language confirmation title
    such as "Accept the WIQD terms and continue?", not a technical label such as
    "WIQD host EULA v2". In the question body, link the current agreement, identify
    its content version, and explain that agreement records acceptance and resumes
@@ -111,18 +109,22 @@ Do not ask the user to open another terminal merely because stdin is redirected.
    This host-only explicit opt-in does not replace the downstream `--consent`
    flow and never authorizes other tools' agreements.
 
-5. **Complete same-candidate setup, then resume.** Run the target-specific platform
-   installer below only AFTER verified host acceptance. Add `-Version <resolved-exact-version>`
+5. **Complete same-candidate setup, then resume.** Only AFTER verified host acceptance,
+   use the command in [Windows](#windows) or [macOS/Linux](#macoslinux) for the current OS.
+   Add `-Version <resolved-exact-version>`
    on Windows or `--version <resolved-exact-version>` on macOS/Linux, retaining both
    component-skip flags and the edition switch where applicable.
    Its prior-acceptance probe calls `wiqd` by name, so an absolute launcher used
    earlier is not sufficient. Bind that name to the verified launcher for this
-   setup invocation only, using the wrappers below; do not invoke its terminal
+   setup invocation only, following [Setup-only launcher binding](#setup-only-launcher-binding);
+   do not invoke its terminal
    prompt from a non-TTY shell. A missing PowerShell 7 host blocks
    Windows web-installer setup; check it before acquisition/repair.
    Do not report npm-only acquisition as full installation or private setup.
    Require installer exit 0, reverify the selected absolute launcher/version and host
    acceptance, then resume the original user request without asking it to be repeated.
+   Do not recursively scan installed npm files for verification. Inspect specific
+   files only to diagnose an actual failure.
    Preserve the marketplace plugin and VS Code; downstream EULAs, sign-in and tenant
    authorization remain independent. Report any completed acquisition on later failure,
    without claiming rollback or successful recovery.

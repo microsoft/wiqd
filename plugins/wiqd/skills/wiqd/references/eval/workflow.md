@@ -36,6 +36,17 @@ URL (for example, `T_1234`), not the full URL. Use it as `--agent-id` or
   unresolved identities, never substitute response-only coverage. Follow the
   template's count/coverage tradeoff and no-tool exceptions.
 - Never fabricate grounding evidence or treat unknown tools as an empty inventory.
+- Groundedness/Similarity use factual, source-verified `expected_response` answers,
+  not behavioral grading prose. Current built-in Groundedness receives that field,
+  not item `context`; retain actual source context for provenance. Bound prompts to
+  verified facts and disclose missing evidence before preview/write.
+- New contract-required substring checks explicitly use
+  `PartialMatch: {"threshold": 0.001}`. The complete substring must occur, and the
+  length-ratio score can still fail for very long answers. Do not use a short token
+  as evidence for inherited Groundedness/Similarity.
+- The behavioral LLM Rubric evaluator is unavailable. Keep behavioral requirements
+  visible for manual review; Relevance/Coherence with `replace` can score response
+  quality only, not assert behavioral compliance. Never invent required wording.
 - Generate `schemaVersion`, `default_evaluators`, and `items`, using the schema
   required by the selected release.
 - Preview prompts, expectations, evaluators and coverage; obtain write approval.
@@ -44,14 +55,14 @@ URL (for example, `T_1234`), not the full URL. Use it as `--agent-id` or
 
 ### Plugin evaluators
 
-| Supported                                                  | Requirements                                        |
-| ---------------------------------------------------------- | --------------------------------------------------- |
-| Relevance, Coherence, Similarity, PartialMatch, ExactMatch | Target-specific configuration                       |
-| Groundedness                                               | Actual `context`                                    |
-| ToolCallSelection, ToolCallExecution                       | V2/schema V2 and verified `calls[].tool` identities |
+| Supported                                                  | Requirements                                                             |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Relevance, Coherence, Similarity, PartialMatch, ExactMatch | Target-specific configuration                                            |
+| Groundedness                                               | Source-verified reference answer; retain source `context` for provenance |
+| ToolCallSelection, ToolCallExecution                       | V2/schema V2 and verified `calls[].tool` identities                      |
 
 Citations, Retrieval and ToolCallAccuracy are unsupported for Plugins.
-Use Groundedness with real context or Similarity with a specific reference;
+Use Groundedness or Similarity with a source-verified reference answer;
 neither substitutes for citation or retrieval validation.
 
 Check defaults and all supported item/turn overrides. Never silently remove
