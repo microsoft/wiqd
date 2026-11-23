@@ -9,7 +9,9 @@ setup rather than expanding these snippets into a platform tutorial.
 
 Install the exact approved WIQD release on Node.js 24.15.0 or later and check
 `wiqd --version --skill wiqd --workflow agent-ci-cd`. Use the existing agent
-project and its lifecycle/environment files. Private feed access, if needed,
+project and its lifecycle/environment files for project lifecycle operations.
+Explicit final-ZIP publishing needs only the approved ZIP, not those source files.
+Private feed access, if needed,
 is installation authentication, not delegated lifecycle authentication.
 
 ### Host terms on a fresh runner
@@ -131,8 +133,59 @@ environment and `--json` flags, without deployment credentials. Source diagnosti
 not LSP or final-ZIP validation. Package validation follows the successful build and uploads the
 explicit captured ZIP to TDP; missing authentication/service results block, not pass.
 Neither check is eval or permission to publish. Source prechecks here are workflow gates, not
-new forced backend checks. Provision and publish build their own artifacts; package validation
+new forced backend checks. Provision and project-mode publish build their own artifacts; package validation
 does not prove either operation uploads the previously validated bytes.
+
+### Publish an approved release ZIP without rebuilding
+
+When the release input is an existing final ZIP, use the same protected lifecycle
+credentials and provider bindings, but use this complete command body instead of
+the project sequence. Replace `./release/plugin.zip` with the approved release
+artifact. Do not run both bodies or carry over project checks or selectors.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
+function Invoke-WiqdJson([string]$Name, [string[]]$Arguments) {
+  $text = & wiqd @Arguments
+  $code = $LASTEXITCODE
+  $text | Set-Content -LiteralPath "$Name.json" -Encoding utf8
+  if ($code -ne 0) {
+    [Console]::Error.WriteLine(($text -join "`n"))
+    exit $code
+  }
+  $result = ($text -join "`n") | ConvertFrom-Json -NoEnumerate
+  if ($result -isnot [pscustomobject] -or $result.status -cne 'success') { throw "WIQD $Name did not return a success envelope." }
+  return $result
+}
+if ($env:CI_ENABLED -cne 'true') { throw 'CI_ENABLED must be exactly true.' }
+if (Test-Path Env:M365_REFRESH_TOKEN) {
+  $tenant = [guid]::Empty
+  if (-not [guid]::TryParse($env:M365_TENANT_ID, [ref]$tenant)) { throw 'Set the intended tenant GUID for refresh-token mode.' }
+  if ([string]::IsNullOrWhiteSpace($env:M365_REFRESH_TOKEN)) { throw 'Configure the protected refresh-token secret.' }
+  if (Test-Path Env:M365_ACCOUNT_NAME) { throw 'Remove M365_ACCOUNT_NAME for refresh-token mode.' }
+  if (Test-Path Env:M365_ACCOUNT_PASSWORD) { throw 'Remove M365_ACCOUNT_PASSWORD for refresh-token mode.' }
+} else {
+  foreach ($name in @('M365_ACCOUNT_NAME', 'M365_ACCOUNT_PASSWORD')) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Configure the protected $name secret for username/password mode." }
+  }
+}
+$packageFile = './release/plugin.zip'
+if (-not (Test-Path -LiteralPath $packageFile -PathType Leaf)) { throw 'Release ZIP is missing.' }
+Invoke-WiqdJson 'publish' @('plugin', 'publish', '--package-file', $packageFile, '--json', '--skill', 'wiqd', '--workflow', 'agent-ci-cd') | Out-Null
+```
+
+This submits exactly the captured ZIP to the org catalog for administrator approval.
+It requires no source project, `m365agents.yml`, provisioning environment, `--path`
+or `--manifest`; explicitly supplying `--env` is an error. The working directory
+must be writable for the private snapshot retained until SDK settlement.
+The success receipt identifies `packageFile`, `packageSha256`, `appId` and
+`target: "org-catalog"`, without project/environment fields.
+Validate that selected artifact separately when authorized; a validation pass
+does not authorize publication. ZIP `--dry-run` and `--mock` refuse explicitly.
+Confirmation-required catalog replacements return `PUBLISH_CONFIRMATION_REQUIRED`
+instead of auto-consenting; review/update through the tenant admin portal.
+Do not retry uncertain publication automatically or claim immediate tenant access.
 
 The selected lifecycle credential also serves supported core-backed share and
 corresponding plugin provision/publish/share operations. Add only explicitly
@@ -240,8 +293,9 @@ project's existing state/build/readiness requirements optional.
 
 Keep related operations on the same project/environment state. Across runs, retain
 stable resource IDs and securely restore/update environment state; an empty runner
-does not make provisioning idempotent. Org publish rebuilds from this workspace;
-the exported ZIP is not a claim that publish uploads those exact bytes.
+does not make provisioning idempotent. Project-mode org publish rebuilds from this workspace;
+the exported ZIP is not a claim that project-mode publish uploads those exact bytes.
+The explicit package-file mode above instead captures and submits the selected ZIP unchanged.
 
 Only retain the approved package and non-secret command receipts. Never upload
 env files, user-secret files, developer caches or the checkout to preserve state.
