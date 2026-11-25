@@ -8,6 +8,54 @@ preparation. Do not repeat a resolved choice. Selecting live does not replace th
 reference's eligibility, bounded-call, upload/installation or connector Allow/auth
 approvals. It does not change the read-only evidence collector.
 
+### Cleanup provenance
+
+Before provisioning, retain the creation origin, original ZIP/hash, generated
+project or preparation path, selected M365 tenant/account and evidence that the
+test app identity and resources are new and isolated. After verified success,
+retain its exact provisioning `data.titleId` separately from `data.agentId`,
+alongside the saved result and deployment/environment identity checks. Mark
+cleanup eligible only when those records prove this validation journey created
+the isolated deployment and owns the resources to be torn down.
+
+A newly generated connector host with verified creation provenance can qualify.
+A DA ZIP retains its existing app identity: personal sideload or upload success
+alone never makes it eligible. A saved validation-created connector host can
+qualify across sessions after its isolated creation and ownership are verified;
+reuse does not make it an external target. Externally managed/caller-supplied/shared/production targets
+do not qualify. Preserve a same-run target's recorded cleanup decision, not a
+new approval. A new validation run asks again for an eligible reused host, with
+Keep first and no deletion by default. Source `isUpdate: false`
+alone is insufficient without the generated-host and resource-ownership checks.
+Do not copy credentials into this record or the conversation.
+
+For connector validation only, the terminal handoff asks for a new or saved
+validation-generated host with an explicit No/Keep default even while legacy
+fields or exclusive teardown ownership are pending. `isUpdate: true` alone must
+not suppress the question, just as `isUpdate: false` alone cannot establish
+ownership. Record the choice separately from eligibility; Yes cannot authorize
+execution until ownership and current identity are verified. Known external,
+caller-managed, shared or production targets remain excluded.
+
+For legacy records without explicit cleanup fields, inspect the saved
+connector-to-agent generation record, original ZIP/hash, generated-file hashes,
+successful provision result and matching env/build app, Title ID and auth
+identities. Verify the trusted generated lifecycle refers only to the isolated
+test app's resources, not shared registrations. Supplement missing provenance
+only when those records and current account/tenant checks establish isolated
+validation creation and exclusive teardown ownership. Do not equate missing
+new fields with an external target, fabricate a fresh-creation claim, relax
+ownership checks, or provision again to manufacture cleanup evidence.
+
+Keep pending/kept/blocked/deleted/failed/unknown cleanup disposition and any
+native decision/result with the existing local preparation evidence. Partial
+or uncertain provisioning and conflicting identity/ownership remain blocked;
+retain evidence without remote cleanup or another installation attempt.
+When the journey terminates, return to the workflow's
+[confirmed temporary DA cleanup](../../workflows/validation.md#7-offer-confirmed-temporary-da-cleanup).
+That separate native deletion choice follows all live work and chosen repairs;
+it never runs during setup, recovery or a selected live retry.
+
 ### Connector live target ID
 
 For this workflow's live connector readiness check and every new or retried
@@ -91,6 +139,11 @@ selected project/environment when any, and authorized read-only budgets.
 A missing local ID, 401/403, timeout or failed lookup is unknown state, not
 permission to install again.
 
+For a connector ZIP, first inspect the selected package project's
+`.validate/development/`, not just the terminal's current directory. Follow
+[saved connector host verification](#verify-a-saved-connector-host-before-reuse)
+before either host-generation path, even in a fresh Copilot session.
+
 Reuse a suitable exact user-supplied target or a previously verified Core
 deployment result for this package and current tenant/account. Retain the
 caller-asserted package binding; do not claim independent service-byte attestation.
@@ -100,7 +153,9 @@ budget, or deploy to test whether an existing target works.
 The [connector live target ID](#connector-live-target-id) procedure's bounded
 post-provision metadata lookup is the sole `agent list` exception here; it
 resolves identity, not readiness, and never runs inside the collector.
-With a suitable existing target, continue directly at step 5; skip steps 2-4.
+With a suitable existing target, continue directly at step 5; skip steps 2-4
+only when its required setup/association is already complete. Otherwise resume
+step 4 for that same installation, not provisioning.
 
 If no suitable exact target has already been supplied or verified, **default to
 local development-target preparation**. Do not ask for an agent ID, ask whether
@@ -109,10 +164,99 @@ An existing target is optional input, not a prerequisite for live validation.
 Continue through the eligibility checks below to the local dry run in step 2.
 This default authorizes local preparation, not upload or installation.
 Known failed/uncertain deployment, conflicting target/package context or earlier
-refusal still stops new preparation; never use the default to retry an installation.
+refusal still stops default preparation; for a saved connector host, use the
+explicit decision below, never the default to retry an installation.
 For a retained status failure, use step 3's bounded read-only recovery instead.
 Ask only about material unresolved scope or required authorization.
 Do not silently convert an unresolved live request into a passing static result.
+
+### Verify a saved connector host before reuse
+
+Read the saved orchestration `preparation-record.json`, its referenced successful
+`provision-result.json` (or actual saved public result path), native deployment/
+attempt records and exact runtime-ID/card/setup evidence under
+`.validate/development/`. Honor an explicit active-host reference. If older
+records describe exactly one candidate, verify it before recording it as active.
+Do not pick the newest directory or first same-name agent. Multiple candidates
+without an unambiguous active reference require native target selection or Stop;
+do not create another host to avoid that decision.
+
+Before any reuse in a **new validation run**:
+
+1. Recheck the selected original ZIP/hash, inspected MCP endpoint/auth choice,
+   recorded generated/deployment files and real saved provision success.
+   Apply the existing ZIP or source branch's artifact/identity checks; expected
+   provision-written env/build changes are not unexplained source changes.
+   A prior failed functional call alone does not invalidate this package binding.
+2. Read `wiqd auth status --json --skill wiqd --workflow validation`; verify the
+   same M365 account/tenant. Do not treat 401/403 or unknown identity as a missing
+   deployment or silently switch identity.
+3. Keep the saved provisioning Title ID separate from the runtime ID and apply
+   the [connector live target ID](#connector-live-target-id) rule. Once a full
+   `T_` runtime ID is available, make one fresh read-only metadata check:
+
+   ```powershell
+   wiqd agent show --id "<saved-T-runtime-agent-id>" --json --skill wiqd --workflow validation
+   ```
+
+   Require exit zero, a non-mock success envelope and returned `data.agentId`
+   equal to that full ID. Reuse this verified card within the run; an old cached
+   card alone is not a fresh check. Do not require a card `titleId` that the
+   formatter does not expose. If an ID needs correction/discovery, use only
+   the existing bounded filtered lookup and confirmed-install refresh; do not
+   enumerate the tenant, guess an ID, send a conversation or call MCP tools to
+   probe availability. A card proves metadata availability, not functional pass.
+
+Classify the result and retain its evidence/reason:
+
+- **Usable:** Binding, artifacts, identity and current exact-ID check match.
+  Reuse this host and its unchanged completed Allow/setup; continue at step 5.
+  Do not generate a project, register auth or provision again.
+- **Recoverable setup/metadata:** Keep the installation, saved result and links;
+  resolve only the missing prerequisite through the existing bounded identity/
+  step 4 handoff. Preserve completed setup, do not repeat login or collected
+  functional calls as a readiness probe. If resolved, reuse it. If unresolved
+  or the user cannot complete setup, proceed to the decision below.
+- **Unavailable, incompatible or unknown:** Explain the actual check failure
+  before offering the decision. Missing/changed package binding, a genuinely
+  unavailable target or unresolved card/identity checks never authorize silent
+  reuse. `AGENT_NOT_FOUND`, access/auth errors and timeouts do not prove cloud
+  deletion. Inconclusive provisioning or deletion must be investigated before
+  replacement; missing current account/tenant still blocks any provision.
+
+For an unresolved saved-host check, use **`ask_user` in Copilot** and wait:
+
+```json
+{
+  "question": "The saved validation DA could not be verified as usable: <actual-check-result>. Stop validation, or prepare one replacement DA? The old DA may still exist and will not be deleted; replacement still requires separate provisioning approval.",
+  "choices": ["Stop validation", "Provision a new validation DA"]
+}
+```
+
+**Stop validation is the default.** Stop, dismissal, cancellation or unavailable
+interaction ends this live-validation attempt without creating another DA;
+report retained agent information and any applicable terminal cleanup handoff.
+Do not silently fall back to no-live checks. Explicit replacement selection
+permits only one new candidate after unresolved-state/identity blockers are
+cleared, with normal eligibility, auth choice and scoped upload/provision
+approval. Disclose that an old host of unknown availability may remain and
+replacement can leave duplicate resources. Selection is not provisioning or
+deletion approval. Do not repeat this choice or create further candidates after
+a failed/cancelled/uncertain replacement, or trigger it automatically from a
+functional-test failure.
+
+No saved candidate means normal eligible local preparation, not a replacement
+question or an agent-ID prerequisite. A verified deleted host is historical,
+not reusable. An unknown deletion outcome is not permission to assume absence.
+Retain all prior host/result/attempt records, including failed replacements;
+never overwrite native hash-bound artifacts. Use a distinct child directory
+for an explicitly selected new candidate and update the orchestration record's
+active-host reference only after verified provision success. Keep the earlier
+record/history and its paths available rather than silently losing the old DA.
+Retain each run/target's reuse check, setup state and cleanup decision/outcome.
+The final summary must name the new/reused host, actual Title ID/runtime ID,
+cleanup status, absolute preparation/provision record paths and available
+verified Copilot links. Do not print env-file contents or credentials.
 
 **Prepare a DA host when needed:** The live selection starts this preparation
 branch without requiring the user to author a DA. A supported DA ZIP is sideloaded
@@ -409,8 +553,10 @@ ZIP/source binding and current account/tenant; accept only the expected
 provision-written environment/build changes. Missing adapter-only fields are
 not a reason to provision again. Resume at step 4 only when all checks pass;
 missing or contradictory retained evidence remains a blocker.
-Reuse a retained successful card and completed setup when their inputs remain
-unchanged; do not repeat lookup or the manual prompt to obtain missing metadata.
+Reuse a retained successful card and completed setup within the same validation
+run when their inputs remain unchanged; do not repeat lookup or the manual
+prompt to obtain missing metadata. A new run first performs the fresh saved-host
+verification above, while preserving unchanged completed setup.
 If only target association remains unconfirmed, obtain that assertion in step 4.
 An existing output without a verified saved success, or failed/cancelled or
 uncertain source provision, stops: retain the project, registration outputs and
@@ -513,6 +659,10 @@ cancellation or uncertain persistence, stop and report the retained directory
 and actionable error. No silent continuation, automatic re-provision,
 account change, shared/tenant access or remote cleanup. A saved success may be
 reused only with the same identity and packages; it is not a fresh readiness test.
+After verified success (including status recovery), retain the cleanup provenance
+above before setup or collection can fail. The prohibition here covers uncertain
+installation recovery, not separately confirmed terminal cleanup of a proven
+isolated test host.
 
 **Bounded status recovery:** When the failed command reports
 `PACKAGE_SIDELOAD_UNAVAILABLE` for a status transport or response-read failure,
@@ -823,7 +973,9 @@ intended MCP receipt diagnostics separately. Native permissions and safety/integ
 if it fails again, offer the four choices again and wait, without automatic retry.
 Cancel,
 dismissal or an unavailable question stops before assessment/final validation,
-retaining the target and evidence without uninstalling.
+retaining the target and evidence. Return to the workflow's separate
+[temporary DA cleanup](../../workflows/validation.md#7-offer-confirmed-temporary-da-cleanup)
+after active work stops; this cancellation itself never authorizes uninstall.
 
 Once the gate passes, reuse this capture rather than invoking the helper again.
 Distinguish earlier blocked attempts from this selected capture in the final
@@ -851,4 +1003,7 @@ availability nor a passing policy result. A capture failure stays a capture
 failure; it does not re-enter preparation or authorize another installation.
 
 Retain preparation/attempt/deployment artifacts for this target's lifetime.
-Automatic workflow cleanup must not delete them or uninstall the target.
+Retain those local artifacts even after confirmed teardown. Never automatically
+uninstall the target: only the workflow's separate exact-target native approval
+permits cleanup of a proven isolated validation-created host. Existing targets,
+uncertain ownership and declined/unavailable confirmation remain untouched.
