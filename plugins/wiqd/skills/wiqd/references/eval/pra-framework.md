@@ -133,8 +133,8 @@ Read the registered definitions. An MCP URL without tool metadata leaves callabl
 inventory unknown; obtain metadata or clarify before recommending tool coverage.
 Root Plugin `agentSkills[]`/`agentConnectors[]` are distinct from an Agent's
 embedded skills/actions. Resolve the evaluation target before applying this table.
-For Plugin grounding/reference-answer scenarios, use Groundedness with actual
-source context or Similarity with a specific reference response, never Citations
+For Plugin grounding/reference-answer scenarios, use Groundedness or Similarity
+with a source-verified reference answer in `expected_response`, never Citations
 or Retrieval evaluators. These alternatives assess answers, not citation
 correctness or retrieval queries/results/ranking. Report that coverage limitation;
 do not fabricate source/reference content or silently rewrite an existing suite.
@@ -235,13 +235,13 @@ PRA ensures the eval suite covers the right failure modes. Eval CLI metrics scor
 
 When generating evals, translate each PRA category into the following evaluator configuration. Apply this mapping to every prompt in the eval suite. See [eval-templates.md](eval-templates.md) for full JSON examples including the `context` field.
 
-| PRA Category                        | Evaluators to assign                                              | `evaluators_mode`  | Notes                                                                                                                                                 |
-| ----------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Perceive**                        | `Groundedness` (threshold: 4); Agent-only `Citations`             | `extend` (default) | Raise Groundedness and provide actual source `context`. Add Citations only for Agents, never Plugins.                                                 |
-| **Reason**                          | `Coherence` (threshold: 4, optional)                              | `extend` (default) | Defaults usually suffice. Only add Coherence override for structure-critical prompts. May omit `evaluators` entirely if no threshold override needed. |
-| **Act**                             | Optional `Similarity`, V2 `ToolCallSelection`/`ToolCallExecution` | `extend` (default) | Use schema V2 and verified tool identities/runtime evidence; review arguments separately.                                                             |
-| **Boundary** (out-of-scope refusal) | `PartialMatch`                                                    | **`replace`**      | Replace all LLM evaluators — only string match is meaningful for refusal responses.                                                                   |
-| **Deterministic** (exact output)    | `ExactMatch`                                                      | **`replace`**      | Replace all LLM evaluators — only exact string match is appropriate.                                                                                  |
+| PRA Category                            | Evaluators to assign                                              | `evaluators_mode`  | Notes                                                                                                                                                 |
+| --------------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Perceive**                            | `Groundedness` (threshold: 4); Agent-only `Citations`             | `extend` (default) | Supply a source-verified factual `expected_response`; retain source `context` for provenance. Add Citations only for Agents.                          |
+| **Reason**                              | `Coherence` (threshold: 4, optional)                              | `extend` (default) | Defaults usually suffice. Only add Coherence override for structure-critical prompts. May omit `evaluators` entirely if no threshold override needed. |
+| **Act**                                 | Optional `Similarity`, V2 `ToolCallSelection`/`ToolCallExecution` | `extend` (default) | Use schema V2 and verified tool identities/runtime evidence; review arguments separately.                                                             |
+| **Boundary** (required literal wording) | `PartialMatch` (threshold: `0.001`)                               | **`replace`**      | Require the complete contract-defined substring. Not a semantic refusal check; very long responses can still fail the length ratio.                   |
+| **Deterministic** (exact output)        | `ExactMatch`                                                      | **`replace`**      | Replace all LLM evaluators — only exact string match is appropriate.                                                                                  |
 
 Plugin defaults and every item/turn override allow only Relevance, Coherence,
 Groundedness, Similarity, PartialMatch, ExactMatch, ToolCallSelection and
@@ -252,6 +252,11 @@ existing datasets at all scopes and propose a separately approved adaptation rat
 than silently dropping evaluators. Agent-only examples must not be copied unchanged
 into Plugin suites. Skill output-format constraints are Reason scenarios;
 Groundedness checks factual content, not JSON/schema syntax.
+Similarity measures semantic agreement with a verified answer, not adherence to a
+behavioral checklist. Check effective inherited evaluators for suitable references.
+The behavioral LLM Rubric evaluator is unavailable: keep free-form behavioral
+requirements in preview/manual-review notes. Relevance/Coherence with `replace`
+score response quality only, not compliance. Do not invent literal refusal wording.
 
 ### `extend` vs `replace` mode
 
@@ -260,7 +265,9 @@ Groundedness checks factual content, not JSON/schema syntax.
 
 Use `replace` for:
 
-- **Boundary/refusal prompts** — LLM evaluators score refusal responses poorly even when the refusal is correct. String match is more appropriate.
+- **Boundary/refusal prompts with required wording** use PartialMatch threshold
+  `0.001`. Without required wording, retain manual behavioral review and use
+  Relevance/Coherence only for response quality, not an asserted refusal verdict.
 - **Deterministic prompts** — when the expected output is an exact string (e.g., a specific phrase, URL, or number), LLM scoring adds noise.
 
 Use `extend` for:
@@ -269,7 +276,9 @@ Use `extend` for:
 
 ### `context` field for Perceive prompts
 
-The `context` field supplies the actual source text to the Groundedness evaluator. It must be:
+Retain actual source text in `context` for provenance. The currently inspected
+upstream built-in Groundedness runners instead receive `expected_response` as
+evidence. Improving `context` alone does not fix that plumbing. The source must be:
 
 - The **actual content** from the knowledge source the agent is expected to retrieve (SharePoint page body, OneDrive document excerpt, Graph connector data payload)
 - Representative of what the agent will see at runtime — not a paraphrase or summary
@@ -278,11 +287,16 @@ The `context` field supplies the actual source text to the Groundedness evaluato
 When source content is not available at generation time:
 
 1. Obtain actual source text through an authorized read or request a source fixture.
-2. If unavailable, flag the gap in the preview. A draft may use
+2. Derive a factual reference answer containing all requested, verified facts in
+   `expected_response`; never use "The agent should..." grading prose.
+3. If unavailable, block affected cases and flag the gap in the preview. A draft may use
    `[[TO_BE_REPLACED_WITH_REAL_SOURCE_CONTEXT]]`, but it must be replaced with actual
    source text before execution. Never synthesize source evidence from a URL/topic.
+   Resolve evidence or obtain an approved count/coverage tradeoff; do not lower
+   grounding/similarity thresholds or silently drop scenarios to compensate.
 
 Do not conflate PRA category with evaluator assignment. Groundedness is already
-a file-level default; Perceive overrides its threshold to 4 with actual context.
+a file-level default; Perceive overrides its threshold to 4 with a source-verified
+reference answer and retained source context.
 Only Agents add Citations. Plugins never do. Omitting the override leaves
 Groundedness at the default threshold, not the required Perceive threshold.
