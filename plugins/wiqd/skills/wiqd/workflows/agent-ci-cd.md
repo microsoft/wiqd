@@ -2,19 +2,20 @@
 name: agent-ci-cd
 description: >
   Prepare WIQD authentication, inputs and lifecycle commands for unattended agent
-  development and org-catalog deployment in any CI/CD system.
-trigger-summary: 'M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent deployment'
+  development and deployment in any CI/CD system.
+trigger-summary: 'M365 agent CI/CD, WIQD pipeline authentication, automate M365 agent or Partner Center deployment'
 triggers: >
   set up agent CI/CD, create an agent pipeline, GitHub Actions for my agent,
-  Azure Pipelines for my agent, automate agent deployment, unattended agent deployment
-routing-label: 'Agent development CI/CD setup'
-routing-intent: 'Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands'
+  Azure Pipelines for my agent, automate agent deployment, unattended agent deployment,
+  Partner Center CI/CD, publish to Partner Center from CI, automate marketplace publishing
+routing-label: 'Agent lifecycle CI/CD setup'
+routing-intent: 'Configure agent lifecycle pipelines with WIQD authentication and commands'
 routing-order: 11
 contract-version: 1
 routing-requires: [plugin validate, plugin provision, plugin package, plugin publish]
 ---
 
-# Agent development CI/CD setup
+# Agent lifecycle CI/CD setup
 
 Use this workflow only for WIQD/M365 agent development or deployment pipelines.
 A generic GitHub Actions or Azure Pipelines request does not establish that
@@ -39,9 +40,16 @@ existing-project gate in `workflows/wiqd-core.md`; never replace/scaffold a proj
 silently. Retain real project builds/tests; declarative projects have no universal
 compile command, and `plugin package` produces the app ZIP.
 
-This example targets the **org admin catalog**, not public Marketplace submission.
-Resolve the destination before preparing commands. Setup does not authorize a
-deployment, secret-store write, remote pipeline creation or permissions change.
+Resolve the lifecycle destination before preparing commands:
+
+- **Org admin catalog** uses core lifecycle provision/package/publish and supports
+  either credential mode below.
+- **Commercial Marketplace** uses `wiqd publish pc`, the refresh-token mode below,
+  a tenant-matching `partner-center.json`, and separate invocation-scoped
+  `--authorize-submit`.
+
+Setup does not authorize a deployment, submission, secret-store write, remote
+pipeline creation or permissions change.
 
 For a fresh runner, include the reference's direct-npm-first host bootstrap and
 truthful host-status checks. Configure `wiqd eula accept wiqd --yes --json` only
@@ -53,8 +61,9 @@ switch, hidden stamp or copied profile is permitted.
 ## 2. Configure the owning authentication mode
 
 **Both username/password and refresh-token authentication are supported** for
-core-backed provision, publish and share, including corresponding plugin
-lifecycle commands. Confirm the owner's choice; do not mix modes.
+core-backed provision, org-catalog publish and share, including corresponding
+plugin lifecycle commands. The commercial Marketplace destination supports only
+the refresh-token mode. Confirm the owner's choice and destination; do not mix modes.
 
 | Mode | Process-environment inputs |
 | --- | --- |
@@ -62,35 +71,52 @@ lifecycle commands. Confirm the owner's choice; do not mix modes.
 | Username/password | Nonempty protected `M365_ACCOUNT_NAME` and `M365_ACCOUNT_PASSWORD`; `M365_REFRESH_TOKEN` entirely absent. Optional `M365_TENANT_ID` accepts a tenant ID/domain, defaults to `organizations` and rejects `common`/`consumers`. No refresh-token bootstrap. |
 | Refresh token | Nonempty protected `M365_REFRESH_TOKEN` and required tenant GUID in `M365_TENANT_ID`; both password inputs entirely absent, including empty definitions. |
 
-For refresh-token mode only, the human bootstraps **locally in a private terminal**:
+For refresh-token mode only, the human bootstraps once on their **persistent
+workstation in a private terminal**, never on an ephemeral runner:
 
 ```text
 wiqd auth token get --tenant <tenant-guid> --show-token
 ```
 
 The human confirms disclosure and saves the result directly in their approved
-secret store. Never run bootstrap in CI, capture its output, ask for credentials
-in chat, copy a developer cache or run `wiqd auth login` in the pipeline.
+secret store. Every clean runner receives it through the process environment and
+creates a memory-only session; runner affinity or a persisted cache is unnecessary.
+Never run bootstrap in CI, capture its output, ask for credentials in chat, copy
+a developer cache or run `wiqd auth login` in the pipeline.
 Inject the selected credentials only into the processes performing authenticated
 lifecycle operations. Do not expose them to untrusted code.
 
 These are delegated identities subject to consent, permissions, MFA and
 Conditional Access, not app-only/service-principal/managed-identity authentication.
 They do not authenticate Work IQ, eval or arbitrary Azure/SPFx drivers.
+For the commercial Marketplace destination, the selected project binding tenant must match
+`M365_TENANT_ID`; the Marketplace provider acquires and verifies its own Graph
+and Marketplace access tokens from the same caller-managed refresh token.
 Qualify the chosen release, intended runner and a non-production operation with
 the tenant owner; content tests or successful token bootstrap do not prove access.
 
 ## 3. Prepare the lifecycle sequence
 
-Use the reference's provider-neutral example:
-source validate -> provision -> source revalidate -> package -> explicit ZIP package validation
--> org-catalog publish. Use `--mode source` with the same path/environment before lifecycle
-operations, not default validation. Package validation requires the successfully built ZIP and
-may need separately scoped TDP authentication. Provision/publish build their own uploads; these
-workflow checks do not establish that either uploads the exported ZIP bytes.
-Adapt only the operations the user needs. Share uses the same lifecycle
-credential but needs an explicitly approved audience; do not add destructive
-cleanup or perform all mutations merely because their authentication is supported.
+For org-catalog deployment, use the reference's provider-neutral example:
+source validate -> provision -> source revalidate -> package -> explicit ZIP
+package validation -> org-catalog publish. Use `--mode source` with the same
+path/environment before lifecycle operations, not default validation. Package
+validation requires the successfully built ZIP and may need separately scoped
+TDP authentication. Provision/publish build their own uploads; these workflow
+checks do not establish that either uploads the exported ZIP bytes. Adapt only
+the operations the user needs. Share uses the same lifecycle credential but
+needs an explicitly approved audience; do not add destructive cleanup.
+
+For the commercial Marketplace destination, use the reference's exact-package example:
+source/package preparation -> independent package validation -> approved
+`wiqd publish pc ... --authorize-submit` -> read-only status inspection.
+The human establishes the minimal nonsecret binding, supplies the completed
+secret-bearing `partner-center.json` through an approved protected-file mechanism,
+and bootstraps the token locally. Do not run `wiqd auth login` in CI, commit the
+complete publishing configuration, or copy a protected developer cache.
+`--authorize-submit` authorizes only that invocation; authentication, preparation,
+or pipeline setup does not imply it. Pending or uncertain results stop automatic
+resubmission.
 
 Use explicit project/environment flags and the same working state across related
 operations. Preserve stable resource IDs and define secure state ownership
@@ -110,8 +136,9 @@ prerequisite. The reference's snippets illustrate the optional-script approach;
 for inline commands, replace the script invocation with its command body,
 retaining credential bindings, Azure macro checks and exit propagation.
 Insert the adapted steps into the existing trusted release job.
-Choose either username/password or refresh-token
-bindings, never both; unused credential keys must be absent, not empty.
+Choose either username/password or refresh-token bindings for org-catalog
+operations, never both. The commercial Marketplace lifecycle uses refresh-token bindings only.
+Unused credential keys must be absent, not empty.
 Keep secrets in `env`, not executable script interpolation. Preserve native-exit
 propagation and Azure unresolved-macro checks. Script paths are examples, not
 new CLI settings or files installed by WIQD.
@@ -122,9 +149,11 @@ for these values. The example `env` bindings are only native authentication inpu
 Provide the user and any related platform skill with:
 
 - Required WIQD/Node version and extensions, project path and lifecycle environment.
-- Chosen credential mode, exact environment-variable names and owning operations;
+- Destination, chosen credential mode, exact environment-variable names and owning operations;
   secret values are never part of the handoff.
 - WIQD command order, expected package/receipt outputs and native-exit/JSON gates.
+- For the commercial Marketplace lifecycle, the reviewed binding, exact-package validation,
+  invocation-scoped submission authorization, and status/retry boundary.
 - Environment-state ownership, no automatic mutation retry and remaining live qualification.
 
 General triggers, runner setup, secret-store administration, approvals,

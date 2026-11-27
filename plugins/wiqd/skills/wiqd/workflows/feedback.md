@@ -48,13 +48,16 @@ This workflow is about feedback on **wiqd itself** — not about the user's own 
    placeholder like `**Problem**` (with nothing else after it) as the description; if the user's
    message doesn't contain enough detail to write a real description, ask a follow-up question
    before submitting.
-5. Confirm with the user before submitting — show them the title AND the full description body you
-   composed (not just the title and type), so an empty or placeholder description is caught before
-   submit.
-6. Submit:
+5. Preview with `wiqd feedback submit --dry-run --json` using the composed fields.
+   Show the user the resolved destination, disclosure warning, title, and full
+   description/body, including any environment context. If `requiresHostSelection`
+   is true, ask the user to select an explicit host/repository and preview again.
+   Get explicit approval for that destination and complete report before submitting.
+   Never assume a private destination or substitute the public repository.
+6. Submit the same approved fields with `--yes` for non-interactive JSON execution:
 
 ```bash
-wiqd feedback submit --type <type> --title "<title>" --description "<desc>" [--sentiment <positive|negative>] --json --skill wiqd
+wiqd feedback submit --type <type> --title "<title>" --description "<desc>" [--sentiment <positive|negative>] --yes --json --skill wiqd
 ```
 
    Example — a bug report with a real multi-line description (the title stays a short summary;
@@ -78,7 +81,7 @@ spaces.
 **Actual**
 ATK exits immediately with \"error: unrecognized argument\" and no resources
 are created." \
-  --sentiment negative --json --skill wiqd
+  --sentiment negative --yes --json --skill wiqd
 ```
 
 7. Check the response before reporting success: if `data.descriptionEmpty` is `true`, the issue was
@@ -88,6 +91,11 @@ are created." \
    writes a `⚠ No user feedback in --description` warning to stderr on this path, in both human and
    `--json` mode.
 8. Report the issue number and URL
+
+After an uncertain submission result, retry the identical approved command so
+the local journal can reconcile it. Do not change the report, delete state, or
+call `gh issue create` separately: that can duplicate an already-created issue.
+An unresolved recovery is not success and does not authorize another create.
 
 ## List the user's feedback
 
@@ -107,6 +115,7 @@ The list output includes a **Triage** column (AI-applied `category:*/severity:*`
 | `--sentiment`   | `positive` or `negative` — omit if neutral                                           |
 | `--no-context`  | Skip auto-attached environment context                                               |
 | `--dry-run`     | Preview payload without creating an issue                                            |
+| `--yes`         | Submit the reviewed destination and report without a terminal prompt; required for live JSON/headless use |
 | `--json`        | Emit machine-readable JSON output (default: human-readable table)                    |
 
 **Exit codes:** 0 = success, 1 = validation/auth error, 2 = `gh` CLI missing or unsupported, 130 = cancelled.
@@ -120,4 +129,7 @@ current platform (winget/choco on Windows, Homebrew on macOS/Linux). Auto-instal
 disabled with `WIQD_GH_AUTO_INSTALL=false`. If `gh` still isn't available, the command exits
 with code 2 and prints install guidance.
 
-**Fallback (`gh` unavailable):** use `gh issue create --repo microsoft/wiqd --title "<title>" --label "feedback,<type>" --body "<desc>"` directly, or present the formatted feedback for manual submission at `https://github.com/microsoft/wiqd/issues/new`.
+**If `gh` is unavailable:** preserve the formatted report and explain the blocker.
+Do not silently redirect to a public issue page or bypass the configured
+destination. For a user-requested manual submission, first establish the exact
+destination and obtain approval of its disclosure boundary and complete report.

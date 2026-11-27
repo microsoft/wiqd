@@ -62,6 +62,7 @@ use the portal journey below without silently activating an extension or flag.
 | User intent | Action |
 |-------------|--------|
 | "How do I publish / submit / ship my agent to the store", "publish to AppSource", "get into the marketplace" | Check installed direct-command availability, then follow **Direct publishing** or the portal journey below |
+| "Set up Partner Center CI/CD", "publish to Partner Center from CI", "automate marketplace publishing" | Read `workflows/agent-ci-cd.md` and its direct Partner Center branch; retain this workflow's package, listing, authorization and recovery boundaries |
 | Detailed store-listing checklist, icon/URL requirements, per-field guidance | Read `references/wiqd-core/partner-center.md` → Store listing checklist |
 | "Certification failed", "my agent was rejected", troubleshooting a submission | Read `references/wiqd-core/partner-center.md` → Troubleshooting rejections |
 | Build the submittable `.zip` | Read `references/wiqd-core/package.md` — run `wiqd plugin package` |
@@ -187,14 +188,23 @@ After Steps 0-2 have validated the exact final ZIP:
 
 1. Confirm Partner Center enrollment, publisher profile and program access with
    the partner. Authentication is not enrollment, legal acceptance, or readiness.
-2. Direct the human to run `wiqd auth login --interactive --skill wiqd --workflow partner-center` from the intended
-   project in a real terminal, optionally with `--tenant <seller-tenant-guid>`.
-   Generic missing-profile login initially offers Skip Marketplace setup before
-   touching protected storage. Discovery/another directory starts setup; verify
-   the returned Seller Id separately and confirm the exact binding destination.
-   Sign in with the home work account, targeting the seller tenant, never a guest
-   object as a separate password-bearing account. No embedded sign-in or
-   borrowed credentials. Never run interactive login from a redirected agent tool.
+2. Select the authentication path:
+   - **Interactive developer flow:** direct the human to run
+     `wiqd auth login --interactive --skill wiqd --workflow partner-center` from
+     the intended project in a real terminal, optionally with
+     `--tenant <seller-tenant-guid>`. Generic missing-profile login initially
+     offers Skip Marketplace setup before touching protected storage.
+     Discovery/another directory starts setup; verify the returned Seller Id
+     separately and confirm the exact binding destination. Sign in with the home
+     work account, targeting the seller tenant, never a guest object as a separate
+     password-bearing account. No embedded sign-in or borrowed credentials.
+   - **Trusted CI/CD flow:** follow `workflows/agent-ci-cd.md`. A human first
+     establishes and reviews `partner-center.json` and bootstraps
+     `M365_REFRESH_TOKEN` locally. The job supplies exact `CI_ENABLED=true`,
+     matching `M365_TENANT_ID`, and the protected token. It does not run
+     interactive login, read protected developer storage, or copy a developer
+     cache. Username/password, service-principal and workload-identity modes do
+     not authenticate direct Partner Center publishing.
 3. Initialize the verified binding, then collect the partner's explicit listing
    choices in `partner-center.json`: language, title/description/short summary,
    categories, privacy/support URLs, standard Microsoft or custom terms, a custom
@@ -216,8 +226,10 @@ wiqd publish pc prepare --path "<project>" --package "<final.zip>" --release-not
 5. Obtain **explicit submission authority** for the exact verified Product,
    publisher, package and terms. `--yes` confirms preparation only.
    `submit --yes --interactive` belongs in the human's real terminal and requires
-   typed confirmation. Only when the user explicitly authorizes unattended
-   submission for that exact operation may you relay `--authorize-submit`.
+   typed confirmation. In an approved CI/CD release step, `--authorize-submit`
+   permits submission without interactive input for that invocation only.
+   Configure or relay it only when the user explicitly authorizes unattended
+   submission for that exact operation.
    Never derive that authority from preparing a Draft, login, validation,
    defaults, saved configuration, or a broad request for help. Bare `publish pc`
    composes preparation/submission and must not be used for a prepare-only request.

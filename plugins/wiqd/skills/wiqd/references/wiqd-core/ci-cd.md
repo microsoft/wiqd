@@ -9,7 +9,9 @@ setup rather than expanding these snippets into a platform tutorial.
 
 Install the exact approved WIQD release on Node.js 24.15.0 or later and check
 `wiqd --version --skill wiqd --workflow agent-ci-cd`. Use the existing agent
-project and its lifecycle/environment files. Private feed access, if needed,
+project and its lifecycle/environment files for project lifecycle operations.
+Explicit final-ZIP publishing needs only the approved ZIP, not those source files.
+Private feed access, if needed,
 is installation authentication, not delegated lifecycle authentication.
 
 ### Host terms on a fresh runner
@@ -54,9 +56,11 @@ refusal remain unchanged.
 
 **Both username/password and refresh-token authentication are supported.**
 Password mode requires no refresh-token bootstrap. For refresh-token mode only,
-the human runs `wiqd auth token get --tenant <tenant-guid> --show-token` locally
-in a private terminal and puts the disclosed result directly in their secret store.
-Neither bootstrap nor `wiqd auth login` belongs in CI.
+the human runs `wiqd auth token get --tenant <tenant-guid> --show-token` once on
+their persistent workstation in a private terminal and puts the disclosed result
+directly in their secret store. This is not a runner initialization step: every
+clean runner receives the stored token through its process environment. Neither
+bootstrap nor `wiqd auth login` belongs in CI.
 
 Use the snippets below to map the chosen credential names from the owner's secret
 store to the authenticated process environment. Never pass secrets as arguments,
@@ -131,8 +135,175 @@ environment and `--json` flags, without deployment credentials. Source diagnosti
 not LSP or final-ZIP validation. Package validation follows the successful build and uploads the
 explicit captured ZIP to TDP; missing authentication/service results block, not pass.
 Neither check is eval or permission to publish. Source prechecks here are workflow gates, not
-new forced backend checks. Provision and publish build their own artifacts; package validation
+new forced backend checks. Provision and project-mode publish build their own artifacts; package validation
 does not prove either operation uploads the previously validated bytes.
+
+### Publish an approved release ZIP without rebuilding
+
+When the release input is an existing final ZIP, use the same protected lifecycle
+credentials and provider bindings, but use this complete command body instead of
+the project sequence. Replace `./release/plugin.zip` with the approved release
+artifact. Do not run both bodies or carry over project checks or selectors.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
+function Invoke-WiqdJson([string]$Name, [string[]]$Arguments) {
+  $text = & wiqd @Arguments
+  $code = $LASTEXITCODE
+  $text | Set-Content -LiteralPath "$Name.json" -Encoding utf8
+  if ($code -ne 0) {
+    [Console]::Error.WriteLine(($text -join "`n"))
+    exit $code
+  }
+  $result = ($text -join "`n") | ConvertFrom-Json -NoEnumerate
+  if ($result -isnot [pscustomobject] -or $result.status -cne 'success') { throw "WIQD $Name did not return a success envelope." }
+  return $result
+}
+if ($env:CI_ENABLED -cne 'true') { throw 'CI_ENABLED must be exactly true.' }
+if (Test-Path Env:M365_REFRESH_TOKEN) {
+  $tenant = [guid]::Empty
+  if (-not [guid]::TryParse($env:M365_TENANT_ID, [ref]$tenant)) { throw 'Set the intended tenant GUID for refresh-token mode.' }
+  if ([string]::IsNullOrWhiteSpace($env:M365_REFRESH_TOKEN)) { throw 'Configure the protected refresh-token secret.' }
+  if (Test-Path Env:M365_ACCOUNT_NAME) { throw 'Remove M365_ACCOUNT_NAME for refresh-token mode.' }
+  if (Test-Path Env:M365_ACCOUNT_PASSWORD) { throw 'Remove M365_ACCOUNT_PASSWORD for refresh-token mode.' }
+} else {
+  foreach ($name in @('M365_ACCOUNT_NAME', 'M365_ACCOUNT_PASSWORD')) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) { throw "Configure the protected $name secret for username/password mode." }
+  }
+}
+$packageFile = './release/plugin.zip'
+if (-not (Test-Path -LiteralPath $packageFile -PathType Leaf)) { throw 'Release ZIP is missing.' }
+Invoke-WiqdJson 'publish' @('plugin', 'publish', '--package-file', $packageFile, '--json', '--skill', 'wiqd', '--workflow', 'agent-ci-cd') | Out-Null
+```
+
+This submits exactly the captured ZIP to the org catalog for administrator approval.
+It requires no source project, `m365agents.yml`, provisioning environment, `--path`
+or `--manifest`; explicitly supplying `--env` is an error. The working directory
+must be writable for the private snapshot retained until SDK settlement.
+The success receipt identifies `packageFile`, `packageSha256`, `appId` and
+`target: "org-catalog"`, without project/environment fields.
+Validate that selected artifact separately when authorized; a validation pass
+does not authorize publication. ZIP `--dry-run` and `--mock` refuse explicitly.
+Confirmation-required catalog replacements return `PUBLISH_CONFIRMATION_REQUIRED`
+instead of auto-consenting; review/update through the tenant admin portal.
+Do not retry uncertain publication automatically or claim immediate tenant access.
+
+### Publish an approved package directly to Partner Center
+
+Direct Partner Center publishing uses refresh-token mode only. It consumes the
+same caller-managed `M365_REFRESH_TOKEN`, `M365_TENANT_ID`, and exact
+`CI_ENABLED=true` inputs as core refresh-token lifecycle operations, but the
+Marketplace provider creates and verifies separate in-memory Graph and Marketplace
+sessions. Do not configure password inputs, copy a protected developer cache, or
+run `wiqd auth login` in CI.
+
+Outside the runner, a human uses a persistent workstation and the intended project
+to establish and review the minimal nonsecret `partner-center.json` binding. That
+binding alone may be committed. Before publishing, the human runs initialization
+and completes the required publishing fields. The complete configuration contains
+the secret `hideKey`, so keep it out of version control and supply it at the
+project's `partner-center.json` path through an approved protected-file mechanism.
+The human separately runs
+`wiqd auth token get --tenant <seller-tenant-guid> --show-token` in a private
+interactive terminal and stores the disclosed token directly in the approved
+pipeline secret store. Each randomly assigned clean runner reconstructs a
+memory-only Marketplace session from `M365_TENANT_ID` and the injected token;
+no runner-local sign-in or persisted cache is required. The profile tenant must
+match `M365_TENANT_ID`. Token bootstrap does not prove Marketplace consent,
+publisher access, enrollment, legal acceptance, or release readiness.
+
+The following complete PowerShell 7 body validates the exact approved ZIP and
+performs one explicitly authorized composed submission. Save it optionally as
+`.ci/wiqd-partner-center.ps1`, or inline it into the provider step unchanged
+apart from the approved project, package, and release-note values.
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
+function Invoke-WiqdJson([string]$Name, [string[]]$Arguments) {
+  $text = & wiqd @Arguments
+  $code = $LASTEXITCODE
+  $text | Set-Content -LiteralPath "$Name.json" -Encoding utf8
+  if ($code -ne 0) {
+    [Console]::Error.WriteLine(($text -join "`n"))
+    exit $code
+  }
+  $result = ($text -join "`n") | ConvertFrom-Json -NoEnumerate
+  if ($result -isnot [pscustomobject] -or $result.status -cne 'success') { throw "WIQD $Name did not return a success envelope." }
+  return $result
+}
+if ($env:CI_ENABLED -cne 'true') { throw 'CI_ENABLED must be exactly true.' }
+$tenant = [guid]::Empty
+if (-not [guid]::TryParse($env:M365_TENANT_ID, [ref]$tenant) -or $tenant -eq [guid]::Empty) { throw 'Set the intended seller tenant GUID.' }
+if ([string]::IsNullOrWhiteSpace($env:M365_REFRESH_TOKEN)) { throw 'Configure the protected refresh-token secret.' }
+if ((Test-Path Env:M365_ACCOUNT_NAME) -or (Test-Path Env:M365_ACCOUNT_PASSWORD)) { throw 'Direct Partner Center publishing does not support password mode.' }
+$project = './agent-project'
+$releaseNotes = '<approved-release-notes>'
+if (-not (Test-Path -LiteralPath $project -PathType Container)) { throw 'Project directory is missing.' }
+$packageCandidate = Join-Path $project 'release.zip'
+if (-not (Test-Path -LiteralPath $packageCandidate -PathType Leaf)) { throw 'Approved release ZIP is missing.' }
+$packageFile = (Resolve-Path -LiteralPath $packageCandidate -ErrorAction Stop).Path
+if ($releaseNotes -eq '<approved-release-notes>' -or [string]::IsNullOrWhiteSpace($releaseNotes)) { throw 'Set the approved release notes.' }
+$profilePath = Join-Path $project 'partner-center.json'
+if (-not (Test-Path -LiteralPath $profilePath -PathType Leaf)) { throw 'Protected complete partner-center.json is missing.' }
+$profile = Get-Content -LiteralPath $profilePath -Raw | ConvertFrom-Json
+$profileTenant = [guid]::Empty
+if (-not [guid]::TryParse([string]$profile.binding.tenantId, [ref]$profileTenant) -or $profileTenant -ne $tenant) { throw 'partner-center.json tenant must match M365_TENANT_ID.' }
+$workflow = @('--skill', 'wiqd', '--workflow', 'agent-ci-cd')
+$validation = Invoke-WiqdJson 'validate-package' (@('plugin', 'validate', '--mode', 'package', '--package-file', $packageFile, '--json') + $workflow)
+if ($validation.data.validation.result -cne 'PASSED') { throw 'Require an independent PASSED package result.' }
+Invoke-WiqdJson 'partner-center-publish' (@('publish', 'pc', '--path', $project, '--package', $packageFile, '--release-notes', $releaseNotes, '--authorize-submit', '--json') + $workflow) | Out-Null
+```
+
+`--authorize-submit` authorizes only this command invocation. It does not
+authenticate the process, accept Partner Center agreements, or authorize later
+runs. Use it only in an explicitly approved release step. The composed command
+performs preflight, Draft preparation, and submission in order; an explicit
+preflight/prepare/submit sequence is also valid when it preserves the same ZIP,
+release notes, and separate submit authorization.
+
+Keep the non-secret Product/job identifiers and command receipt. Pending,
+timed-out, unknown, or otherwise uncertain results stop automatic retries.
+Inspect with `wiqd publish pc status` or the Partner Center portal before any
+manually approved rerun. Authentication renewal never replays the mutation, and
+replacement refresh credentials remain process-local rather than updating the
+secret store.
+
+#### GitHub Actions: direct Partner Center
+
+Set `M365_TENANT_ID` as the intended seller-tenant variable and store the locally
+bootstrapped token as `M365_REFRESH_TOKEN`.
+
+```yaml
+- name: Publish approved package to Partner Center
+  shell: pwsh
+  run: |
+    & ./.ci/wiqd-partner-center.ps1
+    exit $LASTEXITCODE
+  env:
+    CI_ENABLED: 'true'
+    M365_TENANT_ID: ${{ vars.M365_TENANT_ID }}
+    M365_REFRESH_TOKEN: ${{ secrets.M365_REFRESH_TOKEN }}
+```
+
+#### Azure Pipelines: direct Partner Center
+
+Mark `M365_REFRESH_TOKEN` secret and map it explicitly into the step environment.
+
+```yaml
+- pwsh: |
+    foreach ($name in @('M365_TENANT_ID', 'M365_REFRESH_TOKEN')) {
+      if ([Environment]::GetEnvironmentVariable($name) -match '^\$\([^)]+\)$') { throw "Define Azure pipeline variable $name before running WIQD." }
+    }
+    & ./.ci/wiqd-partner-center.ps1
+    exit $LASTEXITCODE
+  displayName: Publish approved package to Partner Center
+  env:
+    CI_ENABLED: 'true'
+    M365_TENANT_ID: $(M365_TENANT_ID)
+    M365_REFRESH_TOKEN: $(M365_REFRESH_TOKEN)
+```
 
 The selected lifecycle credential also serves supported core-backed share and
 corresponding plugin provision/publish/share operations. Add only explicitly
@@ -240,8 +411,9 @@ project's existing state/build/readiness requirements optional.
 
 Keep related operations on the same project/environment state. Across runs, retain
 stable resource IDs and securely restore/update environment state; an empty runner
-does not make provisioning idempotent. Org publish rebuilds from this workspace;
-the exported ZIP is not a claim that publish uploads those exact bytes.
+does not make provisioning idempotent. Project-mode org publish rebuilds from this workspace;
+the exported ZIP is not a claim that project-mode publish uploads those exact bytes.
+The explicit package-file mode above instead captures and submits the selected ZIP unchanged.
 
 Only retain the approved package and non-secret command receipts. Never upload
 env files, user-secret files, developer caches or the checkout to preserve state.
