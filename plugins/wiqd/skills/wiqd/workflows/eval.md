@@ -288,6 +288,30 @@ tradeoff; never silently exceed the total. Show missing actual source context in
 preview and do not execute placeholder context. PartialMatch and ExactMatch require
 literal expected text, not a behavioral description.
 
+For **both Agents and Plugins**, follow section 2 of `eval-templates.md` before
+preview/write:
+
+- Groundedness/Similarity require an actual, source-verified reference answer in
+  `expected_response`, not "The agent should..." grading prose. The currently
+  inspected upstream Groundedness runners use this field as evidence, not the
+  item's `context`. Preserve source context for provenance and disclose the limitation.
+- Bound factual prompts to verified evidence and include all requested facts in
+  the reference. Never invent policy values or successful tool outcomes. Missing
+  evidence blocks affected cases until resolved or a count/coverage tradeoff is approved.
+- Newly generated literal-containment cases explicitly use
+  `"PartialMatch": { "threshold": 0.001 }` for wording required by the actual
+  contract. The entire substring must occur; the length-ratio score can still fail
+  for very long responses. Do not combine a short token with inherited grounding
+  or similarity checks that need a full answer.
+- The behavioral LLM Rubric evaluator is unavailable. For free-form behavioral
+  cases without required wording, retain the requirement in preview/manual-review
+  notes. Relevance/Coherence with `replace` score response quality only, not behavioral
+  compliance. Do not fabricate literal wording or claim automated behavioral coverage.
+
+Check effective evaluators and reference suitability on every item/turn, including
+inherited defaults. These policies apply to new generation, not silent updates to
+existing datasets, other thresholds, global defaults or historical results.
+
 ### ⛔ MANDATORY: Present Diff + Get Approval Before Writing
 
 **Before writing ANY eval file** (`evals/evals.json` or `evals/generated-evals.json`), you MUST:
@@ -610,17 +634,17 @@ upgrading. See the upstream
 
 Names are **case-sensitive PascalCase**:
 
-| Name                | Type        | Use With                                        |
-| ------------------- | ----------- | ----------------------------------------------- |
-| `Relevance`         | LLM         | All (default)                                   |
-| `Coherence`         | LLM         | All (default)                                   |
-| `Groundedness`      | LLM         | All (default); raise threshold for Perceive     |
-| `Similarity`        | LLM         | Act prompts (or wording-sensitive prompts)      |
-| `Citations`         | Count-based | Perceive prompts                                |
-| `ExactMatch`        | String      | Deterministic prompts                           |
-| `PartialMatch`      | String      | Boundary/refusal prompts                        |
-| `ToolCallSelection` | Non-LLM     | V2/schema V2; expected tool identities selected |
-| `ToolCallExecution` | Non-LLM     | V2/schema V2; expected HTTP 2xx executions      |
+| Name                | Type        | Use With                                                    |
+| ------------------- | ----------- | ----------------------------------------------------------- |
+| `Relevance`         | LLM         | All (default)                                               |
+| `Coherence`         | LLM         | All (default)                                               |
+| `Groundedness`      | LLM         | All (default); raise threshold for Perceive                 |
+| `Similarity`        | LLM         | Semantic agreement with a verified reference answer         |
+| `Citations`         | Count-based | Perceive prompts                                            |
+| `ExactMatch`        | String      | Deterministic prompts                                       |
+| `PartialMatch`      | String      | Required literal substring; new cases use threshold `0.001` |
+| `ToolCallSelection` | Non-LLM     | V2/schema V2; expected tool identities selected             |
+| `ToolCallExecution` | Non-LLM     | V2/schema V2; expected HTTP 2xx executions                  |
 
 > Use the actual V2 names above, not `ToolCallAccuracy`. Load the tool-call
 > configuration in `references/eval/eval-templates.md`; response scores alone

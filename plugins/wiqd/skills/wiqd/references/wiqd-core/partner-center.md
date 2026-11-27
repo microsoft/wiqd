@@ -42,6 +42,15 @@ status and portal recovery do not justify blind replay. `resume` is simulated.
 An accepted submission or configure job never proves certification or Live
 publication. Follow `workflows/partner-center.md` for the full direct sequence.
 
+Trusted clean-runner automation uses exact `CI_ENABLED=true`, a nonempty
+caller-managed `M365_REFRESH_TOKEN`, and `M365_TENANT_ID` matching the selected
+project's `partner-center.json`. The Marketplace provider acquires its own Graph
+and Marketplace tokens in memory; no protected developer session, browser,
+password mode, service principal, or workload identity is used. Authentication
+does not imply `--authorize-submit`, and replacement refresh credentials are not
+written back to the environment or secret store. Follow
+`workflows/agent-ci-cd.md` for provider snippets and failure handling.
+
 ## Pre-submission checklist
 
 Work through this before creating the offer. Most certification rejections trace

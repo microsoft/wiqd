@@ -245,3 +245,7 @@ invocation internally for requested troubleshooting or a necessary user-owned ne
 Include ZIP/report paths and HTML links only when produced; never
 invent source artifacts. Incomplete replay means **changes applied; revalidation pending**,
 not PASS or official Marketplace approval.
+When the loop finishes or stops, return to the validation workflow's
+[temporary DA cleanup](../../workflows/validation.md#7-offer-confirmed-temporary-da-cleanup)
+for any retained validation-created host. Keep it during selected retries and
+repair rounds; repair approval or cancellation is never deletion approval.

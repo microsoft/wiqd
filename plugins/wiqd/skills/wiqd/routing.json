@@ -84,7 +84,7 @@
     {
       "id": "plugin",
       "file": "workflows/plugin.md",
-      "routingLabel": "Plugin authoring (alpha)",
+      "routingLabel": "Plugin authoring",
       "routingIntent": "Authoring a standalone, reusable plugin (create or import, add skill/connector/agent, validate, provision, package, publish/share, export)",
       "order": 2,
       "triggers": [
@@ -387,8 +387,8 @@
     {
       "id": "agent-ci-cd",
       "file": "workflows/agent-ci-cd.md",
-      "routingLabel": "Agent development CI/CD setup",
-      "routingIntent": "Configure agent development and org-catalog deployment pipelines with WIQD authentication and lifecycle commands",
+      "routingLabel": "Agent lifecycle CI/CD setup",
+      "routingIntent": "Configure agent lifecycle pipelines with WIQD authentication and commands",
       "order": 11,
       "triggers": [
         "set up agent CI/CD",
@@ -396,7 +396,10 @@
         "GitHub Actions for my agent",
         "Azure Pipelines for my agent",
         "automate agent deployment",
-        "unattended agent deployment"
+        "unattended agent deployment",
+        "Partner Center CI/CD",
+        "publish to Partner Center from CI",
+        "automate marketplace publishing"
       ],
       "requires": [
         "plugin validate",
@@ -1610,6 +1613,21 @@
     },
     {
       "phrase": "unattended agent deployment",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "partner center ci/cd",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "publish to partner center from ci",
+      "workflowId": "agent-ci-cd",
+      "workflowFile": "workflows/agent-ci-cd.md"
+    },
+    {
+      "phrase": "automate marketplace publishing",
       "workflowId": "agent-ci-cd",
       "workflowFile": "workflows/agent-ci-cd.md"
     },
